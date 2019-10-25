@@ -22,10 +22,11 @@ class BUFRMsg
   class EBADF < Errno::EBADF
   end
 
-  def initialize buf, ofs, msglen, fnam = '-'
-    @buf, @ofs, @msglen, @fnam = buf, ofs, msglen, fnam
+  def initialize buf, ofs, msglen, fnam = '-', ahl = nil
+    ahl = '-' unless ahl
+    @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
     @ed = @buf[ofs+7].unpack('C').first
-    @props = { :fnam => @fnam, :ofs => @ofs, :msglen => @msglen, :ed => @ed }
+    @props = { :fnam => @fnam, :ofs => @ofs, :msglen => @msglen, :ed => @ed, :ahl => @ahl }
     build_sections
   end
 
@@ -56,7 +57,7 @@ class BUFRMsg
     raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}" if esofs2 != esofs
   end
 
-  def decode_ids
+  def decode_primary
     @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
     @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4,2])
     @props[:subctr] = BUFRMsg::unpack2(@buf[@idsofs+6,2])
@@ -73,10 +74,14 @@ class BUFRMsg
       BUFRMsg::unpack1(@buf[@idsofs+20]),
       BUFRMsg::unpack1(@buf[@idsofs+21])
     )
+    @props[:nsubset] = BUFRMsg::unpack2(@buf[@ddsofs+4,2])
+    ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
+    @props[:obsp] = !(ddsflags & 0x80).zero?
+    @props[:compress] = !(ddsflags & 0x40).zero?
   end
 
   def to_h
-    decode_ids
+    decode_primary
     @props.dup
   end
 
@@ -93,6 +98,7 @@ class BUFRScan
     @buf = ""
     @ofs = 0
     @fnam = fnam
+    @ahl = nil
   end
 
   def readmsg
@@ -103,6 +109,10 @@ class BUFRScan
         return nil if @buf.nil?
         @ofs = 0
         next
+      elsif idx > @ofs
+        if /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\r\r\n/ === @buf[@ofs,idx-@ofs] then
+          @ahl = $1
+        end
       end
       # check BUFR ... 7777 structure
       msglen = BUFRMsg::unpack3(@buf[idx+4,3])
@@ -111,7 +121,7 @@ class BUFRScan
       end
       endmark = @buf[idx + msglen - 4, 4]
       if endmark == '7777' then
-        msg = BUFRMsg.new(@buf, idx, msglen, @fnam)
+        msg = BUFRMsg.new(@buf, idx, msglen, @fnam, @ahl)
         @ofs = idx + msglen
         return msg
       end
