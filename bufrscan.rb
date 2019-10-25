@@ -22,6 +22,9 @@ class BUFRMsg
   class EBADF < Errno::EBADF
   end
 
+  class ENOSYS < Errno::ENOSYS
+  end
+
   def initialize buf, ofs, msglen, fnam = '-', ahl = nil
     ahl = '-' unless ahl
     @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
@@ -35,7 +38,7 @@ class BUFRMsg
     # building section structure with size validation
     #
     esofs = @ofs + @msglen - 4
-    raise EBADF, "Edition #{@ed} != 4" unless 4 == @ed
+    raise ENOSYS, "Edition #{@ed} != 4" unless 4 == @ed
     @idsofs = @ofs + 8
     @idslen = BUFRMsg::unpack3(@buf[@idsofs, 3])
     if @buf[@idsofs + 9].unpack('C').first != 0 then
@@ -78,6 +81,13 @@ class BUFRMsg
     ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
     @props[:obsp] = !(ddsflags & 0x80).zero?
     @props[:compress] = !(ddsflags & 0x40).zero?
+    raise ENOSYS, "compressed file not supported" if @props[:compress]
+    @props[:descs] = @buf[@ddsofs+7, @ddslen-7].unpack('n*').map{|d|
+      f = d >> 14
+      x = (d >> 8) & 0x3F
+      y = d & 0xFF
+      format('%01u%02u%03u', f, x, y)
+    }.join(',')
   end
 
   def to_h
