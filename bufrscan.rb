@@ -92,7 +92,7 @@ class BUFRMsg
   end
 
   def [] key
-    @props[key].dup
+    @props[key]
   end
 
   def to_h
