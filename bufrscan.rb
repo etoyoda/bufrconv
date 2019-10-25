@@ -61,6 +61,7 @@ class BUFRMsg
   end
 
   def decode_primary
+    return if @props[:mastab]
     @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
     @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4,2])
     @props[:subctr] = BUFRMsg::unpack2(@buf[@idsofs+6,2])
@@ -90,6 +91,10 @@ class BUFRMsg
     }.join(',')
   end
 
+  def [] key
+    @props[key].dup
+  end
+
   def to_h
     decode_primary
     @props.dup
@@ -102,6 +107,15 @@ class BUFRMsg
 end
 
 class BUFRScan
+
+  def self.filescan fnam
+    File.open(fnam, 'r:BINARY'){|fp|
+      fp.binmode
+      BUFRScan.new(fp, fnam).scan{|msg|
+        yield msg
+      }
+    }
+  end
 
   def initialize io, fnam = '-'
     @io = io
@@ -149,11 +163,8 @@ end
 
 if $0 == __FILE__
   ARGV.each{|fnam|
-    File.open(fnam, 'r:BINARY'){|fp|
-      fp.binmode
-      BUFRScan.new(fp, fnam).scan{|msg|
-        p msg
-      }
+    BUFRScan.filescan(fnam){|msg|
+      p msg
     }
   }
 end
