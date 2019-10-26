@@ -167,9 +167,14 @@ class BUFRScan
   end
 
   def scan
-    while msg = readmsg
-      yield msg
-    end
+    loop {
+      begin
+        msg = readmsg
+        yield msg
+      rescue BUFRMsg::ENOSYS => e
+        STDERR.puts e.message
+      end
+    }
   end
 
 end
