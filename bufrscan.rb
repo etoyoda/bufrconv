@@ -56,6 +56,9 @@ class BUFRMsg
         BUFRMsg::unpack1(@buf[@idsofs + 7]) >> 7
       when 4
         BUFRMsg::unpack1(@buf[@idsofs + 9]) >> 7
+      # fake --- not sure this is right, though works
+      when 2
+        0
       else
         raise ENOSYS, "unsupported BUFR edition #{@ed}"
       end
