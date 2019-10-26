@@ -95,6 +95,11 @@ class BUFRMsg
     @props[key]
   end
 
+  def descs
+    decode_primary
+    @props[:descs]
+  end
+
   def to_h
     decode_primary
     @props.dup
@@ -162,9 +167,15 @@ class BUFRScan
 end
 
 if $0 == __FILE__
+  action = :inspect
   ARGV.each{|fnam|
-    BUFRScan.filescan(fnam){|msg|
-      p msg
-    }
+    case fnam
+    when '-d' then
+      action = :descs
+    else
+      BUFRScan.filescan(fnam){|msg|
+        puts msg.send(action)
+      }
+    end
   }
 end
