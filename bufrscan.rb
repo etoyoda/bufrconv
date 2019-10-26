@@ -37,7 +37,10 @@ class BUFRMsg
     ahl = '-' unless ahl
     @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
     @ed = @buf[ofs+7].unpack('C').first
-    @props = { :fnam => @fnam, :ofs => @ofs, :msglen => @msglen, :ed => @ed, :ahl => @ahl }
+    @props = {
+      :msglen => @msglen, :ed => @ed,
+      :meta => { :ahl => @ahl, :fnam => @fnam, :ofs => @ofs }
+    }
     build_sections
   end
 
