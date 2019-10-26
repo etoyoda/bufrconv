@@ -189,7 +189,9 @@ class BUFRScan
       # check BUFR ... 7777 structure
       msglen = BUFRMsg::unpack3(@buf[idx+4,3])
       if @buf.bytesize - idx < msglen then
-        @buf += @io.read(msglen - @buf.bytesize + idx)
+        buf2 = @io.read(msglen - @buf.bytesize + idx)
+        return nil if buf2.nil?
+        @buf += buf2
       end
       endmark = @buf[idx + msglen - 4, 4]
       if endmark == '7777' then
@@ -205,6 +207,7 @@ class BUFRScan
     loop {
       begin
         msg = readmsg
+        return if msg.nil?
         yield msg
       rescue BUFRMsg::ENOSYS => e
         STDERR.puts e.message
