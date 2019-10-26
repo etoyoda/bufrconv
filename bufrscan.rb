@@ -7,6 +7,10 @@ end
 
 =begin
 BUFRテーブルの読み込みなしでできる程度の解読。
+
+単独で起動した場合
+  ruby bufrscan.rb files ...
+  ruby bufrscan.rb -d files ...
 =end
 
 class BUFRMsg
