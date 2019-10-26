@@ -5,6 +5,10 @@ def diag kwd, obj
  STDERR.puts kwd + ': ' + obj.inspect if $VERBOSE
 end
 
+=begin
+BUFRテーブルの読み込みなしでできる程度の解読。
+=end
+
 class BUFRMsg
 
   def self.unpack1(str)
@@ -110,6 +114,10 @@ class BUFRMsg
   end
 
 end
+
+=begin
+任意の形式のファイル（ストリームでもまだいける）からBUFR電文を抽出する
+=end
 
 class BUFRScan
 
