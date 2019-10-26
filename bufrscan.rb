@@ -49,10 +49,17 @@ class BUFRMsg
     # building section structure with size validation
     #
     esofs = @ofs + @msglen - 4
-    raise ENOSYS, "Edition #{@ed} != 4" unless 4 == @ed
     @idsofs = @ofs + 8
     @idslen = BUFRMsg::unpack3(@buf[@idsofs, 3])
-    if @buf[@idsofs + 9].unpack('C').first != 0 then
+    opsflag = case @ed
+      when 3
+        BUFRMsg::unpack1(@buf[@idsofs + 7]) >> 7
+      when 4
+        BUFRMsg::unpack1(@buf[@idsofs + 9]) >> 7
+      else
+        raise ENOSYS, "unsupported BUFR edition #{@ed}"
+      end
+    if opsflag != 0 then
       @opsofs = @idsofs + @idslen
       raise EBADF, "OPS #{@opsofs} beyond msg end #{esofs}" if @opsofs >= esofs
       @opslen = BUFRMsg::unpack3(@buf[@opsofs,3])
@@ -73,22 +80,43 @@ class BUFRMsg
 
   def decode_primary
     return if @props[:mastab]
-    @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
-    @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4,2])
-    @props[:subctr] = BUFRMsg::unpack2(@buf[@idsofs+6,2])
-    @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+8])
-    @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+10])
-    @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+11])
-    @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+13])
-    @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+14])
-    @props[:reftime] = Time.gm(
-      BUFRMsg::unpack2(@buf[@idsofs+15,2]),
-      BUFRMsg::unpack1(@buf[@idsofs+17]),
-      BUFRMsg::unpack1(@buf[@idsofs+18]),
-      BUFRMsg::unpack1(@buf[@idsofs+19]),
-      BUFRMsg::unpack1(@buf[@idsofs+20]),
-      BUFRMsg::unpack1(@buf[@idsofs+21])
-    )
+    case @ed
+    when 4 then
+      @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
+      @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4,2])
+      @props[:subctr] = BUFRMsg::unpack2(@buf[@idsofs+6,2])
+      @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+8])
+      @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+10])
+      @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+11])
+      @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+13])
+      @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+14])
+      @props[:reftime] = Time.gm(
+        BUFRMsg::unpack2(@buf[@idsofs+15,2]),
+        BUFRMsg::unpack1(@buf[@idsofs+17]),
+        BUFRMsg::unpack1(@buf[@idsofs+18]),
+        BUFRMsg::unpack1(@buf[@idsofs+19]),
+        BUFRMsg::unpack1(@buf[@idsofs+20]),
+        BUFRMsg::unpack1(@buf[@idsofs+21])
+      )
+    when 3 then
+      @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
+      @props[:ctr] = BUFRMsg::unpack1(@buf[@idsofs+5])
+      @props[:subctr] = BUFRMsg::unpack1(@buf[@idsofs+4])
+      @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+6])
+      @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+8])
+      @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
+      @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+10])
+      @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+11])
+      @props[:reftime] = Time.gm(
+        BUFRMsg::unpack1(@buf[@idsofs+12]) + 2000,
+        BUFRMsg::unpack1(@buf[@idsofs+13]),
+        BUFRMsg::unpack1(@buf[@idsofs+14]),
+        BUFRMsg::unpack1(@buf[@idsofs+15]),
+        BUFRMsg::unpack1(@buf[@idsofs+16]),
+        0
+      )
+
+    end
     @props[:nsubset] = BUFRMsg::unpack2(@buf[@ddsofs+4,2])
     ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
     @props[:obsp] = !(ddsflags & 0x80).zero?
