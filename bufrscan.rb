@@ -190,7 +190,13 @@ class BUFRScan
         end
       end
       # check BUFR ... 7777 structure
+      if @buf.bytesize - idx < 8 then
+        buf2 = @io.read(1024)
+        return nil if buf2.nil?
+        @buf += buf2
+      end
       msglen = BUFRMsg::unpack3(@buf[idx+4,3])
+      raise "oops #{@buf.bytesize} #{idx+4} " if msglen.nil?
       if @buf.bytesize - idx < msglen then
         buf2 = @io.read(msglen - @buf.bytesize + idx)
         return nil if buf2.nil?
