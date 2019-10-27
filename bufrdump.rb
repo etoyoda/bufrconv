@@ -58,6 +58,12 @@ class BUFRDump
     [fxy, desc[:scale], desc[:refv], desc[:width], desc[:desc]].join(',')
   end
 
+  def expand_explain descs, out = $stdout
+    expand(descs).flatten.each {|fxy|
+      out.puts explain_fxy(fxy)
+    }
+  end
+
 end
 
 if $0 == __FILE__
@@ -67,9 +73,7 @@ if $0 == __FILE__
       msg.decode_primary
       puts msg[:fnam]
       descs = msg[:descs].split(/[,\s]/)
-      dumper.expand(descs).flatten.each {|fxy|
-        puts dumper.explain_fxy(fxy)
-      }
+      dumper.expand_explain(descs)
     }
   }
 end
