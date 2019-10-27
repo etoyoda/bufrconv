@@ -58,8 +58,10 @@ class BUFRDump
     [fxy, desc[:scale], desc[:refv], desc[:width], desc[:desc]].join(',')
   end
 
-  def expand_explain descs, out = $stdout
-    expand(descs).flatten.each {|fxy|
+  def expand_explain bufrmsg, out = $stdout
+    bufrmsg.decode_primary
+    out.puts bufrmsg[:fnam]
+    expand(bufrmsg[:descs].split(/[,\s]/)).flatten.each {|fxy|
       out.puts explain_fxy(fxy)
     }
   end
@@ -68,12 +70,10 @@ end
 
 if $0 == __FILE__
   dumper = BUFRDump.new('table_b_bufr', 'table_d_bufr')
+  action = :expand_explain
   ARGV.each{|fnam|
-    BUFRScan.filescan(fnam){|msg|
-      msg.decode_primary
-      puts msg[:fnam]
-      descs = msg[:descs].split(/[,\s]/)
-      dumper.expand_explain(descs)
+    BUFRScan.filescan(fnam){|bufrmsg|
+      dumper.send(action, bufrmsg)
     }
   }
 end
