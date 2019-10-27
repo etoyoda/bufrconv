@@ -1,9 +1,26 @@
 #!/usr/bin/ruby
 
+require 'json'
 $LOAD_PATH.push File.dirname($0)
 require 'bufrscan'
 
-class BUFRDump
+class BufrDecode
+
+  def initialize tape, bufrmsg
+    @tape, @bufrmsg = tape, bufrmsg
+    @ptr = 0
+    @cstack = []
+  end
+
+  def run
+  end
+
+end
+
+class BufrDB
+
+  class ENOSYS < BUFRMsg::ENOSYS
+  end
 
   def initialize table_b, table_d
     @b = {}
@@ -13,13 +30,12 @@ class BUFRDump
         line.chomp!
         next if /^\s*\*/ === line
         fxy = line[0, 6]
-        kvp = {}
+        kvp = {:type => :elem, :fxy => fxy}
+        kvp[:desc] = line[8, 43].strip
         kvp[:units] = line[52, 10].strip
         kvp[:scale] = line[62, 4].to_i
         kvp[:refv] = line[66, 11].to_i
         kvp[:width] = line[77, 6].to_i
-        kvp[:nbits] = ('CCITT IA5' == kvp[:units]) ? kvp[:width] * 8 : kvp[:width]
-        kvp[:desc] = line[8, 43].strip
         @b[fxy] = kvp
       }
     }
@@ -36,14 +52,53 @@ class BUFRDump
 
   def expand descs
     result = []
-    descs.each{|fxy|
-      if @d.include? fxy then
-        result.push expand(@d[fxy])
-      else
+    a = descs.dup
+    while fxy = a.shift
+      case fxy
+      when /^[02]/ then
         result.push fxy
+      when /^1(\d\d)(\d\d\d)/ then
+        x = $1.to_i
+        y = $2.to_i
+        x += 1 if y.zero?
+        rep = expand(a.shift(x))
+        newx = rep.flatten.reject{|s|/^#/ === s}.size
+        rep.unshift format('1%02u%03u:%s', newx, y, fxy)
+        result.push rep
+      when /^3/ then
+        raise ENOSYS, "unresolved element #{fxy}" unless @d.include?(fxy)
+        rep = expand(@d[fxy])
+        rep.unshift "##{fxy}"
+        result.push rep
+      end
+    end
+    result
+  end
+
+  def compile descs
+    result = []
+    xd = expand(descs).flatten.reject{|s| /^#/ === s}
+    xd.each{|fxy|
+      case fxy
+      when Hash then
+        result.push fxy
+      when /^0/ then
+        desc = @b[fxy]
+        raise ENOSYS, "unresolved element #{fxy}" unless desc
+        result.push desc
+      when /^1(\d\d)(\d\d\d):/ then
+        x, y, z = $1.to_i, $2.to_i, $'
+        desc = { :type => :repl, :fxy => z, :ndesc => x, :niter => y }
+        result.push desc
+      when /^2/ then
+        raise ENOSYS, "unsupported operator #{fxy}"
+      when /^3/ then
+        raise ENOSYS, "unresolved sequence #{fxy}"
+      else
+        raise ENOSYS, "unknown fxy=#{fxy}"
       end
     }
-    result
+    return result
   end
 
   def explain_fxy fxy
@@ -58,22 +113,35 @@ class BUFRDump
     [fxy, desc[:scale], desc[:refv], desc[:width], desc[:desc]].join(',')
   end
 
-  def expand_explain bufrmsg, out = $stdout
+  def expand_dump bufrmsg, out = $stdout
     bufrmsg.decode_primary
-    out.puts bufrmsg[:fnam]
-    expand(bufrmsg[:descs].split(/[,\s]/)).flatten.each {|fxy|
-      out.puts explain_fxy(fxy)
-    }
+    out.puts JSON.pretty_generate(expand(bufrmsg[:descs].split(/[,\s]/)))
+  end
+
+  def compile_dump bufrmsg, out = $stdout
+    bufrmsg.decode_primary
+    out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
+  end
+
+  def decode bufrmsg, out = $stdout
+    bufrmsg.decode_primary
+    tape = compile(bufrmsg[:descs].split(/[,\s]/))
+    BufrDecode.new(tape, bufrmsg, out).run
   end
 
 end
 
 if $0 == __FILE__
-  dumper = BUFRDump.new('table_b_bufr', 'table_d_bufr')
-  action = :expand_explain
+  db = BufrDB.new('table_b_bufr', 'table_d_bufr')
+  action = :decode
   ARGV.each{|fnam|
-    BUFRScan.filescan(fnam){|bufrmsg|
-      dumper.send(action, bufrmsg)
-    }
+    case fnam
+    when '-x' then action = :expand_dump
+    when '-c' then action = :compile_dump
+    else
+      BUFRScan.filescan(fnam){|bufrmsg|
+        db.send(action, bufrmsg)
+      }
+    end
   }
 end
