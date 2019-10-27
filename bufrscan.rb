@@ -41,6 +41,7 @@ class BUFRMsg
       :msglen => @msglen, :ed => @ed,
       :meta => { :ahl => @ahl, :fnam => @fnam, :ofs => @ofs }
     }
+    @ptr = nil
     build_sections
   end
 
@@ -79,6 +80,20 @@ class BUFRMsg
     @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
     esofs2 = @dsofs + @dslen
     raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}" if esofs2 != esofs
+    @ptr = 0
+    @ptrmax = (@dslen - 7) * 8
+  end
+
+  def readnum width, scale = 0, refv = 0
+    raise "overrun" if @ptr + width > @ptrmax
+    ifirst = @dslen + 7 + @ptr / 8
+    ilast = @dslen + 7 + (@ptr + width - 1) / 8
+    iwidth = ilast - ifirst + 1
+    ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
+    rval = (ival - refv).to_f
+    rval *= (10.0 ** -scale) unless scale.zero?
+    @ptr += width
+    rval
   end
 
   def decode_primary
@@ -118,7 +133,6 @@ class BUFRMsg
         BUFRMsg::unpack1(@buf[@idsofs+16]),
         0
       )
-
     end
     @props[:nsubset] = BUFRMsg::unpack2(@buf[@ddsofs+4,2])
     ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
