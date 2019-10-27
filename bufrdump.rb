@@ -8,11 +8,24 @@ class BufrDecode
 
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
-    @ptr = 0
+    @ptr = nil
     @cstack = []
   end
 
-  def run
+  def run out = $stdout
+    @ptr = 0
+    while @ptr < @tape.size
+      desc = @tape[@ptr]
+      @ptr += 1
+      case desc[:type]
+      when :str
+        p @bufrmsg.readstr(desc[:width], desc[:scale])
+      when :num
+        p @bufrmsg.readnum(desc[:width], desc[:scale], desc[:refv])
+      when :repl
+        p desc
+      end
+    end
   end
 
 end
@@ -30,9 +43,11 @@ class BufrDB
         line.chomp!
         next if /^\s*\*/ === line
         fxy = line[0, 6]
-        kvp = {:type => :elem, :fxy => fxy}
+        units = line[52, 10].strip
+        type = case units when 'CCITT IA5' then :str else :num end
+        kvp = {:type => type, :fxy => fxy}
         kvp[:desc] = line[8, 43].strip
-        kvp[:units] = line[52, 10].strip
+        kvp[:units] = units
         kvp[:scale] = line[62, 4].to_i
         kvp[:refv] = line[66, 11].to_i
         kvp[:width] = line[77, 6].to_i
@@ -126,7 +141,7 @@ class BufrDB
   def decode bufrmsg, out = $stdout
     bufrmsg.decode_primary
     tape = compile(bufrmsg[:descs].split(/[,\s]/))
-    BufrDecode.new(tape, bufrmsg, out).run
+    BufrDecode.new(tape, bufrmsg).run(out)
   end
 
 end

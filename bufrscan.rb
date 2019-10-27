@@ -96,7 +96,7 @@ class BUFRMsg
     rval
   end
 
-  def readstr width, scale = 0, refv = 0
+  def readstr width, scale = 0
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
     ifirst = @dslen + 7 + @ptr / 8
