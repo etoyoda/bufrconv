@@ -90,8 +90,28 @@ class BUFRMsg
     ilast = @dslen + 7 + (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
-    rval = (ival - refv).to_f
-    rval *= (10.0 ** -scale) unless scale.zero?
+    rval = (ival >> (@ptr % 8)) + refv
+    rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
+    @ptr += width
+    rval
+  end
+
+  def readstr len, scale = 0, refv = 0
+    width = len * 8
+    raise "overrun" if @ptr + width > @ptrmax
+    ifirst = @dslen + 7 + @ptr / 8
+    ilast = @dslen + 7 + (@ptr + width - 1) / 8
+    iwidth = ilast - ifirst + 1
+    rval = if (@ptr % 8).zero? then
+      @buf[ifirst,iwidth].force_encoding(Encoding::ASCII_8BIT)
+    else
+      lshift = @ptr % 8
+      rshift = 8 - (@ptr % 8)
+      a = @buf[ifirst,iwidth].unpack('C*')
+      (0 ... len).map{|i|
+        (a[i] << lshift) | (a[i+1] >> rshift)
+      }.pack('C*').force_encoding(Encoding::ASCII_8BIT)
+    end
     @ptr += width
     rval
   end
