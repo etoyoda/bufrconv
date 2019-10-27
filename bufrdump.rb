@@ -19,9 +19,13 @@ class BufrDecode
       @ptr += 1
       case desc[:type]
       when :str
-        p @bufrmsg.readstr(desc[:width], desc[:scale])
+        p [desc[:fxy],
+          @bufrmsg.readstr(desc[:width], desc[:scale]),
+          desc[:desc]]
       when :num
-        p @bufrmsg.readnum(desc[:width], desc[:scale], desc[:refv])
+        p [desc[:fxy],
+          @bufrmsg.readnum(desc[:width], desc[:scale], desc[:refv]),
+          desc[:desc]]
       when :repl
         p desc
       end

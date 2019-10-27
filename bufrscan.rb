@@ -89,14 +89,19 @@ class BUFRMsg
     ifirst = @dslen + 7 + @ptr / 8
     ilast = @dslen + 7 + (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
+    ishift = 8 - (@ptr + width) % 8
+    imask = (1 << width) - 1
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
-    rval = (ival >> (@ptr % 8)) + refv
+    diag 'readnum', [width, scale, refv, @ptr]
+    rval = ((imask & ival) >> ishift) + refv
+    diag 'readnum/rval', format('%b %b %b', ival, (ival >> ishift), rval)
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     @ptr += width
     rval
   end
 
   def readstr width, scale = 0
+    diag 'readstr', [width, scale, @ptr]
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
     ifirst = @dslen + 7 + @ptr / 8
@@ -108,8 +113,9 @@ class BUFRMsg
       lshift = @ptr % 8
       rshift = 8 - (@ptr % 8)
       a = @buf[ifirst,iwidth].unpack('C*')
+      diag 'readstr/a', a.map{|i| '%08b' % i}
       (0 ... len).map{|i|
-        (a[i] << lshift) | (a[i+1] >> rshift)
+        (0xFF & (a[i] << lshift)) | (a[i+1] >> rshift)
       }.pack('C*').force_encoding(Encoding::ASCII_8BIT)
     end
     @ptr += width
