@@ -11,7 +11,7 @@ class BufrDecode
     @pos = nil
     # tape marker for debugging -- note a descriptor may appear twice or more
     (0 ... @tape.size).each{|i|
-      @tape[i][:pos] = i unless @tape[i][:pos]
+      @tape[i][:pos] = i
     }
     # replication counter: nesting implemented using stack push/pop
     @cstack = [{:type=>:dummy, :ctr=>0}]
@@ -186,7 +186,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       when Hash then
         result.push fxy
       when /^0/ then
-        desc = @b[fxy]
+        desc = @b[fxy].dup
         raise ENOSYS, "unresolved element #{fxy}" unless desc
         result.push desc
       when /^1(\d\d)(\d\d\d):/ then
