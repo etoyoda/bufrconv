@@ -122,7 +122,7 @@ class BUFRMsg
   end
 
   def readstr desc
-    width, scale = desc[:width], desc[:scale]
+    width = desc[:width]
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
     ifirst = @ptr / 8
