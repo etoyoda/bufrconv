@@ -144,6 +144,7 @@ class BufrDB
 
   def decode bufrmsg, out = $stdout
     bufrmsg.decode_primary
+    bufrmsg.dump
     tape = compile(bufrmsg[:descs].split(/[,\s]/))
     BufrDecode.new(tape, bufrmsg).run(out)
   end

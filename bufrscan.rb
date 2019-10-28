@@ -80,22 +80,31 @@ class BUFRMsg
     @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
     esofs2 = @dsofs + @dslen
     raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}" if esofs2 != esofs
-    @ptr = 0
-    @ptrmax = (@dslen - 7) * 8
+    @ptr = (@dsofs + 4) * 8
+    @ptrmax = @ptr + (@dslen - 4) * 8
   end
 
   def dump ofs = nil
+    ofs = @dsofs unless ofs
+    8.times {
+      printf "%5u:", ofs
+      8.times {
+        printf " %08b", @buf[ofs].unpack('C').first
+        ofs += 1
+      }
+      printf "\n"
+    }
   end
 
   def readnum width, scale = 0, refv = 0
     raise "overrun" if @ptr + width > @ptrmax
-    ifirst = @dsofs + 7 + @ptr / 8
-    ilast = @dsofs + 7 + (@ptr + width - 1) / 8
+    ifirst = @ptr / 8
+    ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
-    ishift = 8 - (@ptr + width) % 8
+    ishift = 8 - ((@ptr + width) % 8)
     imask = (1 << width) - 1
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
-    diag 'readnum', [width, scale, refv, @ptr]
+    diag 'readnum', [width, scale, refv, @ptr, @ptr / 8]
     rval = ((imask & ival) >> ishift) + refv
     diag 'readnum/rval', format('%b %b %b', ival, (ival >> ishift), rval)
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
@@ -104,11 +113,11 @@ class BUFRMsg
   end
 
   def readstr width, scale = 0
-    diag 'readstr', [width, scale, @ptr]
+    diag 'readstr', [width, scale, @ptr, @ptr / 8]
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
-    ifirst = @dsofs + 7 + @ptr / 8
-    ilast = @dsofs + 7 + (@ptr + width - 1) / 8
+    ifirst = @ptr / 8
+    ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     rval = if (@ptr % 8).zero? then
       @buf[ifirst,iwidth].force_encoding(Encoding::ASCII_8BIT)
