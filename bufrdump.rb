@@ -51,7 +51,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
         @cstack.pop
         p({:cstack_pop=>clast, :pos=>@pos}) if $VERBOSE
       else
-        clast[:ctr] = clast[:ndesc] + 1
+        clast[:ctr] = clast[:ndesc]
         @pos -= clast[:ndesc]
         p({:nextrepl=>clast, :pos=>@pos}) if $VERBOSE
       end
@@ -80,7 +80,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
         showval desc, num
       when :repl
         r = desc.dup
-        r[:ctr] = r[:ndesc] + 1
+        r[:ctr] = r[:ndesc]
         @cstack.push r
         showval r, :REPLICATION
         if r[:niter].zero? then
