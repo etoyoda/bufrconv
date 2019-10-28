@@ -1,10 +1,5 @@
 #!/usr/bin/ruby
 
-$VERBOSE = true if STDERR.tty?
-def diag kwd, obj
- STDERR.puts kwd + ': ' + obj.inspect if $VERBOSE
-end
-
 =begin
 BUFRテーブルの読み込みなしでできる程度の解読。
 
@@ -102,18 +97,21 @@ class BUFRMsg
     ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - ((@ptr + width) % 8)
-    imask = (1 << width) - 1
+    imask = (1 << (width + ishift)) - 1
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
-    diag 'readnum', [width, scale, refv, @ptr, @ptr / 8]
+    p {:w=>width, :s=>scale, :r=>refv, :ptr=>@ptr, :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift} if $VERBOSE
     rval = ((imask & ival) >> ishift) + refv
-    diag 'readnum/rval', format('%b %b %b', ival, (ival >> ishift), rval)
+    p {
+      :ival=>format("%0#{iwidth*8}b", ival),
+      :imask=>format("%0#{iwidth*8}b", imask),
+      :rval=>format("%0#{iwidth*8}b", rval)
+    } if $VERBOSE
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     @ptr += width
     rval
   end
 
   def readstr width, scale = 0
-    diag 'readstr', [width, scale, @ptr, @ptr / 8]
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
     ifirst = @ptr / 8
@@ -125,7 +123,6 @@ class BUFRMsg
       lshift = @ptr % 8
       rshift = 8 - (@ptr % 8)
       a = @buf[ifirst,iwidth].unpack('C*')
-      diag 'readstr/a', a.map{|i| '%08b' % i}
       (0 ... len).map{|i|
         (0xFF & (a[i] << lshift)) | (a[i+1] >> rshift)
       }.pack('C*').force_encoding(Encoding::ASCII_8BIT)
