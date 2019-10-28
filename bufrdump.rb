@@ -9,18 +9,26 @@ class BufrDecode
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
     @ptr = nil
-    @cstack = [{:type=>:dummy, :niter=>0}]
+    @cstack = [{:type=>:dummy, :ctr=>0}]
   end
 
   def read_tape
     d = @tape[@ptr]
     @ptr += 1
     clast = @cstack.last
-    clast[:niter] -= 1
-    if clast[:niter].zero? then
-      @ptr -= clast[:ndesc]
-      p({:endrepl=>clast, :newptr=>@ptr}) if $VERBOSE
-      @cstack.pop
+    clast[:ctr] -= 1
+    if clast[:ctr].zero? then
+      clast[:niter] -= 1
+      if clast[:niter].zero? then
+        @cstack.pop
+        p({:endrepl=>clast, :newptr=>@ptr}) if $VERBOSE
+      else
+        clast[:ctr] = clast[:ndesc] + 1
+        @ptr -= clast[:ndesc]
+        p({:nextrepl=>clast, :newptr=>@ptr}) if $VERBOSE
+      end
+    else
+        p({:ctos=>clast, :ptr=>@ptr}) if $VERBOSE
     end
     d
   end
@@ -38,16 +46,18 @@ class BufrDecode
         p [desc[:fxy], num, desc[:desc]]
       when :repl
         r = desc.dup
+        r[:ctr] = r[:ndesc] + 1
+        @cstack.push r
+        p r
         if r[:niter].zero? then
           d = read_tape
           unless d and d[:type] == :num and /^031/ === d[:fxy]
             raise "missing class 31 after delayed repl #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
-          p [d[:fxy], num, d[:desc], r]
+          p [d[:fxy], num, d[:desc]]
           r[:niter] = num
         end
-        @cstack.push r
       end
     end
   end
