@@ -216,11 +216,17 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 
   def decode bufrmsg, out = $stdout
     bufrmsg.decode_primary
+    puts bufrmsg.inspect
     tape = compile(bufrmsg[:descs].split(/[,\s]/))
     nsubset = bufrmsg[:nsubset]
     nsubset.times{|isubset|
-      puts "--- subset #{isubset} ---" if $VERBOSE
-      BufrDecode.new(tape, bufrmsg).run(out)
+      puts "--- subset #{isubset} #{bufrmsg.ptrcheck.inspect} ---"
+      begin
+        BufrDecode.new(tape, bufrmsg).run(out)
+      rescue => e
+        $stderr.puts e.message
+        break
+      end
     }
   end
 

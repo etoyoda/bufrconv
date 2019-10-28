@@ -28,6 +28,9 @@ class BUFRMsg
   class ENOSYS < Errno::ENOSYS
   end
 
+  class ENOSPC < Errno::ENOSPC
+  end
+
   def initialize buf, ofs, msglen, fnam = '-', ahl = nil
     ahl = '-' unless ahl
     @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
@@ -91,10 +94,16 @@ class BUFRMsg
     }
   end
 
+  def ptrcheck
+    [@ptr, @ptrmax]
+  end
+
   def readnum desc
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
     do_missing = !(/^031/ === desc[:fxy])
-    raise "overrun" if @ptr + width > @ptrmax
+    if @ptr + width > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
+    end
     ifirst = @ptr / 8
     ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
@@ -125,7 +134,9 @@ class BUFRMsg
   def readstr desc
     width = desc[:width]
     len = width / 8
-    raise "overrun" if @ptr + width > @ptrmax
+    if @ptr + width > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
+    end
     ifirst = @ptr / 8
     ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
@@ -257,7 +268,6 @@ class BUFRScan
         @buf += buf2
       end
       msglen = BUFRMsg::unpack3(@buf[idx+4,3])
-      raise "oops #{@buf.bytesize} #{idx+4} " if msglen.nil?
       if @buf.bytesize - idx < msglen then
         buf2 = @io.read(msglen - @buf.bytesize + idx)
         return nil if buf2.nil?
