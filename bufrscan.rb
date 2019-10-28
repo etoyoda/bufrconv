@@ -102,20 +102,21 @@ class BUFRMsg
     imask = ((1 << width) - 1) << ishift
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
     if $VERBOSE then
-      p({:w=>width, :s=>scale, :r=>refv, :ptr=>@ptr, :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift})
+      p({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr, :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift})
     end
     @ptr += width
     if ival & imask == imask and do_missing then
       if $VERBOSE
         fmt = format('%%0%ub', iwidth * 8)
-        p({:ival=>format(fmt, ival), :imask=>format(fmt, imask), :missing=>true})
+        p({:readnum=>:miss, :ival=>format(fmt, ival), :imask=>format(fmt, imask)})
       end
       return nil
     end
     rval = ((imask & ival) >> ishift) + refv
     if $VERBOSE then
       fmt = format('%%0%ub', iwidth * 8)
-      p({:ival=>format(fmt, ival), :imask=>format(fmt, imask), :rval=>format(fmt, rval)})
+      p({:readnum=>:okay,
+        :ival=>format(fmt, ival), :imask=>format(fmt, imask), :rval=>format(fmt, rval)})
     end
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     rval

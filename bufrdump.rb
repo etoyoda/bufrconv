@@ -9,6 +9,7 @@ class BufrDecode
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
     @ptr = nil
+    (0 ... @tape.size).each{|i| @tape[i][:pos] = i unless @tape[i][:pos]}
     @cstack = [{:type=>:dummy, :ctr=>0}]
   end
 
@@ -21,16 +22,20 @@ class BufrDecode
       clast[:niter] -= 1
       if clast[:niter].zero? then
         @cstack.pop
-        p({:endrepl=>clast, :newptr=>@ptr}) if $VERBOSE
+        p({:newptr=>@ptr, :endrepl=>clast}) if $VERBOSE
       else
         clast[:ctr] = clast[:ndesc] + 1
         @ptr -= clast[:ndesc]
-        p({:nextrepl=>clast, :newptr=>@ptr}) if $VERBOSE
+        p({:newptr=>@ptr, :nextrepl=>clast}) if $VERBOSE
       end
     else
-        p({:ctos=>clast, :ptr=>@ptr}) if $VERBOSE
+        p({:newptr=>@ptr, :ctos=>clast}) if $VERBOSE
     end
     d
+  end
+
+  def showval desc, val = nil
+    printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
   end
 
   def run out = $stdout
@@ -40,24 +45,27 @@ class BufrDecode
       case desc[:type]
       when :str
         str = @bufrmsg.readstr(desc)
-        p [desc[:fxy], str, desc[:desc]]
+        showval desc, str
       when :num
         num = @bufrmsg.readnum(desc)
-        p [desc[:fxy], num, desc[:desc]]
+        showval desc, num
       when :repl
         r = desc.dup
         r[:ctr] = r[:ndesc] + 1
         @cstack.push r
-        p r
+        showval r
         if r[:niter].zero? then
           d = read_tape
           unless d and d[:type] == :num and /^031/ === d[:fxy]
             raise "missing class 31 after delayed repl #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
-          p [d[:fxy], num, d[:desc]]
-          r[:niter] = num
-          r[:niter] = r[:ctr] = 1 if num.zero?
+          showval d, num
+          if num.zero? then
+            r[:niter] = r[:ctr] = 1
+          else
+            r[:niter] = num
+          end
         end
       end
     end
@@ -151,18 +159,6 @@ class BufrDB
     return result
   end
 
-  def explain_fxy fxy
-    desc = @b[fxy]
-    case fxy
-    when /^1(\d\d)000/ then
-      return "#{fxy},,,,repeat following #{$1} descriptors variable times"
-    when /^1(\d\d)(\d\d\d)/ then
-      return "#{fxy},,,,repeat following #{$1} descriptors #{$2} times"
-    end
-    raise "unknown desc #{fxy}" unless desc
-    [fxy, desc[:scale], desc[:refv], desc[:width], desc[:desc]].join(',')
-  end
-
   def expand_dump bufrmsg, out = $stdout
     bufrmsg.decode_primary
     out.puts JSON.pretty_generate(expand(bufrmsg[:descs].split(/[,\s]/)))
@@ -175,7 +171,6 @@ class BufrDB
 
   def decode bufrmsg, out = $stdout
     bufrmsg.decode_primary
-    bufrmsg.dump
     tape = compile(bufrmsg[:descs].split(/[,\s]/))
     BufrDecode.new(tape, bufrmsg).run(out)
   end
