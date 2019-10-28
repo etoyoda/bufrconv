@@ -84,10 +84,13 @@ class BUFRMsg
     @ptrmax = (@dslen - 7) * 8
   end
 
+  def dump ofs = nil
+  end
+
   def readnum width, scale = 0, refv = 0
     raise "overrun" if @ptr + width > @ptrmax
-    ifirst = @dslen + 7 + @ptr / 8
-    ilast = @dslen + 7 + (@ptr + width - 1) / 8
+    ifirst = @dsofs + 7 + @ptr / 8
+    ilast = @dsofs + 7 + (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - (@ptr + width) % 8
     imask = (1 << width) - 1
@@ -104,8 +107,8 @@ class BUFRMsg
     diag 'readstr', [width, scale, @ptr]
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
-    ifirst = @dslen + 7 + @ptr / 8
-    ilast = @dslen + 7 + (@ptr + width - 1) / 8
+    ifirst = @dsofs + 7 + @ptr / 8
+    ilast = @dsofs + 7 + (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     rval = if (@ptr % 8).zero? then
       @buf[ifirst,iwidth].force_encoding(Encoding::ASCII_8BIT)
