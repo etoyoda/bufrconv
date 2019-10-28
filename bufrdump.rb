@@ -57,6 +57,7 @@ class BufrDecode
           num = @bufrmsg.readnum(d)
           p [d[:fxy], num, d[:desc]]
           r[:niter] = num
+          r[:niter] = r[:ctr] = 1 if num.zero?
         end
       end
     end
