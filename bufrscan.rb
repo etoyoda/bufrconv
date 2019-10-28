@@ -110,22 +110,24 @@ class BUFRMsg
     ishift = 8 - ((@ptr + width) % 8)
     imask = ((1 << width) - 1) << ishift
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
-    if $VERBOSE then
-      p({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr, :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift})
+    if $DEBUG then
+      $stderr.puts({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr,
+      :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift}.inspect)
     end
     @ptr += width
     if ival & imask == imask and do_missing then
-      if $VERBOSE
+      if $DEBUG
         fmt = format('%%0%ub', iwidth * 8)
-        p({:readnum=>:miss, :ival=>format(fmt, ival), :imask=>format(fmt, imask)})
+        $stderr.puts({:readnum=>:miss, :ival=>format(fmt, ival),
+          :imask=>format(fmt, imask)}.inspect)
       end
       return nil
     end
     rval = ((imask & ival) >> ishift) + refv
-    if $VERBOSE then
+    if $DEBUG then
       fmt = format('%%0%ub', iwidth * 8)
-      p({:readnum=>:okay,
-        :ival=>format(fmt, ival), :imask=>format(fmt, imask), :rval=>format(fmt, rval)})
+      $stderr.puts({:readnum=>:okay, :ival=>format(fmt, ival),
+        :imask=>format(fmt, imask), :rval=>format(fmt, rval)}.inspect)
     end
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     rval

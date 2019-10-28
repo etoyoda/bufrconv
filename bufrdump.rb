@@ -40,7 +40,10 @@ BUFRの反復はネストできなければいけないので（用例がある�
 
   def read_tape(keep_ctr = false)
     clast = @cstack.last
-    p({:read_tape=>keep_ctr, :pos=>@pos, :cstack=>@cstack.size, :ctos=>clast}) if $VERBOSE
+    if $DEBUG
+      $stderr.puts({:read_tape=>keep_ctr, :pos=>@pos,
+        :cstack=>@cstack.size, :ctos=>clast}.inspect)
+    end
     d = @tape[@pos]
     @pos += 1
     return d if keep_ctr
@@ -49,18 +52,22 @@ BUFRの反復はネストできなければいけないので（用例がある�
       clast[:niter] -= 1
       if clast[:niter].zero? then
         @cstack.pop
-        p({:cstack_pop=>clast, :pos=>@pos}) if $VERBOSE
+        if $DEBUG
+          $stderr.puts({:cstack_pop=>clast, :pos=>@pos}.inspect)
+        end
       else
         clast[:ctr] = clast[:ndesc]
         @pos -= clast[:ndesc]
-        p({:nextrepl=>clast, :pos=>@pos}) if $VERBOSE
+        if $DEBUG
+          $stderr.puts({:nextrepl=>clast, :pos=>@pos}.inspect)
+        end
       end
     end
     d
   end
 
-  def showval desc, val = nil
-    printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
+  def showval out, desc, val = nil
+    out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
   end
 
 =begin
@@ -74,22 +81,22 @@ BUFRの反復はネストできなければいけないので（用例がある�
       case desc[:type]
       when :str
         str = @bufrmsg.readstr(desc)
-        showval desc, str
+        showval out, desc, str
       when :num
         num = @bufrmsg.readnum(desc)
-        showval desc, num
+        showval out, desc, num
       when :repl
         r = desc.dup
         r[:ctr] = r[:ndesc]
         @cstack.push r
-        showval r, :REPLICATION
+        showval out, r, :REPLICATION
         if r[:niter].zero? then
           d = read_tape(:keep_ctr)
           unless d and d[:type] == :num and /^031/ === d[:fxy]
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
-          showval d, num
+          showval out, d, num
           if num.zero? then
             r[:niter] = r[:ctr] = 1
             forward(r[:ndesc])
@@ -97,9 +104,9 @@ BUFRの反復はネストできなければいけないので（用例がある�
             r[:niter] = num
           end
         end
-        if $VERBOSE
-          printf("loop pos=%u niter=%u ctr=%u ndesc=%u\n", @pos, r[:niter], r[:ctr],
-            r[:ndesc])
+        if $DEBUG
+          $stderr.printf("loop pos=%u niter=%u ctr=%u ndesc=%u\n",
+            @pos, r[:niter], r[:ctr], r[:ndesc])
         end
       end
     end
@@ -239,6 +246,7 @@ if $0 == __FILE__
     case fnam
     when '-x' then action = :expand_dump
     when '-c' then action = :compile_dump
+    when '-d' then action = :decode
     else
       BUFRScan.filescan(fnam){|bufrmsg|
         db.send(action, bufrmsg)
