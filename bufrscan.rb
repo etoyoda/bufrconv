@@ -91,27 +91,38 @@ class BUFRMsg
     }
   end
 
-  def readnum width, scale = 0, refv = 0
+  def readnum desc
+    width, scale, refv = desc[:width], desc[:scale], desc[:refv]
+    do_missing = !(/^031/ === desc[:fxy])
     raise "overrun" if @ptr + width > @ptrmax
     ifirst = @ptr / 8
     ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - ((@ptr + width) % 8)
-    imask = (1 << (width + ishift)) - 1
+    imask = ((1 << width) - 1) << ishift
     ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
-    p {:w=>width, :s=>scale, :r=>refv, :ptr=>@ptr, :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift} if $VERBOSE
-    rval = ((imask & ival) >> ishift) + refv
-    p {
-      :ival=>format("%0#{iwidth*8}b", ival),
-      :imask=>format("%0#{iwidth*8}b", imask),
-      :rval=>format("%0#{iwidth*8}b", rval)
-    } if $VERBOSE
-    rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
+    if $VERBOSE then
+      p({:w=>width, :s=>scale, :r=>refv, :ptr=>@ptr, :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift})
+    end
     @ptr += width
+    if ival & imask == imask and do_missing then
+      if $VERBOSE
+        fmt = format('%%0%ub', iwidth * 8)
+        p({:ival=>format(fmt, ival), :imask=>format(fmt, imask), :missing=>true})
+      end
+      return nil
+    end
+    rval = ((imask & ival) >> ishift) + refv
+    if $VERBOSE then
+      fmt = format('%%0%ub', iwidth * 8)
+      p({:ival=>format(fmt, ival), :imask=>format(fmt, imask), :rval=>format(fmt, rval)})
+    end
+    rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     rval
   end
 
-  def readstr width, scale = 0
+  def readstr desc
+    width, scale = desc[:width], desc[:scale]
     len = width / 8
     raise "overrun" if @ptr + width > @ptrmax
     ifirst = @ptr / 8
