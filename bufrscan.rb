@@ -247,6 +247,9 @@ class BUFRMsg
     when brt1, brt2
       return nil
     end
+    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s\n",
+      brtx >> 10, 0b1111 & (brtx >> 6), 0b111111 & brtx, rt1.strftime('%Y-%m-%d'))
+
     (-180 .. 10).each{|ofs|
       next if ofs.zero?
       xptr = @ptr + ofs
