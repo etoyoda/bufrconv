@@ -98,18 +98,23 @@ class BUFRMsg
     [@ptr, @ptrmax]
   end
 
+  def peeknum ptr, width
+    ifirst = ptr / 8
+    ilast = (ptr + width - 1) / 8
+    iwidth = ilast - ifirst + 1
+    ishift = 8 - ((ptr + width) % 8)
+    imask = ((1 << width) - 1) << ishift
+    ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
+    [iwidth, ishift, imask, ival]
+  end
+
   def readnum desc
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
     do_missing = !(/^031/ === desc[:fxy])
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
-    ifirst = @ptr / 8
-    ilast = (@ptr + width - 1) / 8
-    iwidth = ilast - ifirst + 1
-    ishift = 8 - ((@ptr + width) % 8)
-    imask = ((1 << width) - 1) << ishift
-    ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
+    iwidth, ishift, imask, ival = peeknum(@ptr, width)
     if $DEBUG then
       $stderr.puts({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr,
       :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift}.inspect)
