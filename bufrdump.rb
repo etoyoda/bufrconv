@@ -8,13 +8,14 @@ class BufrDecode
 
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
-    @pos = nil
+    @pos = 0
     # tape marker for debugging -- note a descriptor may appear twice or more
     (0 ... @tape.size).each{|i|
       @tape[i][:pos] = i
     }
     # replication counter: nesting implemented using stack push/pop
-    @cstack = [{:type=>:dummy, :ctr=>0}]
+    @cstack = []
+    setloop({:type=>:dummy, :ctr=>0})
     @ymdhack = ymdhack_ini
   end
 
@@ -62,14 +63,15 @@ class BufrDecode
 BUFRの反復はネストできなければいけないので（用例があるか知らないが）、カウンタ設定時に現在値はスタック構造で退避される。反復に入っていないときはダミーの記述子数カウンタが初期値ゼロで入っており、１減算によってゼロになることはない。
 =end
 
-  def loopdebug title, desc, opt = ''
+  def loopdebug title, opt = ''
+    desc = @cstack.last
     $stderr.printf("%-7s pos=%3u niter=%-3s ctr=%-3s ndesc=%-3s %s\n",
       title, @pos, desc[:niter], desc[:ctr], desc[:ndesc], opt)
   end
 
   def read_tape(keep_ctr = false)
     clast = @cstack.last
-    loopdebug 'chkloop', clast, "keep_ctr=#{keep_ctr.inspect}" if $VERBOSE
+    loopdebug 'chkloop', "keep_ctr=#{keep_ctr.inspect}" if $VERBOSE
     d = @tape[@pos]
     @pos += 1
     return d if keep_ctr
@@ -78,19 +80,20 @@ BUFRの反復はネストできなければいけないので（用例がある�
       clast[:niter] -= 1
       if clast[:niter].zero? then
         @cstack.pop
-        loopdebug 'endloop', clast if $VERBOSE
+        loopdebug 'endloop' if $VERBOSE
       else
         clast[:ctr] = clast[:ndesc]
         @pos -= clast[:ndesc]
-        loopdebug 'nexloop', clast if $VERBOSE
+        loopdebug 'nexloop' if $VERBOSE
       end
     end
+    $stderr.puts "      -->#{d[:pos]}" if $VERBOSE
     d
   end
 
   def setloop desc
-    loopdebug 'setloop', desc if $VERBOSE
     @cstack.push desc
+    loopdebug 'setloop' if $VERBOSE
   end
 
   def showval out, desc, val = nil
@@ -271,7 +274,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       puts "--- subset #{isubset} #{bufrmsg.ptrcheck.inspect} ---"
       begin
         BufrDecode.new(tape, bufrmsg).run(out)
-      rescue => e
+      rescue Errno::ENOSPC => e
         $stderr.puts e.message
         break
       end
