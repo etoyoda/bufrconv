@@ -169,7 +169,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         @b[fxy] = kvp
       }
     }
-    File.open(table_d, 'r'){|bfp|
+    File.open(table_d, 'r:Windows-1252'){|bfp|
       bfp.each_line {|line|
         line.chomp!
         next if /^\s*\*/ === line
