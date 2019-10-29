@@ -8,7 +8,7 @@ class BufrDecode
 
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
-    @pos = 0
+    @pos = nil
     # tape marker for debugging -- note a descriptor may appear twice or more
     (0 ... @tape.size).each{|i|
       @tape[i][:pos] = i
@@ -57,7 +57,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
 
   def loopdebug title
     desc = @cstack.last
-    $stderr.printf("%-7s pos=%3u niter=%-3s ctr=%-3s ndesc=%-3s %s\n",
+    $stderr.printf("%-7s pos=%3u nit=%-3s ctr=%-3s nds=%-3s %s\n",
       title, @pos, desc[:niter], desc[:ctr], desc[:ndesc], @cstack.size)
   end
 
@@ -77,7 +77,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
         # @pos = clast[:resume]
       else
         clast[:niter] -= 1
-        clast[:ctr] = clast[:ndesc]
+        clast[:ctr] = clast[:ndesc] - 1
         loopdebug 'nexloop' if $VERBOSE
         @pos -= clast[:ndesc]
       end
@@ -126,7 +126,6 @@ BUFRの反復はネストできなければいけないので（用例がある�
           num = @bufrmsg.readnum(d)
           showval out, d, num
           if num.zero? then
-            forward_tape(ndesc)
             setloop(0, ndesc)
           else
             setloop(num, ndesc)
