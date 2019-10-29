@@ -244,7 +244,7 @@ class BUFRMsg
       return nil
     end
     unless @ymdhack[:db]
-      $stderr.puts "ymdhack: building db #{rt1}"
+      $stderr.puts "ymdhack: lost track rt=#{rt1}"
       db = @ymdhack[:db] = {
         [brt1].pack('n') => 6,
         [brt1>>1].pack('n') => 7,
