@@ -189,17 +189,29 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   def compile descs
     result = []
     xd = expand(descs).flatten.reject{|s| /^#/ === s}
-    xd.each{|fxy|
+    xd.size.times{|i|
+      fxy = xd[i]
       case fxy
       when Hash then
         result.push fxy
       when /^0/ then
-        desc = @b[fxy].dup
-        raise ENOSYS, "unresolved element #{fxy}" unless desc
-        result.push desc
+        if @b.include?(fxy)
+          desc = @b[fxy].dup
+          result.push desc
+        elsif result.last[:type] == :op06 
+          desc = { :type=>:num, :fxy=>fxy, :width=>result.last[:set_width],
+            :scale =>0, :refv=>0, :desc=>"LOCAL ELEMENT #{fxy}" }
+          result.push desc
+        else
+          raise ENOSYS, "unresolved element #{fxy}" unless desc
+        end
       when /^1(\d\d)(\d\d\d):/ then
         x, y, z = $1.to_i, $2.to_i, $'
         desc = { :type => :repl, :fxy => z, :ndesc => x, :niter => y }
+        result.push desc
+      when /^206(\d\d\d)/ then
+        y = $1.to_i
+        desc = { :type => :op06, :fxy => fxy, :set_width => y }
         result.push desc
       when /^2/ then
         raise ENOSYS, "unsupported operator #{fxy}"
