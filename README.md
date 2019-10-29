@@ -4,6 +4,8 @@ supported templates: SYNOP and TEMP (so far planned).
 
 # ツール利用法
 
+**出来上がったら書きます。まだ変える**
+
 # 設計メモ
 
 bufr は grib に似た節構造。第３節にデータ記述があって、第４節にデータ本体がある。
