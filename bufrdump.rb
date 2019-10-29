@@ -62,12 +62,14 @@ class BufrDecode
 BUFRの反復はネストできなければいけないので（用例があるか知らないが）、カウンタ設定時に現在値はスタック構造で退避される。反復に入っていないときはダミーの記述子数カウンタが初期値ゼロで入っており、１減算によってゼロになることはない。
 =end
 
+  def loopdebug title, desc, opt = ''
+    $stderr.printf("%-7s pos=%3u niter=%-3s ctr=%-3s ndesc=%-3s %s\n",
+      title, @pos, desc[:niter], desc[:ctr], desc[:ndesc], opt)
+  end
+
   def read_tape(keep_ctr = false)
     clast = @cstack.last
-    if $DEBUG
-      $stderr.puts({:read_tape=>keep_ctr, :pos=>@pos,
-        :cstack=>@cstack.size, :ctos=>clast}.inspect)
-    end
+    loopdebug 'chkloop', clast, "keep_ctr=#{keep_ctr.inspect}" if $VERBOSE
     d = @tape[@pos]
     @pos += 1
     return d if keep_ctr
@@ -76,23 +78,24 @@ BUFRの反復はネストできなければいけないので（用例がある�
       clast[:niter] -= 1
       if clast[:niter].zero? then
         @cstack.pop
-        if $DEBUG
-          $stderr.puts({:cstack_pop=>clast, :pos=>@pos}.inspect)
-        end
+        loopdebug 'endloop', clast if $VERBOSE
       else
         clast[:ctr] = clast[:ndesc]
         @pos -= clast[:ndesc]
-        if $DEBUG
-          $stderr.puts({:nextrepl=>clast, :pos=>@pos}.inspect)
-        end
+        loopdebug 'nexloop', clast if $VERBOSE
       end
     end
     d
   end
 
+  def setloop desc
+    loopdebug 'setloop', desc if $VERBOSE
+    @cstack.push desc
+  end
+
   def showval out, desc, val = nil
     out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
-    out.flush if $DEBUG
+    out.flush if $VERBOSE
   end
 
 =begin
@@ -131,11 +134,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
         else
           r[:ctr] = r[:ndesc]
         end
-        @cstack.push r
-        if $DEBUG
-          $stderr.printf("loop pos=%u niter=%u ctr=%u ndesc=%u\n",
-            @pos, r[:niter], r[:ctr], r[:ndesc])
-        end
+        setloop r
       end
     end
   end
