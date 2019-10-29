@@ -68,6 +68,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
 
   def showval out, desc, val = nil
     out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
+    out.flush if $DEBUG
   end
 
 =begin
