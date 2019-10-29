@@ -40,6 +40,7 @@ class BUFRMsg
       :meta => { :ahl => @ahl, :fnam => @fnam, :ofs => @ofs }
     }
     @ptr = nil
+    @ymdhack = {}
     build_sections
   end
 
@@ -138,9 +139,6 @@ class BUFRMsg
     rval
   end
 
-  def ymdhack opts
-  end
-
   def readstr desc
     width = desc[:width]
     len = width / 8
@@ -231,6 +229,63 @@ class BUFRMsg
 
   def inspect
     to_h.inspect
+  end
+
+  def ymdhack opts
+    decode_primary
+    rt1 = @props[:reftime]
+    brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
+    rt2 = rt1 - 86400
+    brt2 = rt2.year << 10 | rt2.month << 6 | rt2.day
+    iwidth, ishift, imask, ival = peeknum(@ptr + opts[:ymd], 22)
+    brtx = (ival & imask) >> ishift
+    case brtx
+    when brt1, brt2
+      return nil
+    end
+    unless @ymdhack[:db]
+      $stderr.puts "ymdhack: building db #{rt1}"
+      db = @ymdhack[:db] = {
+        [brt1].pack('n') => 6,
+        [brt1>>1].pack('n') => 7,
+        [brt1>>2].pack('n') => 8,
+        [brt1>>3].pack('n') => 9,
+        [brt1>>4].pack('n') => 10,
+        [brt1>>5].pack('n') => 11,
+        [brt1>>6].pack('n') => 12,
+        [brt1>>7].pack('n') => 13,
+        [brt1>>7 | 0x80].pack('n') => 13
+      }
+      db[[brt2].pack('n')] = 6
+      db[[brt2>>1].pack('n')] = 7
+      db[[brt2>>2].pack('n')] = 8
+    end
+    # a tuning parameter
+    istart = @ptr / 8
+    ofs = 0xFFFF
+    ibs = nil
+    for str, setback in @ymdhack[:db]
+      i = @buf.index(str, istart)
+      next if i.nil?
+      xptr = i * 8 - setback - opts[:ymd]
+      iwidth, ishift, imask, ival = peeknum(xptr + opts[:ymd], 22)
+      brtx = (ival & imask) >> ishift
+      case brtx
+      when brt1, brt2
+        next if i > ofs
+      else
+        next
+      end
+      ofs = i
+      ibs = setback
+    end
+    unless ibs then
+      raise ENOSPC, "ymdhack - bit pat not found"
+    end
+    xptr = ofs * 8 - ibs - opts[:ymd]
+    $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr"
+    @ptr = xptr
+    return true
   end
 
 end
