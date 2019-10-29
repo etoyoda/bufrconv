@@ -148,9 +148,11 @@ class BufrDB
 BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libECBUFR 付属の表が扱いやすい形式なのでこれを用いる。
 =end
 
-  def initialize dir = '.'
+  def initialize dir = '.', suffix = ''
     table_b = File.join(dir, 'table_b_bufr')
     table_d = File.join(dir, 'table_d_bufr')
+    table_b += suffix
+    table_d += suffix
     @b = {}
     @d = {}
     File.open(table_b, 'r'){|bfp|
@@ -279,7 +281,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 end
 
 if $0 == __FILE__
-  db = BufrDB.new(ENV['BUFRTABDIR'] || File.dirname($0))
+  db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0),
+    ENV['BUFRDUMPVER'] || '')
   action = :decode
   ARGV.each{|fnam|
     case fnam
