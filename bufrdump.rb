@@ -113,8 +113,6 @@ BUFRの反復はネストできなければいけないので（用例がある�
         showval out, desc, num
       when :repl
         r = desc.dup
-        r[:ctr] = r[:ndesc]
-        @cstack.push r
         showval out, r, :REPLICATION
         if r[:niter].zero? then
           d = read_tape(:keep_ctr)
@@ -124,12 +122,16 @@ BUFRの反復はネストできなければいけないので（用例がある�
           num = @bufrmsg.readnum(d)
           showval out, d, num
           if num.zero? then
-            r[:niter] = r[:ctr] = 1
             forward_tape(r[:ndesc])
+            r[:niter] = r[:ctr] = 1
           else
             r[:niter] = num
+            r[:ctr] = r[:ndesc]
           end
+        else
+          r[:ctr] = r[:ndesc]
         end
+        @cstack.push r
         if $DEBUG
           $stderr.printf("loop pos=%u niter=%u ctr=%u ndesc=%u\n",
             @pos, r[:niter], r[:ctr], r[:ndesc])
