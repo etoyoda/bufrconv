@@ -14,8 +14,7 @@ class BufrDecode
       @tape[i][:pos] = i
     }
     # replication counter: nesting implemented using stack push/pop
-    @cstack = []
-    setloop({:type=>:dummy, :ctr=>0})
+    @cstack = [{:type=>:dummy, :ctr=>-1}]
     @ymdhack = ymdhack_ini
   end
 
@@ -43,7 +42,7 @@ class BufrDecode
   end
 
   def rewind_tape
-    @pos = 0
+    @pos = -1
   end
 
   def forward_tape n
@@ -52,47 +51,45 @@ class BufrDecode
 
 =begin
 記述子列がチューリングマシンのテープであるかのように読み出す。
-反復記述子がループ命令に相当する。反復記述子を読むと、
-反復数カウンタ clast[:niter] と
-記述子数カウンタ clast[:ctr] が設定される。
-ループ内の記述子を読み出した後で、記述子数カウンタは１減算される。
-記述子数カウンタをゼロにするとき、反復数カウンタが１減算される。
-反復数カウンタが１減算の結果非零になるならば、読み出し位置が戻される。
-記述子数カウンタのループ先頭での設定値や読み出し位置の戻し幅には、遅延反復記述子を計算に入れない。
-反復数カウンタが１減算の結果ゼロになるならば、反復が終了する。
-BUFRの反復はネストできなければいけないので（用例があるか知らないが）、カウンタ設定時に現在値はスタック構造で退避される。反復に入っていないときはダミーの記述子数カウンタが初期値ゼロで入っており、１減算によってゼロになることはない。
+反復記述子がループ命令に相当する。
+BUFRの反復はネストできなければいけないので（用例があるか知らないが）、カウンタ設定時に現在値はスタック構造で退避される。反復に入っていないときはダミーの記述子数カウンタが初期値-1 で入っており、１減算によってゼロになることはない。
 =end
 
-  def loopdebug title, opt = ''
+  def loopdebug title
     desc = @cstack.last
     $stderr.printf("%-7s pos=%3u niter=%-3s ctr=%-3s ndesc=%-3s %s\n",
-      title, @pos, desc[:niter], desc[:ctr], desc[:ndesc], opt)
+      title, @pos, desc[:niter], desc[:ctr], desc[:ndesc], @cstack.size)
   end
 
-  def read_tape(keep_ctr = false)
-    clast = @cstack.last
-    loopdebug 'chkloop', "keep_ctr=#{keep_ctr.inspect}" if $VERBOSE
-    d = @tape[@pos]
+  def read_tape_simple
     @pos += 1
-    return d if keep_ctr
-    clast[:ctr] -= 1
+    @tape[@pos]
+  end
+
+  def read_tape
+    @pos += 1
+    clast = @cstack.last
+    loopdebug 'chkloop' if $VERBOSE
     if clast[:ctr].zero? then
-      clast[:niter] -= 1
       if clast[:niter].zero? then
         @cstack.pop
         loopdebug 'endloop' if $VERBOSE
+        # @pos = clast[:resume]
       else
+        clast[:niter] -= 1
         clast[:ctr] = clast[:ndesc]
-        @pos -= clast[:ndesc]
         loopdebug 'nexloop' if $VERBOSE
+        @pos -= clast[:ndesc]
       end
+    else
+      clast[:ctr] -= 1
     end
-    $stderr.puts "      -->#{d[:pos]}" if $VERBOSE
-    d
+    @tape[@pos]
   end
 
-  def setloop desc
-    @cstack.push desc
+  def setloop niter, ndesc
+    @pos += ndesc
+    @cstack.push({:niter=>niter, :ndesc=>ndesc, :ctr=>0, :resume=>@pos })
     loopdebug 'setloop' if $VERBOSE
   end
 
@@ -120,24 +117,23 @@ BUFRの反復はネストできなければいけないので（用例がある�
       when :repl
         r = desc.dup
         showval out, r, :REPLICATION
+        ndesc = r[:ndesc]
         if r[:niter].zero? then
-          d = read_tape(:keep_ctr)
+          d = read_tape_simple
           unless d and d[:type] == :num and /^031/ === d[:fxy]
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
           showval out, d, num
           if num.zero? then
-            forward_tape(r[:ndesc])
-            r[:niter] = r[:ctr] = 1
+            forward_tape(ndesc)
+            setloop(0, ndesc)
           else
-            r[:niter] = num
-            r[:ctr] = r[:ndesc]
+            setloop(num, ndesc)
           end
         else
-          r[:ctr] = r[:ndesc]
+          setloop(r[:niter], ndesc)
         end
-        setloop r
       end
     end
   end
