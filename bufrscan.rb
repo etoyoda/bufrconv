@@ -101,6 +101,7 @@ class BUFRMsg
 
   def peeknum ptr, width
     ifirst = ptr / 8
+    raise ENOSPC, "peeknum beyond buf" if ifirst > @buf.bytesize
     ilast = (ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - ((ptr + width) % 8)
@@ -280,6 +281,35 @@ class BUFRMsg
           }
         end
         yptr += opts['001011'] + 80
+      }
+    end
+    if opts['001015'] then
+      yptr = @ptr
+      8.times{
+        idx = [
+          @buf.index("\x20\x20\x20\x20", yptr / 8),
+          @buf.index("\x40\x40\x40\x40", yptr / 8),
+          @buf.index("\x01\x01\x01\x01", yptr / 8),
+          @buf.index("\x02\x02\x02\x02", yptr / 8),
+          @buf.index("\x04\x04\x04\x04", yptr / 8),
+          @buf.index("\x08\x08\x08\x08", yptr / 8),
+          @buf.index("\x10\x10\x10\x10", yptr / 8)
+          ].compact.min
+        if idx then
+          $stderr.puts "ymdhack: 4SPC found at #{idx * 8} #{@ptr}"
+          yptr = idx * 8 - opts['001015']
+          (0).downto(-132){|ofs|
+            xptr = yptr + ofs
+            brtx = getnum(xptr + opts[:ymd], 22)
+            case brtx
+            when brt1, brt2
+              $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr (shift #{xptr - @ptr}) ofs #{ofs}"
+              @ptr = xptr
+              return true
+            end
+          }
+        end
+        yptr += opts['001015'] + 80
       }
     end
     raise ENOSPC, "ymdhack - bit pat not found"
