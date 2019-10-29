@@ -15,13 +15,37 @@ class BufrDecode
     }
     # replication counter: nesting implemented using stack push/pop
     @cstack = [{:type=>:dummy, :ctr=>0}]
+    @ymdhack = ymdhack_ini
   end
 
-  def rewind
+  def ymdhack_ini
+    result = {}
+    bits = 0
+    (0 ... @tape.size).each{|i|
+      desc = @tape[i]
+      case desc[:fxy] 
+      when '004001' then
+        if @tape[i+1][:fxy] == '004002' and @tape[i+2][:fxy] == '004003' then
+          result[:ymd] = bits
+          return result
+        end
+      when /^00101[15]$/ then
+        result[desc[:fxy]] = bits
+      when /^1..000/ then
+        $stderr.puts "ymdhack failed - delayed repl before ymd" if $DEBUG
+        return nil
+      end
+      bits += desc[:width]
+    }
+    $stderr.puts "ymdhack failed - ymd not found" if $DEBUG
+    return nil
+  end
+
+  def rewind_tape
     @pos = 0
   end
 
-  def forward n
+  def forward_tape n
     @pos += n
   end
 
@@ -77,7 +101,8 @@ BUFRの反復はネストできなければいけないので（用例がある�
 =end
 
   def run out = $stdout
-    rewind
+    rewind_tape
+    @bufrmsg.ymdhack(@ymdhack) if @ymdhack
     while desc = read_tape
       case desc[:type]
       when :str
@@ -100,7 +125,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
           showval out, d, num
           if num.zero? then
             r[:niter] = r[:ctr] = 1
-            forward(r[:ndesc])
+            forward_tape(r[:ndesc])
           else
             r[:niter] = num
           end

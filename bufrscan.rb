@@ -133,6 +133,9 @@ class BUFRMsg
     rval
   end
 
+  def ymdhack opts
+  end
+
   def readstr desc
     width = desc[:width]
     len = width / 8
