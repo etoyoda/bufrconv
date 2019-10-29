@@ -264,22 +264,22 @@ class BUFRMsg
     if opts['001011'] then
       yptr = @ptr
       4.times{
-      idx = @buf.index("\0\0\0\0", yptr / 8)
-      if idx then
-        $stderr.puts "ymdhack: 4NUL found at #{idx * 8} #{@ptr}"
-        yptr = idx * 8 - opts['001011']
-        (0).downto(-32){|ofs|
-          xptr = yptr + ofs
-          brtx = getnum(xptr + opts[:ymd], 22)
-          case brtx
-          when brt1, brt2
-            $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr (shift #{xptr - @ptr}) ofs #{ofs}"
-            @ptr = xptr
-            return true
-          end
-        }
-      end
-      yptr += opts['001011'] + 80
+        idx = @buf.index("\0\0\0\0", yptr / 8)
+        if idx then
+          $stderr.puts "ymdhack: 4NUL found at #{idx * 8} #{@ptr}"
+          yptr = idx * 8 - opts['001011']
+          (0).downto(-32){|ofs|
+            xptr = yptr + ofs
+            brtx = getnum(xptr + opts[:ymd], 22)
+            case brtx
+            when brt1, brt2
+              $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr (shift #{xptr - @ptr}) ofs #{ofs}"
+              @ptr = xptr
+              return true
+            end
+          }
+        end
+        yptr += opts['001011'] + 80
       }
     end
     raise ENOSPC, "ymdhack - bit pat not found"
