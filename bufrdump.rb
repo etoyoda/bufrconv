@@ -4,6 +4,42 @@ require 'json'
 $LOAD_PATH.push File.dirname($0)
 require 'bufrscan'
 
+class DataOrganizer
+
+  def initialize mode, out = $stdout
+    @mode, @out = mode, out
+    @obj = []
+    @tos = @obj
+  end
+
+  def showval desc, val
+    @out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
+    @out.flush if $VERBOSE
+  end
+
+  def header h
+    @out.puts h.inspect
+  end
+
+  def newsubset isubset, ptrcheck
+    @out.puts "--- subset #{isubset} #{ptrcheck.inspect} ---"
+  end
+
+  def setloop
+  end
+
+  def newcycle
+  end
+
+  def endloop
+  end
+
+  def flush
+    @out.flush
+  end
+
+end
+
 class BufrDecode
 
   def initialize tape, bufrmsg
@@ -23,7 +59,7 @@ class BufrDecode
     bits = 0
     (0 ... @tape.size).each{|i|
       desc = @tape[i]
-      case desc[:fxy] 
+      case desc[:fxy]
       when '004001' then
         if @tape[i+1][:fxy] == '004002' and @tape[i+2][:fxy] == '004003' then
           result[:ymd] = bits
@@ -66,7 +102,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
     @tape[@pos]
   end
 
-  def read_tape
+  def read_tape prt
     @pos += 1
     clast = @cstack.last
     loopdebug 'chkloop' if $VERBOSE
@@ -74,11 +110,12 @@ BUFRの反復はネストできなければいけないので（用例がある�
       if clast[:niter].zero? then
         @cstack.pop
         loopdebug 'endloop' if $VERBOSE
-        # @pos = clast[:resume]
+        prt.endloop
       else
         clast[:niter] -= 1
         clast[:ctr] = clast[:ndesc] - 1
         loopdebug 'nexloop' if $VERBOSE
+        prt.newcycle
         @pos -= clast[:ndesc]
       end
     else
@@ -93,30 +130,25 @@ BUFRの反復はネストできなければいけないので（用例がある�
     loopdebug 'setloop' if $VERBOSE
   end
 
-  def showval out, desc, val = nil
-    out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
-    out.flush if $VERBOSE
-  end
-
 =begin
 記述子列がチューリングマシンのテープであるかのように走査して処理する。
 要素記述子を読むたびに、BUFR報 bufrmsg から実データを読み出す。
 =end
 
-  def run out = $stdout
+  def run prt
     rewind_tape
     @bufrmsg.ymdhack(@ymdhack) if @ymdhack
-    while desc = read_tape
+    while desc = read_tape(prt)
       case desc[:type]
       when :str
         str = @bufrmsg.readstr(desc)
-        showval out, desc, str
+        prt.showval desc, str
       when :num
         num = @bufrmsg.readnum(desc)
-        showval out, desc, num
+        prt.showval desc, num
       when :repl
         r = desc.dup
-        showval out, r, :REPLICATION
+        prt.showval r, :REPLICATION
         ndesc = r[:ndesc]
         if r[:niter].zero? then
           d = read_tape_simple
@@ -124,14 +156,17 @@ BUFRの反復はネストできなければいけないので（用例がある�
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
-          showval out, d, num
+          prt.showval d, num
           if num.zero? then
             setloop(0, ndesc)
+            prt.setloop
           else
             setloop(num, ndesc)
+            prt.setloop
           end
         else
           setloop(r[:niter], ndesc)
+          prt.setloop
         end
       end
     end
@@ -247,7 +282,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         desc = table_b(fxy)
         if desc
           result.push desc
-        elsif result.last[:type] == :op06 
+        elsif result.last[:type] == :op06
           desc = { :type=>:num, :fxy=>fxy, :width=>result.last[:set_width],
             :scale =>0, :refv=>0, :desc=>"LOCAL ELEMENT #{fxy}" }
           result.push desc
@@ -284,33 +319,46 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
-  def decode bufrmsg, out = $stdout
+  def decode bufrmsg, outmode = :json, out = $stdout
+    prt = DataOrganizer.new(outmode, out)
     bufrmsg.decode_primary
     tabconfig bufrmsg
-    puts bufrmsg.inspect
+    prt.header bufrmsg.to_h
     tape = compile(bufrmsg[:descs].split(/[,\s]/))
     nsubset = bufrmsg[:nsubset]
+    rc = nil
     nsubset.times{|isubset|
-      puts "--- subset #{isubset} #{bufrmsg.ptrcheck.inspect} ---"
+      prt.newsubset isubset, bufrmsg.ptrcheck
       begin
-        BufrDecode.new(tape, bufrmsg).run(out)
+        BufrDecode.new(tape, bufrmsg).run(prt)
       rescue Errno::ENOSPC => e
         $stderr.puts e.message
-        exit 16
+        rc = 16
       end
     }
+    prt.flush
+    exit(rc) if rc
+  end
+
+  def decode_pretty bufrmsg, out = $stdout
+    decode bufrmsg, :pretty, out
+  end
+
+  def decode_json bufrmsg, out = $stdout
+    decode bufrmsg, :json, out
   end
 
 end
 
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
-  action = :decode
+  action = :decode_json
   ARGV.each{|fnam|
     case fnam
     when '-x' then action = :expand_dump
     when '-c' then action = :compile_dump
-    when '-d' then action = :decode
+    when '-d' then action = :decode_pretty
+    when '-j' then action = :decode_json
     else
       BUFRScan.filescan(fnam){|bufrmsg|
         db.send(action, bufrmsg)
