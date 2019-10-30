@@ -55,6 +55,9 @@ class DataOrganizer
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
+      @tos.push []
+      @tosstack.push @tos
+      @tos = @tos.last
     when :plain
       @level += 1
       @out.puts "___ begin #@level"
@@ -65,6 +68,7 @@ class DataOrganizer
     case @mode
     when :json, :direct
       @tos = @tosstack.pop
+      @tos.pop if @tos.last.empty?
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
@@ -76,6 +80,8 @@ class DataOrganizer
   def endloop
     case @mode
     when :json, :direct
+      @tos = @tosstack.pop
+      @tos.pop if @tos.last.empty?
       @tos = @tosstack.pop
     when :plain
       @out.puts "^^^ end #@level"
