@@ -8,34 +8,85 @@ class DataOrganizer
 
   def initialize mode, out = $stdout
     @mode, @out = mode, out
-    @obj = []
-    @tos = @obj
+    @root = @tos = @tosstack = nil
   end
 
   def showval desc, val
-    @out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
-    @out.flush if $VERBOSE
+    case @mode
+    when :json
+      raise "showval before newsubset" unless @tos
+      @tos.push [desc[:fxy], val]
+    else # :plain
+      @out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
+      @out.flush if $VERBOSE
+    end
   end
 
-  def header h
-    @out.puts h.inspect
+  def newbufr h
+    case @mode
+    when :json
+      @out.puts "BUFR"
+      @out.puts JSON.generate(h)
+    else # :plain
+      @out.puts h.inspect
+    end
   end
 
   def newsubset isubset, ptrcheck
-    @out.puts "--- subset #{isubset} #{ptrcheck.inspect} ---"
+    case @mode
+    when :json
+      @tosstack = []
+      @tos = @root = []
+    else # :plain
+      @out.puts "--- subset #{isubset} #{ptrcheck.inspect} ---"
+    end
   end
 
   def setloop
+    case @mode
+    when :json
+      @tos.push []
+      @tosstack.push @tos
+      @tos = @tos.last
+    # else :plain
+    end
   end
 
   def newcycle
+    case @mode
+    when :json
+      @tos = @tosstack.pop
+      @tos.push []
+      @tosstack.push @tos
+      @tos = @tos.last
+    # else :plain
+    end
   end
 
   def endloop
+    case @mode
+    when :json
+      @tos = @tosstack.pop
+    # else :plain
+    end
   end
 
-  def flush
+  def endsubset
+    case @mode
+    when :json
+      @out.puts JSON.generate(@root)
+      @root = @tos = @tosstack = nil
+    else # :plain
+    end
     @out.flush
+  end
+
+  def endbufr
+    case @mode
+    when :json
+      @out.puts "ENDBUFR"
+    else # :plain
+    end
   end
 
 end
@@ -323,25 +374,30 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     prt = DataOrganizer.new(outmode, out)
     bufrmsg.decode_primary
     tabconfig bufrmsg
-    prt.header bufrmsg.to_h
-    tape = compile(bufrmsg[:descs].split(/[,\s]/))
-    nsubset = bufrmsg[:nsubset]
     rc = nil
-    nsubset.times{|isubset|
-      prt.newsubset isubset, bufrmsg.ptrcheck
-      begin
-        BufrDecode.new(tape, bufrmsg).run(prt)
-      rescue Errno::ENOSPC => e
-        $stderr.puts e.message
-        rc = 16
-      end
-    }
-    prt.flush
+    begin
+      prt.newbufr bufrmsg.to_h
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      nsubset = bufrmsg[:nsubset]
+      nsubset.times{|isubset|
+        begin
+          prt.newsubset isubset, bufrmsg.ptrcheck
+          BufrDecode.new(tape, bufrmsg).run(prt)
+        ensure
+          prt.endsubset
+        end
+      }
+    rescue Errno::ENOSPC => e
+      $stderr.puts e.message
+      rc = 16
+    ensure
+      prt.endbufr
+    end
     exit(rc) if rc
   end
 
-  def decode_pretty bufrmsg, out = $stdout
-    decode bufrmsg, :pretty, out
+  def decode_plain bufrmsg, out = $stdout
+    decode bufrmsg, :plain, out
   end
 
   def decode_json bufrmsg, out = $stdout
@@ -357,7 +413,7 @@ if $0 == __FILE__
     case fnam
     when '-x' then action = :expand_dump
     when '-c' then action = :compile_dump
-    when '-d' then action = :decode_pretty
+    when '-d' then action = :decode_plain
     when '-j' then action = :decode_json
     else
       BUFRScan.filescan(fnam){|bufrmsg|
