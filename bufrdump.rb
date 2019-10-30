@@ -8,28 +8,20 @@ class DataOrganizer
 
   def initialize mode, out = $stdout
     @mode, @out = mode, out
+    # internals for :json
     @root = @tos = @tosstack = nil
+    # internals for :plain
     @level = 0
-  end
-
-  def showval desc, val
-    case @mode
-    when :json
-      raise "showval before newsubset" unless @tos
-      @tos.push [desc[:fxy], val]
-    else # :plain
-      @out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
-      @out.flush if $VERBOSE
-    end
   end
 
   def newbufr h
     case @mode
     when :json
-      @out.puts "BUFR"
       @out.puts JSON.generate(h)
-    else # :plain
+    when :plain
       @out.puts h.inspect
+    else
+      raise "unsupported mode #@mode"
     end
   end
 
@@ -38,9 +30,20 @@ class DataOrganizer
     when :json
       @tosstack = []
       @tos = @root = []
-    else # :plain
+    when :plain
       @out.puts "--- subset #{isubset} #{ptrcheck.inspect} ---"
       @level = 0
+    end
+  end
+
+  def showval desc, val
+    case @mode
+    when :json
+      raise "showval before newsubset" unless @tos
+      @tos.push [desc[:fxy], val]
+    when :plain
+      @out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
+      @out.flush if $VERBOSE
     end
   end
 
@@ -50,7 +53,7 @@ class DataOrganizer
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
-    else #:plain
+    when :plain
       @level += 1
       @out.puts "___ begin #@level"
     end
@@ -63,7 +66,7 @@ class DataOrganizer
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
-    else #:plain
+    when :plain
       @out.puts "--- next #@level"
     end
   end
@@ -72,7 +75,7 @@ class DataOrganizer
     case @mode
     when :json
       @tos = @tosstack.pop
-    else #:plain
+    when :plain
       @out.puts "^^^ end #@level"
       @level -= 1
     end
@@ -83,7 +86,7 @@ class DataOrganizer
     when :json
       @out.puts JSON.generate(@root)
       @root = @tos = @tosstack = nil
-    else # :plain
+    when :plain
     end
     @out.flush
   end
@@ -91,8 +94,8 @@ class DataOrganizer
   def endbufr
     case @mode
     when :json
-      @out.puts "ENDBUFR"
-    else # :plain
+      @out.puts "7777"
+    when :plain
       @out.puts "7777"
     end
   end
