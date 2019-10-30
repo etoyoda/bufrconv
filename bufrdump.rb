@@ -9,6 +9,7 @@ class DataOrganizer
   def initialize mode, out = $stdout
     @mode, @out = mode, out
     @root = @tos = @tosstack = nil
+    @level = 0
   end
 
   def showval desc, val
@@ -39,6 +40,7 @@ class DataOrganizer
       @tos = @root = []
     else # :plain
       @out.puts "--- subset #{isubset} #{ptrcheck.inspect} ---"
+      @level = 0
     end
   end
 
@@ -48,7 +50,9 @@ class DataOrganizer
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
-    # else :plain
+    else #:plain
+      @level += 1
+      @out.puts "___ begin #@level"
     end
   end
 
@@ -59,7 +63,8 @@ class DataOrganizer
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
-    # else :plain
+    else #:plain
+      @out.puts "--- next #@level"
     end
   end
 
@@ -67,7 +72,9 @@ class DataOrganizer
     case @mode
     when :json
       @tos = @tosstack.pop
-    # else :plain
+    else #:plain
+      @out.puts "^^^ end #@level"
+      @level -= 1
     end
   end
 
@@ -86,6 +93,7 @@ class DataOrganizer
     when :json
       @out.puts "ENDBUFR"
     else # :plain
+      @out.puts "7777"
     end
   end
 
