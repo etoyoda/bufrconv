@@ -148,27 +148,36 @@ class BufrDB
 BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libECBUFR 付属の表が扱いやすい形式なのでこれを用いる。
 =end
 
-  def initialize dir = '.', suffix = ''
+  def table_b_parse line
+    return nil if /^\s*\*/ === line
+    fxy = line[0, 6]
+    units = line[52, 10].strip
+    type = case units when 'CCITT IA5' then :str else :num end
+    kvp = {:type => type, :fxy => fxy}
+    kvp[:desc] = line[8, 43].strip
+    kvp[:units] = units
+    kvp[:scale] = line[62, 4].to_i
+    kvp[:refv] = line[66, 11].to_i
+    kvp[:width] = line[77, 6].to_i
+    return kvp
+  end
+
+  def initialize dir = '.'
     table_b = File.join(dir, 'table_b_bufr')
     table_d = File.join(dir, 'table_d_bufr')
-    table_b += suffix
-    table_d += suffix
-    @b = {}
-    @d = {}
-    File.open(table_b, 'r'){|bfp|
+    @table_b = {}
+    @table_b_v13 = {}
+    @table_d = {}
+    File.open(table_b, 'r:Windows-1252'){|bfp|
       bfp.each_line {|line|
-        line.chomp!
-        next if /^\s*\*/ === line
-        fxy = line[0, 6]
-        units = line[52, 10].strip
-        type = case units when 'CCITT IA5' then :str else :num end
-        kvp = {:type => type, :fxy => fxy}
-        kvp[:desc] = line[8, 43].strip
-        kvp[:units] = units
-        kvp[:scale] = line[62, 4].to_i
-        kvp[:refv] = line[66, 11].to_i
-        kvp[:width] = line[77, 6].to_i
-        @b[fxy] = kvp
+        kvp = table_b_parse(line)
+        @table_b[kvp[:fxy]] = kvp if kvp
+      }
+    }
+    File.open(table_b + '.v13', 'r:Windows-1252'){|fp|
+      fp.each_line {|line|
+        kvp = table_b_parse(line)
+        @table_b_v13[kvp[:fxy]] = kvp if kvp
       }
     }
     File.open(table_d, 'r:Windows-1252'){|bfp|
@@ -177,9 +186,21 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         next if /^\s*\*/ === line
         list = line.split(/\s/)
         fxy = list.shift
-        @d[fxy] = list
+        @table_d[fxy] = list
       }
     }
+    @v13p = false
+  end
+
+  def tabconfig bufrmsg
+    @v13p = (bufrmsg[:masver] <= 13)
+    $stderr.puts "BufrDB.@v13p = #@v13p"
+  end
+
+  def table_b fxy
+    return nil unless @table_b.include?(fxy)
+    return @table_b_v13[fxy].dup if @v13p and @table_b_v13.include?(fxy)
+    @table_b[fxy].dup
   end
 
 =begin
@@ -205,8 +226,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         rep.unshift format('1%02u%03u:%s', newx, y, fxy)
         result.push rep
       when /^3/ then
-        raise ENOSYS, "unresolved element #{fxy}" unless @d.include?(fxy)
-        rep = expand(@d[fxy])
+        raise ENOSYS, "unresolved element #{fxy}" unless @table_d.include?(fxy)
+        rep = expand(@table_d[fxy])
         rep.unshift "##{fxy}"
         result.push rep
       end
@@ -223,8 +244,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       when Hash then
         result.push fxy
       when /^0/ then
-        if @b.include?(fxy)
-          desc = @b[fxy].dup
+        desc = table_b(fxy)
+        if desc
           result.push desc
         elsif result.last[:type] == :op06 
           desc = { :type=>:num, :fxy=>fxy, :width=>result.last[:set_width],
@@ -259,11 +280,13 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 
   def compile_dump bufrmsg, out = $stdout
     bufrmsg.decode_primary
+    tabconfig bufrmsg
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
   def decode bufrmsg, out = $stdout
     bufrmsg.decode_primary
+    tabconfig bufrmsg
     puts bufrmsg.inspect
     tape = compile(bufrmsg[:descs].split(/[,\s]/))
     nsubset = bufrmsg[:nsubset]
@@ -273,7 +296,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         BufrDecode.new(tape, bufrmsg).run(out)
       rescue Errno::ENOSPC => e
         $stderr.puts e.message
-        break
+        exit 16
       end
     }
   end
@@ -281,8 +304,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 end
 
 if $0 == __FILE__
-  db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0),
-    ENV['BUFRDUMPVER'] || '')
+  db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
   action = :decode
   ARGV.each{|fnam|
     case fnam
