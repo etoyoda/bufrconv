@@ -16,6 +16,8 @@ class DataOrganizer
 
   def newbufr h
     case @mode
+    when :direct
+      @out.newbufr h
     when :json
       @out.puts JSON.generate(h)
     when :plain
@@ -27,7 +29,7 @@ class DataOrganizer
 
   def newsubset isubset, ptrcheck
     case @mode
-    when :json
+    when :json, :direct
       @tosstack = []
       @tos = @root = []
     when :plain
@@ -38,7 +40,7 @@ class DataOrganizer
 
   def showval desc, val
     case @mode
-    when :json
+    when :json, :direct
       raise "showval before newsubset" unless @tos
       @tos.push [desc[:fxy], val]
     when :plain
@@ -49,7 +51,7 @@ class DataOrganizer
 
   def setloop
     case @mode
-    when :json
+    when :json, :direct
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
@@ -61,7 +63,7 @@ class DataOrganizer
 
   def newcycle
     case @mode
-    when :json
+    when :json, :direct
       @tos = @tosstack.pop
       @tos.push []
       @tosstack.push @tos
@@ -73,7 +75,7 @@ class DataOrganizer
 
   def endloop
     case @mode
-    when :json
+    when :json, :direct
       @tos = @tosstack.pop
     when :plain
       @out.puts "^^^ end #@level"
@@ -83,16 +85,22 @@ class DataOrganizer
 
   def endsubset
     case @mode
+    when :direct
+      @out.subset @root
+      @root = @tos = @tosstack = nil
     when :json
       @out.puts JSON.generate(@root)
       @root = @tos = @tosstack = nil
+      @out.flush
     when :plain
+      @out.flush
     end
-    @out.flush
   end
 
   def endbufr
     case @mode
+    when :direct
+      @out.endbufr
     when :json
       @out.puts "7777"
     when :plain
