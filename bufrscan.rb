@@ -239,6 +239,7 @@ class BUFRMsg
 
   def ymdhack opts
     decode_primary
+    return unless opts[:ymd]
     rt1 = @props[:reftime]
     brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
     rt2 = rt1 - 86400
