@@ -35,9 +35,9 @@ class Bufr2synop
     @knot = true if 'JP' == aa
     cccc = 'RJXX'
     yygg = @reftime.strftime('%d%H')
-    @out.puts "ZCZC"
-    @out.puts "#{tt}#{aa}99 #{cccc} #{yygg}00"
-    @out.puts "AAXX #{yygg}#{@knot ? '4' : '1'}"
+    @out.puts "ZCZC 000     \r\r"
+    @out.puts "#{tt}#{aa}99 #{cccc} #{yygg}00\r\r"
+    @out.puts "AAXX #{yygg}#{@knot ? '4' : '1'}\r\r"
     @ahl_hour = @reftime.hour
   end
 
@@ -232,12 +232,12 @@ class Bufr2synop
       report.push ['9', itoa2(_GG), itoa2(gg)].join
     end
 
-    @out.puts report.join(' ') + '='
+    @out.puts report.join(' ') + "=\r\r"
   end
 
   def endbufr
     return unless @ahl_hour
-    @out.puts "NNNN"
+    @out.puts "\n\n\n\n\n\n\n\nNNNN\r\r"
     @hdr = @reftime = nil
     @ahl_hour = false
   end
