@@ -101,8 +101,8 @@ class BUFRMsg
 
   def peeknum ptr, width
     ifirst = ptr / 8
-    raise ENOSPC, "peeknum beyond buf" if ifirst > @buf.bytesize
-    ilast = (ptr + width - 1) / 8
+    raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
+    ilast = (ptr + width) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - ((ptr + width) % 8)
     imask = ((1 << width) - 1) << ishift
