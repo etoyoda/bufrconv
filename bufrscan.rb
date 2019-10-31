@@ -152,17 +152,18 @@ class BUFRMsg
     ilast = (@ptr + width - 1) / 8
     iwidth = ilast - ifirst + 1
     rval = if (@ptr % 8).zero? then
-      @buf[ifirst,iwidth].force_encoding(Encoding::ASCII_8BIT)
+      @buf[ifirst,iwidth]
     else
       lshift = @ptr % 8
       rshift = 8 - (@ptr % 8)
       a = @buf[ifirst,iwidth].unpack('C*')
       (0 ... len).map{|i|
         (0xFF & (a[i] << lshift)) | (a[i+1] >> rshift)
-      }.pack('C*').force_encoding(Encoding::ASCII_8BIT)
+      }.pack('C*')
     end
     @ptr += width
-    rval
+    return nil if /^\xFF+$/n === rval
+    rval.force_encoding(Encoding::ASCII_8BIT)
   end
 
   def decode_primary
