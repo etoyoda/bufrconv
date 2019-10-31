@@ -8,6 +8,7 @@ ismn01babj.ok:
 
 ismc01rjtd.ok:
 	ruby ../bufrdump.rb -d A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr | diff -u ismc01rjtd.d.txt -
+	ruby ../bufr2synop.rb A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr | diff -u ismc01rjtd.t.txt -
 
 overwrite:
 	-ruby ../bufrdump.rb -c A_ISMN01BABJ280000_C_RJTD_20191028001731_81.bufr > ismn01babj.c.txt
