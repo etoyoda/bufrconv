@@ -7,7 +7,7 @@ class Bufr2synop
 
   def initialize
     @hdr = @reftime = nil
-    @ahl_hour = nil
+    @ahl_hour = @knot = nil
     @out = $stdout
   end
 
@@ -19,7 +19,7 @@ class Bufr2synop
     rt = @hdr[:reftime]
     @reftime = Time.gm(rt.year, rt.mon, rt.day, rt.hour)
     @reftime += 3600 if rt.min > 0
-    @ahl_hour = false
+    @ahl_hour = @knot = false
   end
 
   def print_ahl
@@ -32,11 +32,12 @@ class Bufr2synop
       else 'SN'
       end
     aa = AA[@hdr[:ctr]] || 'XX'
+    @knot = true if 'JP' == aa
     cccc = 'RJXX'
     yygg = @reftime.strftime('%d%H')
     @out.puts "ZCZC"
     @out.puts "#{tt}#{aa}99 #{cccc} #{yygg}00"
-    @out.puts "AAXX #{yygg}1"
+    @out.puts "AAXX #{yygg}#{@knot ? '4' : '1'}"
     @ahl_hour = @reftime.hour
   end
 
@@ -131,11 +132,12 @@ class Bufr2synop
     dd = find(tree, '011001')
     dd = (dd + 5) / 10 if dd
     ff = find(tree, '011002')
-    fff = nil
+    ff *= 1.9438 if ff and @knot
     case ff
-    when 0...100
-      ff = ff.to_i
-    when 0..999
+    when 0 ... 99.5
+      ff = (ff + 0.5).to_i
+      fff = nil
+    when 99.5 ... 999
       fff = ff.to_i
       ff = 99
     end
