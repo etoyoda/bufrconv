@@ -94,10 +94,10 @@ class Bufr2synop
     iR = '4'
     weather = find(tree, '020003')
     case weather
-    when 4..99 then 
+    when 0..99 then 
       ix, ww = '1', weather
-    when 0, 508 then
-      ix, ww = '2', nil
+    when 508 then
+      ix, ww = '2', 0
     when 100..199 then
       ix, ww = '7', weather - 100
     else
@@ -202,16 +202,16 @@ class Bufr2synop
     w1 = find(tree, '020004')
     w2 = find(tree, '020005')
     w1 = case w1
-      when 3..9 then w1
-      when 11..19 then w1 - 10
+      when 0..9 then w1
+      when 10..19 then w1 - 10
       else nil
       end
     w2 = case w2
-      when 3..9 then w2
-      when 11..19 then w2 - 10
+      when 0..9 then w2
+      when 10..19 then w2 - 10
       else nil
       end
-    report.push ['7', itoa2(ww), itoa1(w1), itoa1(w2)].join if ww
+    report.push ['7', itoa2(ww), itoa1(w1), itoa1(w2)].join if ww or w1
 
     # 8NhCLCMCH
     # only the first instance of 020011 represents Nh. the rest in replication are Ns.
@@ -232,7 +232,7 @@ class Bufr2synop
       report.push ['9', itoa2(_GG), itoa2(gg)].join
     end
 
-    @out.puts report.join(' ')
+    @out.puts report.join(' ') + '='
   end
 
   def endbufr
