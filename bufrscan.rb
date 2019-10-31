@@ -52,13 +52,10 @@ class BUFRMsg
     @idsofs = @ofs + 8
     @idslen = BUFRMsg::unpack3(@buf[@idsofs, 3])
     opsflag = case @ed
-      when 3
-        BUFRMsg::unpack1(@buf[@idsofs + 7]) >> 7
       when 4
         BUFRMsg::unpack1(@buf[@idsofs + 9]) >> 7
-      # fake --- not sure this is right, though works
-      when 2
-        0
+      when 3, 2
+        BUFRMsg::unpack1(@buf[@idsofs + 7]) >> 7
       else
         raise ENOSYS, "unsupported BUFR edition #{@ed}"
       end
@@ -192,6 +189,23 @@ class BUFRMsg
       @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
       @props[:ctr] = BUFRMsg::unpack1(@buf[@idsofs+5])
       @props[:subctr] = BUFRMsg::unpack1(@buf[@idsofs+4])
+      @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+6])
+      @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+8])
+      @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
+      @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+10])
+      @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+11])
+      @props[:reftime] = Time.gm(
+        BUFRMsg::unpack1(@buf[@idsofs+12]) + 2000,
+        BUFRMsg::unpack1(@buf[@idsofs+13]),
+        BUFRMsg::unpack1(@buf[@idsofs+14]),
+        BUFRMsg::unpack1(@buf[@idsofs+15]),
+        BUFRMsg::unpack1(@buf[@idsofs+16]),
+        0
+      )
+    when 2 then
+      @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
+      # code table 0 01 031
+      @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4])
       @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+6])
       @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+8])
       @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
