@@ -115,7 +115,7 @@ class Bufr2synop
       when 2500 ... 9999 then 9
       else nil
       end
-    vis = find(tree, '002001')
+    vis = find(tree, '020001')
     _VV = case vis
       when 0..5000 then ((vis + 50) / 100).to_i
       when 5000..30_000 then ((vis + 50500) / 1000).to_i
@@ -126,10 +126,10 @@ class Bufr2synop
     report.push [iR, ix, itoa1(h), itoa2(_VV)].join
 
     # Nddff
-    _N = find(tree, '021010')
+    _N = find(tree, '020010')
     _N = ((_N + 6) / 12.5).to_i if _N
     dd = find(tree, '011001')
-    dd /= 10 if dd
+    dd = (dd + 5) / 10 if dd
     ff = find(tree, '011002')
     fff = nil
     case ff
@@ -167,12 +167,12 @@ class Bufr2synop
     report.push ['2', sn, itoa3(_TdTdTd)].join if _TdTdTd
 
     # 3P0P0P0P0
-    _P0P0P0P0 = find(tree, '010051')
+    _P0P0P0P0 = find(tree, '010004')
     _P0P0P0P0 = ((_P0P0P0P0 + 5) / 10) % 1000_0 if _P0P0P0P0 
     report.push ['3', itoa4(_P0P0P0P0)].join if _P0P0P0P0 
 
     # 4PPPP
-    _PPPP = find(tree, '010004')
+    _PPPP = find(tree, '010051')
     _PPPP = ((_PPPP + 5) / 10) % 1000_0 if _PPPP 
     case _PPPP
     when 1000...9000
@@ -221,7 +221,7 @@ class Bufr2synop
     _CM = case _CM when 20..29 then _CM - 20 else nil end
     _CH = find_nth(tree, '020012', 3)
     _CH = case _CH when 10..19 then _CH - 10 else nil end
-    report.push ['8', itoa1(_Nh), itoa1(_CL), itoa1(_CM), itoa1(_CH)].join if _Nh and _CL
+    report.push ['8', itoa1(_Nh), itoa1(_CL), itoa1(_CM), itoa1(_CH)].join if _Nh or _CL
 
     # 9GGgg
     _GG = find(tree, '004004')
