@@ -306,7 +306,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   def tabconfig bufrmsg
     raise ENOSYS, "master version missing" unless bufrmsg[:masver]
     @v13p = (bufrmsg[:masver] <= 13)
-    $stderr.puts "BufrDB.@v13p = #@v13p"
+    $stderr.puts "BufrDB.@v13p = #@v13p" if $DEBUG
   end
 
   def table_b fxy
