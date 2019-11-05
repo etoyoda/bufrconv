@@ -33,7 +33,7 @@ class DataOrganizer
       @tosstack = []
       @tos = @root = []
     when :plain
-      @out.puts "--- subset #{isubset} #{ptrcheck.inspect} ---"
+      @out.puts "=== subset #{isubset} #{ptrcheck.inspect} ==="
       @level = 0
     end
   end
@@ -44,7 +44,11 @@ class DataOrganizer
       raise "showval before newsubset" unless @tos
       @tos.push [desc[:fxy], val]
     when :plain
-      @out.printf "%03u %6s %15s # %s\n", desc[:pos], desc[:fxy], val.inspect, desc[:desc]
+      sval = if val and /^FLAG TABLE/ === desc[:units]
+        then format(format('0x%%0%uX', (desc[:width]+3)/4), val)
+        else val.inspect
+        end
+      @out.printf "%6s %15s #%03u %s\n", desc[:fxy], sval, desc[:pos], desc[:desc]
       @out.flush if $VERBOSE
     end
   end
