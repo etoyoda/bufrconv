@@ -5,7 +5,10 @@ ISMC01RJTD= A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr
 IUSN01BABJ= A_IUSN01BABJ290000_C_RJTD_20191029025504_87.bufr
 
 iusn01babj.ok:
+	ruby ../bufrdump.rb -x $(IUSN01BABJ) | diff -u iusn01babj.x.txt -
 	ruby ../bufrdump.rb -c $(IUSN01BABJ) | diff -u iusn01babj.c.txt -
+	ruby ../bufrdump.rb -j $(IUSN01BABJ) | diff -u iusn01babj.j.txt -
+	ruby ../bufrdump.rb -d $(IUSN01BABJ) | diff -u iusn01babj.d.txt -
 
 ismn01babj.ok:
 	ruby ../bufrdump.rb -x $(ISMN01BABJ) | diff -u ismn01babj.x.txt -
@@ -26,4 +29,7 @@ overwrite:
 	-ruby ../bufr2synop.rb $(ISMN01BABJ) > ismn01babj.t.txt
 	-ruby ../bufrdump.rb -d $(ISMC01RJTD) > ismc01rjtd.d.txt
 	-ruby ../bufr2synop.rb $(ISMC01RJTD) > ismc01rjtd.t.txt
+	-ruby ../bufrdump.rb -x $(IUSN01BABJ) > iusn01babj.x.txt
 	-ruby ../bufrdump.rb -c $(IUSN01BABJ) > iusn01babj.c.txt
+	-ruby ../bufrdump.rb -j $(IUSN01BABJ) > iusn01babj.j.txt
+	-ruby ../bufrdump.rb -d $(IUSN01BABJ) > iusn01babj.d.txt
