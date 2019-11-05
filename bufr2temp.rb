@@ -132,6 +132,54 @@ class Bufr2temp
     return r
   end
 
+  def encode_level report, pres, pp, levset
+
+    # 99PPP or PPhhh
+    case pres
+    when :SURF
+      ppp0 = levset ? find(levset, '007004') : nil
+      ppp0 = (ppp0 / 100) % 1000 if ppp0
+      report.push [pp, itoa3(ppp0)].join
+    else
+      hhh = levset ? find(levset, '010009') : nil
+      if hhh and hhh < 0 then
+        hhh = (hhh + 500.5).to_i
+      elsif hhh and pres > 500 then
+        hhh = (hhh * 10).to_i % 1000
+      elsif hhh then
+        hhh = (hhh + 0.5).to_i % 1000
+      end
+      report.push [pp, itoa3(hhh)].join
+    end
+
+    # TTTaDD
+    ttt = levset ? find(levset, '012101') : nil
+    td = levset ? find(levset, '012103') : nil
+    _DD = (ttt && td) ? ttt - td : nil
+    if ttt and ttt >= 273.15
+      ttt = ((ttt - 273.15) * 5).to_i * 2
+    elsif ttt
+      ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
+    end
+    if _DD and _DD <= 5.0 then
+      _DD = (_DD * 10).to_i
+    elsif _DD then
+      _DD = (_DD + 0.5).to_i
+    end
+    report.push [itoa3(ttt), itoa2(_DD)].join
+
+    # ddfff
+    dd = levset ? find(levset, '011001') : nil
+    fff = levset ? find(levset, '011002') : nil
+    dd = ((dd + 2.5) / 5).to_i * 5 if dd
+    fff = (fff + 0.5).to_i if fff
+    if dd and 0 != (dd % 10) then
+      fff += 500 if fff
+    end
+    dd /= 10 if dd
+    report.push [itoa2(dd), itoa3(fff)].join
+  end
+
   def subset tree
     print_ahl
     report = []
@@ -155,51 +203,7 @@ class Bufr2temp
     # Section 2
     STDLEVS.each{|pres, pp|
       levset = levels[pres]
-
-      # 99PPP or PPhhh
-      case pres
-      when :SURF
-        ppp0 = levset ? find(levset, '007004') : nil
-        ppp0 = (ppp0 / 100) % 1000 if ppp0
-        report.push [pp, itoa3(ppp0)].join
-      else
-        hhh = levset ? find(levset, '010009') : nil
-        if hhh and hhh < 0 then
-          hhh = (hhh + 500.5).to_i
-        elsif hhh and pres > 500 then
-          hhh = (hhh * 10).to_i % 1000
-        elsif hhh then
-          hhh = (hhh + 0.5).to_i % 1000
-        end
-        report.push [pp, itoa3(hhh)].join
-      end
-
-      # TTTaDD
-      ttt = levset ? find(levset, '012101') : nil
-      td = levset ? find(levset, '012103') : nil
-      _DD = (ttt && td) ? ttt - td : nil
-      if ttt and ttt >= 273.15
-        ttt = ((ttt - 273.15) * 5).to_i * 2
-      elsif ttt
-        ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
-      end
-      if _DD and _DD <= 5.0 then
-        _DD = (_DD * 10).to_i
-      elsif _DD then
-        _DD = (_DD + 0.5).to_i
-      end
-      report.push [itoa3(ttt), itoa2(_DD)].join
-
-      # ddfff
-      dd = levset ? find(levset, '011001') : nil
-      fff = levset ? find(levset, '011002') : nil
-      dd = ((dd + 2.5) / 5).to_i * 5 if dd
-      fff = (fff + 0.5).to_i if fff
-      if dd and 0 != (dd % 10) then
-        fff += 500 if fff
-      end
-      dd /= 10 if dd
-      report.push [itoa2(dd), itoa3(fff)].join
+      encode_level(report, pres, pp, levset)
     }
 
 =begin
