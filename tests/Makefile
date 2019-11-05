@@ -20,3 +20,4 @@ overwrite:
 	-ruby ../bufr2synop.rb A_ISMN01BABJ280000_C_RJTD_20191028001731_81.bufr > ismn01babj.t.txt
 	-ruby ../bufrdump.rb -d A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr > ismc01rjtd.d.txt
 	-ruby ../bufr2synop.rb A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr > ismc01rjtd.t.txt
+	-ruby ../bufrdump.rb -c A_IUSN01BABJ290000_C_RJTD_20191029025504_87.bufr > iusn01babj.c.txt

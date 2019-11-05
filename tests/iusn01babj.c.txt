@@ -1,0 +1,437 @@
+[
+  {
+    "type": "num",
+    "fxy": "001001",
+    "desc": "WMO BLOCK NUMBER",
+    "units": "NUMERIC",
+    "scale": 0,
+    "refv": 0,
+    "width": 7
+  },
+  {
+    "type": "num",
+    "fxy": "001002",
+    "desc": "WMO STATION NUMBER",
+    "units": "NUMERIC",
+    "scale": 0,
+    "refv": 0,
+    "width": 10
+  },
+  {
+    "type": "str",
+    "fxy": "001011",
+    "desc": "SHIP OR MOBILE LAND STATION IDENTIFIER",
+    "units": "CCITT IA5",
+    "scale": 0,
+    "refv": 0,
+    "width": 72
+  },
+  {
+    "type": "num",
+    "fxy": "002011",
+    "desc": "RADIOSONDE TYPE",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 8
+  },
+  {
+    "type": "num",
+    "fxy": "002013",
+    "desc": "SOLAR AND INFRARED RADIATION CORRECTION",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 4
+  },
+  {
+    "type": "num",
+    "fxy": "002014",
+    "desc": "TRACKING TECHNIQUE/STATUS OF THE SYSTEM",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 7
+  },
+  {
+    "type": "num",
+    "fxy": "002003",
+    "desc": "TYPE OF MEASURING INSTRUMENT USED",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 4
+  },
+  {
+    "type": "num",
+    "fxy": "008021",
+    "desc": "TIME SIGNIFICANCE",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 5
+  },
+  {
+    "type": "num",
+    "fxy": "004001",
+    "desc": "YEAR",
+    "units": "YEAR",
+    "scale": 0,
+    "refv": 0,
+    "width": 12
+  },
+  {
+    "type": "num",
+    "fxy": "004002",
+    "desc": "MONTH",
+    "units": "MONTH",
+    "scale": 0,
+    "refv": 0,
+    "width": 4
+  },
+  {
+    "type": "num",
+    "fxy": "004003",
+    "desc": "DAY",
+    "units": "DAY",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "004004",
+    "desc": "HOUR",
+    "units": "HOUR",
+    "scale": 0,
+    "refv": 0,
+    "width": 5
+  },
+  {
+    "type": "num",
+    "fxy": "004005",
+    "desc": "MINUTE",
+    "units": "MINUTES",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "004006",
+    "desc": "SECOND",
+    "units": "S",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "005001",
+    "desc": "LATITUDE(HIGH ACCURACY)",
+    "units": "DEGREE",
+    "scale": 5,
+    "refv": -9000000,
+    "width": 25
+  },
+  {
+    "type": "num",
+    "fxy": "006001",
+    "desc": "LONGITUDE (HIGH ACCURACY)",
+    "units": "DEGREE",
+    "scale": 5,
+    "refv": -18000000,
+    "width": 26
+  },
+  {
+    "type": "num",
+    "fxy": "007030",
+    "desc": "HEIGHT OF STATION GROUND ABV MSL",
+    "units": "M",
+    "scale": 1,
+    "refv": -4000,
+    "width": 17
+  },
+  {
+    "type": "num",
+    "fxy": "007031",
+    "desc": "HEIGHT OF BAROMETER ABV MSL",
+    "units": "M",
+    "scale": 1,
+    "refv": -4000,
+    "width": 17
+  },
+  {
+    "type": "num",
+    "fxy": "007007",
+    "desc": "HEIGHT",
+    "units": "M",
+    "scale": 0,
+    "refv": -1000,
+    "width": 17
+  },
+  {
+    "type": "num",
+    "fxy": "033024",
+    "desc": "MOBILE STATION ELEVATION QUALITY MARK",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 4
+  },
+  {
+    "type": "num",
+    "fxy": "008002",
+    "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "020011",
+    "desc": "CLOUD AMOUNT",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 4
+  },
+  {
+    "type": "num",
+    "fxy": "020013",
+    "desc": "HEIGHT OF BASE OF CLOUD (SA/SM)",
+    "units": "M",
+    "scale": -1,
+    "refv": -40,
+    "width": 11
+  },
+  {
+    "type": "num",
+    "fxy": "020012",
+    "desc": "CLOUD TYPE",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "020012",
+    "desc": "CLOUD TYPE",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "020012",
+    "desc": "CLOUD TYPE",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "008002",
+    "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
+    "units": "CODE TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 6
+  },
+  {
+    "type": "num",
+    "fxy": "022043",
+    "desc": "SEA/WATER TEMPERATURE",
+    "units": "K",
+    "scale": 2,
+    "refv": 0,
+    "width": 15
+  },
+  {
+    "type": "repl",
+    "fxy": "101000",
+    "ndesc": 10,
+    "niter": 0
+  },
+  {
+    "type": "num",
+    "fxy": "031002",
+    "desc": "EXT DELAYED DESCRIPTOR REPLICATION FACTOR",
+    "units": "NUMERIC",
+    "scale": 0,
+    "refv": 0,
+    "width": 16
+  },
+  {
+    "type": "num",
+    "fxy": "004086",
+    "desc": "LONG TIME PERIOD OR DISPLACEMENT",
+    "units": "S",
+    "scale": 0,
+    "refv": -8192,
+    "width": 15
+  },
+  {
+    "type": "num",
+    "fxy": "008042",
+    "desc": "EXTENDED VERTICAL SOUNDING SIGNIFICANCE   *",
+    "units": "FLAG TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 18
+  },
+  {
+    "type": "num",
+    "fxy": "007004",
+    "desc": "PRESSURE",
+    "units": "PA",
+    "scale": -1,
+    "refv": 0,
+    "width": 14
+  },
+  {
+    "type": "num",
+    "fxy": "010009",
+    "desc": "GEOPOTENTIAL HEIGHT",
+    "units": "GPM",
+    "scale": 0,
+    "refv": -1000,
+    "width": 17
+  },
+  {
+    "type": "num",
+    "fxy": "005015",
+    "desc": "LATITUDE DEPLAC (HIGH ACCURACY)",
+    "units": "DEGREE",
+    "scale": 5,
+    "refv": -9000000,
+    "width": 25
+  },
+  {
+    "type": "num",
+    "fxy": "006015",
+    "desc": "LONGITUDE DEPLAC (HIGH ACCURACY)",
+    "units": "DEGREE",
+    "scale": 5,
+    "refv": -18000000,
+    "width": 26
+  },
+  {
+    "type": "num",
+    "fxy": "012101",
+    "desc": "TEMPERATURE/DRY-BULB TEMPERATURE",
+    "units": "K",
+    "scale": 2,
+    "refv": 0,
+    "width": 16
+  },
+  {
+    "type": "num",
+    "fxy": "012103",
+    "desc": "DEW-POINT TEMPERATURE",
+    "units": "K",
+    "scale": 2,
+    "refv": 0,
+    "width": 16
+  },
+  {
+    "type": "num",
+    "fxy": "011001",
+    "desc": "WIND DIRECTION",
+    "units": "DEG TRUE",
+    "scale": 0,
+    "refv": 0,
+    "width": 9
+  },
+  {
+    "type": "num",
+    "fxy": "011002",
+    "desc": "WIND SPEED",
+    "units": "M/S",
+    "scale": 1,
+    "refv": 0,
+    "width": 12
+  },
+  {
+    "type": "repl",
+    "fxy": "101000",
+    "ndesc": 7,
+    "niter": 0
+  },
+  {
+    "type": "num",
+    "fxy": "031001",
+    "desc": "DELAYED DESCRIPTOR REPLICATION FACTOR",
+    "units": "NUMERIC",
+    "scale": 0,
+    "refv": 0,
+    "width": 8
+  },
+  {
+    "type": "num",
+    "fxy": "004086",
+    "desc": "LONG TIME PERIOD OR DISPLACEMENT",
+    "units": "S",
+    "scale": 0,
+    "refv": -8192,
+    "width": 15
+  },
+  {
+    "type": "num",
+    "fxy": "008042",
+    "desc": "EXTENDED VERTICAL SOUNDING SIGNIFICANCE   *",
+    "units": "FLAG TABLE",
+    "scale": 0,
+    "refv": 0,
+    "width": 18
+  },
+  {
+    "type": "num",
+    "fxy": "007004",
+    "desc": "PRESSURE",
+    "units": "PA",
+    "scale": -1,
+    "refv": 0,
+    "width": 14
+  },
+  {
+    "type": "num",
+    "fxy": "005015",
+    "desc": "LATITUDE DEPLAC (HIGH ACCURACY)",
+    "units": "DEGREE",
+    "scale": 5,
+    "refv": -9000000,
+    "width": 25
+  },
+  {
+    "type": "num",
+    "fxy": "006015",
+    "desc": "LONGITUDE DEPLAC (HIGH ACCURACY)",
+    "units": "DEGREE",
+    "scale": 5,
+    "refv": -18000000,
+    "width": 26
+  },
+  {
+    "type": "num",
+    "fxy": "011061",
+    "desc": "ABSOLUTE WIND SHEAR IN 1 KM LAYER BELOW",
+    "units": "M/S",
+    "scale": 1,
+    "refv": 0,
+    "width": 12
+  },
+  {
+    "type": "num",
+    "fxy": "011062",
+    "desc": "ABSOLUTE WIND SHEAR IN 1 KM LAYER ABOVE",
+    "units": "M/S",
+    "scale": 1,
+    "refv": 0,
+    "width": 12
+  }
+]
