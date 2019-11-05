@@ -9,6 +9,7 @@ iusn01babj.ok:
 	ruby ../bufrdump.rb -c $(IUSN01BABJ) | diff -u iusn01babj.c.txt -
 	ruby ../bufrdump.rb -j $(IUSN01BABJ) | diff -u iusn01babj.j.txt -
 	ruby ../bufrdump.rb -d $(IUSN01BABJ) | diff -u iusn01babj.d.txt -
+	ruby ../bufr2temp.rb $(IUSN01BABJ) | diff -u iusn01babj.t.txt -
 
 ismn01babj.ok:
 	ruby ../bufrdump.rb -x $(ISMN01BABJ) | diff -u ismn01babj.x.txt -
@@ -33,3 +34,4 @@ overwrite:
 	-ruby ../bufrdump.rb -c $(IUSN01BABJ) > iusn01babj.c.txt
 	-ruby ../bufrdump.rb -j $(IUSN01BABJ) > iusn01babj.j.txt
 	-ruby ../bufrdump.rb -d $(IUSN01BABJ) > iusn01babj.d.txt
+	-ruby ../bufr2temp.rb $(IUSN01BABJ) > iusn01babj.t.txt
