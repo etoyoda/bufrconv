@@ -195,6 +195,10 @@ class Bufr2synop
     end
 
     # 5appp
+    a = find(tree, '010063')
+    ppp = find(tree, '010061')
+    ppp = (ppp.abs + 5) / 10 if ppp
+    report.push ['5', itoa1(a), itoa3(ppp)].join if a
 
     # 6RRRtR
 
