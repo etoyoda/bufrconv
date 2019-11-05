@@ -99,7 +99,9 @@ class Bufr2temp
       r[:SURF] = levset if 0 != (flags & 0x20000)
       r[:MAXW] = levset if 0 != (flags & 0x04000)
       if 0 != (flags & 0x08000) then
-        if r[:TRP1] then
+        if r[:TRP2] then
+          r[:TRP3] = levset
+        elsif r[:TRP1] then
           r[:TRP2] = levset
         else 
           r[:TRP1] = levset
@@ -136,10 +138,11 @@ class Bufr2temp
 
     # 99PPP or PPhhh
     case pres
-    when :SURF
-      ppp0 = levset ? find(levset, '007004') : nil
-      ppp0 = (ppp0 / 100) % 1000 if ppp0
-      report.push [pp, itoa3(ppp0)].join
+    when :SURF, :TRP1, :TRP2, :TRP3, :MAXW
+      ppp = levset ? find(levset, '007004') : nil
+      ppp *= 10 if ppp and ppp < 100_00
+      ppp = (ppp / 100) % 1000 if ppp
+      report.push [pp, itoa3(ppp)].join
     else
       hhh = levset ? find(levset, '010009') : nil
       if hhh and hhh < 0 then
@@ -153,20 +156,22 @@ class Bufr2temp
     end
 
     # TTTaDD
-    ttt = levset ? find(levset, '012101') : nil
-    td = levset ? find(levset, '012103') : nil
-    _DD = (ttt && td) ? ttt - td : nil
-    if ttt and ttt >= 273.15
-      ttt = ((ttt - 273.15) * 5).to_i * 2
-    elsif ttt
-      ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
+    unless '77' == pp
+      ttt = levset ? find(levset, '012101') : nil
+      td = levset ? find(levset, '012103') : nil
+      _DD = (ttt && td) ? ttt - td : nil
+      if ttt and ttt >= 273.15
+        ttt = ((ttt - 273.15) * 5).to_i * 2
+      elsif ttt
+        ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
+      end
+      if _DD and _DD <= 5.0 then
+        _DD = (_DD * 10).to_i
+      elsif _DD then
+        _DD = (_DD + 0.5).to_i
+      end
+      report.push [itoa3(ttt), itoa2(_DD)].join
     end
-    if _DD and _DD <= 5.0 then
-      _DD = (_DD * 10).to_i
-    elsif _DD then
-      _DD = (_DD + 0.5).to_i
-    end
-    report.push [itoa3(ttt), itoa2(_DD)].join
 
     # ddfff
     dd = levset ? find(levset, '011001') : nil
@@ -205,6 +210,14 @@ class Bufr2temp
       levset = levels[pres]
       encode_level(report, pres, pp, levset)
     }
+
+    encode_level(report, :TRP1, '88', levels[:TRP1]) if levels[:TRP1]
+    encode_level(report, :TRP2, '88', levels[:TRP2]) if levels[:TRP2]
+    encode_level(report, :TRP3, '88', levels[:TRP3]) if levels[:TRP3]
+    report.push '88999' unless levels[:TRP1]
+
+    encode_level(report, :MAXW, '77', levels[:MAXW]) if levels[:MAXW]
+    report.push '77999' unless levels[:MAXW]
 
 =begin
     report.push '61616 DEBUG'
