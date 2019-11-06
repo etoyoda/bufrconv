@@ -115,10 +115,8 @@ class Bufr2temp
       r[pres] = levset if 0 != (flags & 0x10000)
       r[:SURF] = levset if 0 != (flags & 0x20000)
       r[:MAXW] = levset if 0 != (flags & 0x04000)
-      if 0 != (flags & 0x08000) then
-        if r[:TRP2] then
-          r[:TRP3] = levset
-        elsif r[:TRP1] then
+      if 0 != (flags & 0x08000) and pres >= 100 then
+        if r[:TRP1] and not r[:TRP2] then
           r[:TRP2] = levset
         else 
           r[:TRP1] = levset
@@ -165,7 +163,7 @@ class Bufr2temp
 
     # 99PPP or PPhhh
     case pres
-    when :SURF, :TRP1, :TRP2, :TRP3, :MAXW
+    when :SURF, :TRP1, :TRP2, :MAXW
       ppp = levset ? find(levset, '007004') : nil
       ppp *= 10 if ppp and ppp < 100_00
       ppp = (ppp / 100) % 1000 if ppp
@@ -246,7 +244,6 @@ class Bufr2temp
 
     encode_level(report, :TRP1, '88', levdb[:TRP1]) if levdb[:TRP1]
     encode_level(report, :TRP2, '88', levdb[:TRP2]) if levdb[:TRP2]
-    encode_level(report, :TRP3, '88', levdb[:TRP3]) if levdb[:TRP3]
     report.push '88999' unless levdb[:TRP1]
 
     encode_level(report, :MAXW, '77', levdb[:MAXW]) if levdb[:MAXW]
