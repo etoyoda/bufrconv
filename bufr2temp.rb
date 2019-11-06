@@ -126,26 +126,35 @@ class Bufr2temp
   end
 
   STDLEVS = [
-    [:SURF, '99'],
-    [1000, '00'],
-    [925, '92'],
-    [850, '85'],
-    [700, '70'],
-    [500, '50'],
-    [400, '40'],
-    [300, '30'],
-    [250, '20'],
-    [200, '25'],
-    [150, '15'],
-    [100, '10']
+    [:SURF, '99', '/'],
+    [1000, '00', '0'],
+    [925, '92', '9'],
+    [850, '85', '8'],
+    [700, '70', '7'],
+    [500, '50', '5'],
+    [400, '40', '4'],
+    [300, '30', '3'],
+    [250, '20', '2'],
+    [200, '25', '2'],
+    [150, '15', '1'],
+    [100, '10', '1']
   ]
 
-  def toplevel levs
-    r = nil
-    for pres, id in STDLEVS
-      r = id if levs.include?(pres)
+  def scanlevs levdb
+    # levels to be included in the result
+    stdlevs = nil
+    id = nil
+    # first levels missing in BUFR are omitted
+    for pres, pp, pid in STDLEVS
+      next if :SURF === pres
+      if levdb.include? pres
+        stdlevs = [] unless stdlevs
+        id = pid
+      end
+      stdlevs.push([pres, pp]) if stdlevs
     end
-    return r
+    stdlevs.unshift STDLEVS.first
+    return stdlevs, id
   end
 
   def encode_level report, pres, pp, levset
@@ -208,9 +217,9 @@ class Bufr2temp
 
     levbranch = branch(tree, 0)
     levdb = levsort(levbranch)
+    stdlevs, id = scanlevs(levdb)
 
     # YYGGId
-    id = '1'  # do not omit ddfff until 100 hPa
     yygg = @reftime.strftime('%d%H')
     report.push [yygg, id].join
 
@@ -220,7 +229,7 @@ class Bufr2temp
     report.push [itoa2(_II), itoa3(iii)].join
 
     # Section 2
-    STDLEVS.each{|pres, pp|
+    stdlevs.each{|pres, pp|
       levset = levdb[pres]
       encode_level(report, pres, pp, levset)
     }
