@@ -398,7 +398,7 @@ class BUFRScan
         return if msg.nil?
         yield msg
       rescue BUFRMsg::ENOSYS => e
-        STDERR.puts e.message
+        STDERR.puts e.message + [@ahl].inspect
       end
     }
   end
