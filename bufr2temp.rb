@@ -11,6 +11,7 @@ class Bufr2temp
   def initialize
     @hdr = @reftime = nil
     @ahl = nil
+    @knot = nil
     @out = $stdout
   end
 
@@ -23,13 +24,14 @@ class Bufr2temp
     @reftime = Time.gm(rt.year, rt.mon, rt.day, rt.hour)
     gg = (rt.hour + 2) / 3 * 3
     @reftime += (3600 * (gg - rt.hour))
+    @knot = true if 'JP' === AA[@hdr[:ctr]]
     @ahl = false
   end
 
   def print_ahl
     return if @ahl
     tt = 'US' # Part A
-    aa = AA[@hdr[:ctr]] || 'X'
+    aa = AA[@hdr[:ctr]] || 'XX'
     cccc = 'RJXX'
     yygg = @reftime.strftime('%d%H')
     @ahl = "ZCZC 000     \r\r\n#{tt}#{aa}99 #{cccc} #{yygg}00\r\r"
@@ -207,6 +209,7 @@ class Bufr2temp
     # ddfff
     dd = levset ? find(levset, '011001') : nil
     fff = levset ? find(levset, '011002') : nil
+    fff *= 1.9438 if fff and @knot
     dd = ((dd + 2.5) / 5).to_i * 5 if dd
     fff = (fff + 0.5).to_i if fff
     if dd and 0 != (dd % 10) then
@@ -227,8 +230,10 @@ class Bufr2temp
     stdlevs, id = scanlevs(levdb)
 
     # YYGGId
-    yygg = @reftime.strftime('%d%H')
-    report.push [yygg, id].join
+    yy = @reftime.day
+    yy += 50 if @knot
+    gg = @reftime.hour
+    report.push [itoa2(yy), itoa2(gg), id].join
 
     # IIiii
     _II = find(tree, '001001')
