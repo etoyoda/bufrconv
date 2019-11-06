@@ -207,7 +207,7 @@ class Bufr2temp
     report.push "TTAA "
 
     levbranch = branch(tree, 0)
-    levels = levsort(levbranch)
+    levdb = levsort(levbranch)
 
     # YYGGId
     id = '1'  # do not omit ddfff until 100 hPa
@@ -221,17 +221,17 @@ class Bufr2temp
 
     # Section 2
     STDLEVS.each{|pres, pp|
-      levset = levels[pres]
+      levset = levdb[pres]
       encode_level(report, pres, pp, levset)
     }
 
-    encode_level(report, :TRP1, '88', levels[:TRP1]) if levels[:TRP1]
-    encode_level(report, :TRP2, '88', levels[:TRP2]) if levels[:TRP2]
-    encode_level(report, :TRP3, '88', levels[:TRP3]) if levels[:TRP3]
-    report.push '88999' unless levels[:TRP1]
+    encode_level(report, :TRP1, '88', levdb[:TRP1]) if levdb[:TRP1]
+    encode_level(report, :TRP2, '88', levdb[:TRP2]) if levdb[:TRP2]
+    encode_level(report, :TRP3, '88', levdb[:TRP3]) if levdb[:TRP3]
+    report.push '88999' unless levdb[:TRP1]
 
-    encode_level(report, :MAXW, '77', levels[:MAXW]) if levels[:MAXW]
-    report.push '77999' unless levels[:MAXW]
+    encode_level(report, :MAXW, '77', levdb[:MAXW]) if levdb[:MAXW]
+    report.push '77999' unless levdb[:MAXW]
 
 =begin
     report.push '61616 DEBUG'
