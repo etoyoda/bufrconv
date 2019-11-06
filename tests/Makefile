@@ -1,8 +1,9 @@
-test: ismn01babj.ok ismc01rjtd.ok iusn01babj.ok
+test: ismn01babj.ok ismc01rjtd.ok iusn01babj.ok iusc10rjtd.ok
 
 ISMN01BABJ= A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 ISMC01RJTD= A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr
 IUSN01BABJ= A_IUSN01BABJ290000_C_RJTD_20191029025504_87.bufr
+IUSC10RJTD= A_IUSC10RJTD280000_C_RJTD_20191028021231_41.bufr
 
 iusn01babj.ok:
 	ruby ../bufrdump.rb -x $(IUSN01BABJ) | diff -u iusn01babj.x.txt -
@@ -10,6 +11,9 @@ iusn01babj.ok:
 	ruby ../bufrdump.rb -j $(IUSN01BABJ) | diff -u iusn01babj.j.txt -
 	ruby ../bufrdump.rb -d $(IUSN01BABJ) | diff -u iusn01babj.d.txt -
 	ruby ../bufr2temp.rb $(IUSN01BABJ) | diff -u iusn01babj.t.txt -
+
+iusc10rjtd.ok:
+	ruby ../bufr2temp.rb $(IUSC10RJTD) | diff -u /dev/null -
 
 ismn01babj.ok:
 	ruby ../bufrdump.rb -x $(ISMN01BABJ) | diff -u ismn01babj.x.txt -
