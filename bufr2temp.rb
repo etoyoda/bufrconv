@@ -23,18 +23,17 @@ class Bufr2temp
     @reftime = Time.gm(rt.year, rt.mon, rt.day, rt.hour)
     gg = (rt.hour + 2) / 3 * 3
     @reftime += (3600 * (gg - rt.hour))
-    @ahl_hour = false
+    @ahl = false
   end
 
   def print_ahl
-    return if @ahl_hour
+    return if @ahl
     tt = 'US' # Part A
     aa = AA[@hdr[:ctr]] || 'X'
     cccc = 'RJXX'
     yygg = @reftime.strftime('%d%H')
-    @out.puts "ZCZC 000     \r\r"
-    @out.puts "#{tt}#{aa}99 #{cccc} #{yygg}00\r\r"
-    @ahl_hour = @reftime.hour
+    @ahl = "ZCZC 000     \r\r\n#{tt}#{aa}99 #{cccc} #{yygg}00\r\r"
+    @out.puts @ahl
   end
 
   # returns the first element
@@ -93,6 +92,7 @@ class Bufr2temp
   end
 
   def println words
+    print_ahl
     buf = []
     for word in words
       buflen = buf.inject(0){|len, tok| len + 1 + tok.length}
@@ -217,7 +217,6 @@ class Bufr2temp
   end
 
   def subset tree
-    print_ahl
     report = []
 
     # MiMiMjMj
@@ -256,13 +255,15 @@ class Bufr2temp
 =end
     report.last.sub!(/$/, '=')
     println(report)
+  rescue EDOM => e
+    $stderr.puts e.message + @hdr[:meta].inspect
   end
 
   def endbufr
-    return unless @ahl_hour
+    return unless @ahl
     @out.puts "\n\n\n\n\n\n\n\nNNNN\r\r"
     @hdr = @reftime = nil
-    @ahl_hour = false
+    @ahl = nil
   end
 
 end
