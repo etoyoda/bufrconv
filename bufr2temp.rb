@@ -5,9 +5,12 @@ require 'bufrdump'
 
 class Bufr2temp
 
+  class EDOM < Errno::EDOM
+  end
+
   def initialize
     @hdr = @reftime = nil
-    @ahl_hour = nil
+    @ahl = nil
     @out = $stdout
   end
 
@@ -153,6 +156,7 @@ class Bufr2temp
       end
       stdlevs.push([pres, pp]) if stdlevs
     end
+    raise EDOM, "no standard level reported" if stdlevs.nil?
     stdlevs.unshift STDLEVS.first
     return stdlevs, id
   end
