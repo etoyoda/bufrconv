@@ -89,6 +89,20 @@ class Bufr2temp
     case ival when 0..9999 then format('%04u', ival) else '////' end
   end
 
+  def println words
+    buf = []
+    for word in words
+      buflen = buf.inject(0){|len, tok| len + 1 + tok.length}
+      if buflen + word.length > 69 then
+        @out.puts(buf.join(' ') + "\r\r")
+        buf = []
+      else
+        buf.push word
+      end
+    end
+    @out.puts(buf.join(' ') + "\r\r") unless buf.empty?
+  end
+
   def levsort levbranch
     r = {}
     levbranch.each{|levset|
@@ -190,7 +204,7 @@ class Bufr2temp
     report = []
 
     # MiMiMjMj
-    report.push "TTAA"
+    report.push "TTAA "
 
     # IIiii
     _II = find(tree, '001001')
@@ -224,8 +238,8 @@ class Bufr2temp
     maxws = branch(tree, 1)
     report.push "MAXW#{maxws ? maxws.size : '/'}"
 =end
-
-    @out.puts report.join(' ') + "=\r\r"
+    report.last.sub!(/$/, '=')
+    println(report)
   end
 
   def endbufr
