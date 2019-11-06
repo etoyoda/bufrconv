@@ -253,11 +253,27 @@ class Bufr2temp
     encode_level(report, :MAXW, '77', levdb[:MAXW]) if levdb[:MAXW]
     report.push '77999' unless levdb[:MAXW]
 
-=begin
-    report.push '61616 DEBUG'
-    maxws = branch(tree, 1)
-    report.push "MAXW#{maxws ? maxws.size : '/'}"
-=end
+    # 4vbvbvava not implemented - considered deprecated not having real example
+
+    report.push '31313'
+
+    # srrarasasa
+    sr = find(tree, '002013')
+    sr -= 2 if (8..9) === sr
+    rara = find(tree, '002011')
+    rara = case rara
+      when 0..99 then rara
+      when 100..199 then rara - 100
+      else nil
+      end
+    sasa = find(tree, '002014')
+    report.push [itoa1(sr), itoa2(rara), itoa2(sasa)].join
+
+    # 8GGgg
+    _GG = find(tree, '004004')
+    gg = find(tree, '004005')
+    report.push ['8', itoa2(_GG), itoa2(gg)].join
+
     report.last.sub!(/$/, '=')
     println(report)
   rescue EDOM => e
