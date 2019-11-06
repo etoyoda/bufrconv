@@ -11,7 +11,7 @@ overwrite:
 
 zip: bufrconv.zip
 
-FILES= LICENSE bufr2synop.rb bufrdump.rb bufrscan.rb table_b_bufr table_b_bufr.v13 table_d_bufr
+FILES= LICENSE bufr2synop.rb bufr2temp.rb bufrdump.rb bufrscan.rb table_b_bufr table_b_bufr.v13 table_d_bufr
 
 bufrconv.zip: $(FILES)
 	zip bufrconv.zip $(FILES)
