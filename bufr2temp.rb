@@ -183,15 +183,21 @@ class Bufr2temp
       ttt = levset ? find(levset, '012101') : nil
       td = levset ? find(levset, '012103') : nil
       _DD = (ttt && td) ? ttt - td : nil
-      if ttt and ttt >= 273.15
-        ttt = ((ttt - 273.15) * 5).to_i * 2
-      elsif ttt
-        ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
+      if ttt then
+        if ttt >= 273.15
+          ttt = ((ttt - 273.15) * 5).to_i * 2
+        else
+          ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
+        end
       end
-      if _DD and _DD <= 5.0 then
-        _DD = (_DD * 10).to_i
-      elsif _DD then
-        _DD = (_DD + 0.5).to_i
+      if _DD then
+        if _DD < 5.0 then
+          _DD = (_DD * 10).to_i
+        elsif _DD < 5.5 then
+          _DD = 50
+        else
+          _DD = (_DD + 50.5).to_i
+        end
       end
       report.push [itoa3(ttt), itoa2(_DD)].join
     end
