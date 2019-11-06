@@ -187,7 +187,7 @@ class Bufr2temp
         if ttt >= 273.15
           ttt = ((ttt - 273.15) * 5).to_i * 2
         else
-          ttt = ((273.15 - ttt) * 5).to_i * 2 + 1
+          ttt = ((273.20 - ttt) * 5).to_i * 2 + 1
         end
       end
       if _DD then
