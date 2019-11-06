@@ -171,9 +171,9 @@ class Bufr2temp
       if hhh and hhh < 0 then
         hhh = (hhh + 500.5).to_i
       elsif hhh and pres > 500 then
-        hhh = (hhh * 10).to_i % 1000
+        hhh = hhh.to_i % 1000
       elsif hhh then
-        hhh = (hhh + 0.5).to_i % 1000
+        hhh = ((hhh + 5) / 10).to_i % 1000
       end
       report.push [pp, itoa3(hhh)].join
     end
