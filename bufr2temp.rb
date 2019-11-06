@@ -93,9 +93,9 @@ class Bufr2temp
     buf = []
     for word in words
       buflen = buf.inject(0){|len, tok| len + 1 + tok.length}
-      if buflen + word.length > 69 then
+      if buflen + word.length > 64 then
         @out.puts(buf.join(' ') + "\r\r")
-        buf = []
+        buf = [word]
       else
         buf.push word
       end
