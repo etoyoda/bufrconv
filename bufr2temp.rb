@@ -206,11 +206,6 @@ class Bufr2temp
     # MiMiMjMj
     report.push "TTAA "
 
-    # IIiii
-    _II = find(tree, '001001')
-    iii = find(tree, '001002')
-    report.push [itoa2(_II), itoa3(iii)].join
-
     levbranch = branch(tree, 0)
     levels = levsort(levbranch)
 
@@ -218,6 +213,11 @@ class Bufr2temp
     id = '1'  # do not omit ddfff until 100 hPa
     yygg = @reftime.strftime('%d%H')
     report.push [yygg, id].join
+
+    # IIiii
+    _II = find(tree, '001001')
+    iii = find(tree, '001002')
+    report.push [itoa2(_II), itoa3(iii)].join
 
     # Section 2
     STDLEVS.each{|pres, pp|
