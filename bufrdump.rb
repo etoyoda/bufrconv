@@ -233,9 +233,19 @@ BUFRの反復はネストできなければいけないので（用例がある�
     while desc = read_tape(prt)
       case desc[:type]
       when :str
+        if @addfield then
+          @addfield[:pos] = desc[:pos]
+	  num = @bufrmsg.readnum(@addfield)
+          prt.showval @addfield, num
+        end
         str = @bufrmsg.readstr(desc)
         prt.showval desc, str
       when :num, :code, :flags
+        if @addfield and not /^031021/ === desc[:fxy] then
+          @addfield[:pos] = desc[:pos]
+	  num = @bufrmsg.readnum(@addfield)
+          prt.showval @addfield, num
+        end
         num = @bufrmsg.readnum(desc)
         prt.showval desc, num
       when :repl
@@ -276,7 +286,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
         if desc[:yyy].zero? then
           @addfield = nil
         else
-          @addfield = desc[:yyy]
+          @addfield = { :type => :code,
+            :width => desc[:yyy], :scale => 0, :refv => 0,
+            :units => 'CODE TABLE', :desc => 'ASSOCIATED FIELD',
+            :pos => -1, :fxy => desc[:fxy]
+          }
         end
       end
     end
