@@ -44,7 +44,7 @@ class DataOrganizer
       raise "showval before newsubset" unless @tos
       @tos.push [desc[:fxy], val]
     when :plain
-      sval = if val and /^FLAG TABLE/ === desc[:units]
+      sval = if val and :flags === desc[:type]
         then format(format('0x%%0%uX', (desc[:width]+3)/4), val)
         else val.inspect
         end
@@ -131,6 +131,8 @@ class BufrDecode
     }
     # replication counter: nesting implemented using stack push/pop
     @cstack = [{:type=>:dummy, :ctr=>-1}]
+    # operators
+    @addwidth = @addscale = @addfield = nil
     @ymdhack = ymdhack_ini
   end
 
@@ -158,6 +160,7 @@ class BufrDecode
   end
 
   def rewind_tape
+    @addwidth = @addscale = @addfield = nil
     @pos = -1
   end
 
@@ -201,7 +204,16 @@ BUFRの反復はネストできなければいけないので（用例がある�
     else
       clast[:ctr] -= 1
     end
-    @tape[@pos]
+    ent = @tape[@pos]
+    if @addwidth and :num === ent[:type] then
+      ent = ent.dup
+      ent[:width] += @addwidth
+    end
+    if @addscale and :num === ent[:type] then
+      ent = ent.dup
+      ent[:scale] += @addscale
+    end
+    ent
   end
 
   def setloop niter, ndesc
@@ -223,7 +235,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
       when :str
         str = @bufrmsg.readstr(desc)
         prt.showval desc, str
-      when :num
+      when :num, :code, :flags
         num = @bufrmsg.readnum(desc)
         prt.showval desc, num
       when :repl
@@ -232,7 +244,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
         ndesc = r[:ndesc]
         if r[:niter].zero? then
           d = read_tape_simple
-          unless d and d[:type] == :num and /^031/ === d[:fxy]
+          unless d and /^031/ === d[:fxy]
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
@@ -247,6 +259,24 @@ BUFRの反復はネストできなければいけないので（用例がある�
         else
           setloop(r[:niter], ndesc)
           prt.setloop
+        end
+      when :op01
+        if desc[:yyy].zero? then
+          @addwidth = nil
+        else
+          @addwidth = desc[:yyy] - 128
+        end
+      when :op02
+        if desc[:yyy].zero? then
+          @addscale = nil
+        else
+          @addscale = desc[:yyy] - 128
+        end
+      when :op04
+        if desc[:yyy].zero? then
+          @addfield = nil
+        else
+          @addfield = desc[:yyy]
         end
       end
     end
@@ -267,7 +297,12 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     return nil if /^\s*\*/ === line
     fxy = line[0, 6]
     units = line[52, 10].strip
-    type = case units when 'CCITT IA5' then :str else :num end
+    type = case units
+      when 'CCITT IA5' then :str
+      when 'CODE TABLE' then :code
+      when 'FLAG TABLE' then :flags
+      else :num
+      end
     kvp = {:type => type, :fxy => fxy}
     kvp[:desc] = line[8, 43].strip
     kvp[:units] = units
@@ -364,8 +399,11 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         if desc
           result.push desc
         elsif result.last[:type] == :op06
-          desc = { :type=>:num, :fxy=>fxy, :width=>result.last[:set_width],
-            :scale =>0, :refv=>0, :desc=>"LOCAL ELEMENT #{fxy}" }
+          desc = {
+            :type=>:num, :fxy=>fxy, :width=>result.last[:set_width],
+            :scale =>0, :refv=>0, :desc=>"LOCAL ELEMENT #{fxy}",
+            :units =>"NUMERIC"
+          }
           result.push desc
         else
           raise ENOSYS, "unresolved element #{fxy}" unless desc
@@ -374,6 +412,12 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         x, y, z = $1.to_i, $2.to_i, $'
         desc = { :type => :repl, :fxy => z, :ndesc => x, :niter => y }
         result.push desc
+      when /^201(\d\d\d)/ then
+        result.push({ :type => :op01, :fxy => fxy, :yyy => $1.to_i })
+      when /^202(\d\d\d)/ then
+        result.push({ :type => :op02, :fxy => fxy, :yyy => $1.to_i })
+      when /^204(\d\d\d)/ then
+        result.push({ :type => :op04, :fxy => fxy, :yyy => $1.to_i })
       when /^206(\d\d\d)/ then
         y = $1.to_i
         desc = { :type => :op06, :fxy => fxy, :set_width => y }

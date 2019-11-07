@@ -27,7 +27,7 @@
     "width": 160
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "002001",
     "desc": "TYPE OF STATION",
     "units": "CODE TABLE",
@@ -144,7 +144,7 @@
     "width": 10
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "010063",
     "desc": "CHARACTERISTIC OF PRESSURE TENDENCY",
     "units": "CODE TABLE",
@@ -270,7 +270,7 @@
     "width": 7
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -279,7 +279,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020011",
     "desc": "CLOUD AMOUNT",
     "units": "CODE TABLE",
@@ -297,7 +297,7 @@
     "width": 11
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -306,7 +306,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -315,7 +315,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -339,7 +339,7 @@
     "width": 8
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -348,7 +348,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020011",
     "desc": "CLOUD AMOUNT",
     "units": "CODE TABLE",
@@ -357,7 +357,7 @@
     "width": 4
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -390,7 +390,7 @@
     "width": 8
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -399,7 +399,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020011",
     "desc": "CLOUD AMOUNT",
     "units": "CODE TABLE",
@@ -408,7 +408,7 @@
     "width": 4
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -426,7 +426,7 @@
     "width": 11
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020017",
     "desc": "CLOUD TOP DESCRIPTION",
     "units": "CODE TABLE",
@@ -441,7 +441,7 @@
     "niter": 3
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -459,7 +459,7 @@
     "width": 9
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -486,7 +486,7 @@
     "width": 15
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -513,7 +513,7 @@
     "width": 15
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020062",
     "desc": "STATE OF GROUND(WITH/WITHOUT SNOW)",
     "units": "CODE TABLE",
@@ -540,7 +540,7 @@
     "width": 16
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020003",
     "desc": "PRESENT WEATHER (SM)",
     "units": "CODE TABLE",
@@ -558,7 +558,7 @@
     "width": 12
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020004",
     "desc": "PAST WEATHER (1)",
     "units": "CODE TABLE",
@@ -567,7 +567,7 @@
     "width": 5
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020005",
     "desc": "PAST WEATHER (2)",
     "units": "CODE TABLE",
@@ -705,7 +705,7 @@
     "width": 16
   },
   {
-    "type": "num",
+    "type": "flags",
     "fxy": "002002",
     "desc": "TYPE OF INSTR. FOR WIND MEASUREMENT       *",
     "units": "FLAG TABLE",
@@ -714,7 +714,7 @@
     "width": 4
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008021",
     "desc": "TIME SIGNIFICANCE",
     "units": "CODE TABLE",
@@ -750,7 +750,7 @@
     "width": 12
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008021",
     "desc": "TIME SIGNIFICANCE",
     "units": "CODE TABLE",
@@ -810,7 +810,7 @@
     "width": 12
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "002004",
     "desc": "TYPE OF INSTR./CROP USED FOR EVAPOR. REPT",
     "units": "CODE TABLE",

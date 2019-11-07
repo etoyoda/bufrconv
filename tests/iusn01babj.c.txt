@@ -27,7 +27,7 @@
     "width": 72
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "002011",
     "desc": "RADIOSONDE TYPE",
     "units": "CODE TABLE",
@@ -36,7 +36,7 @@
     "width": 8
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "002013",
     "desc": "SOLAR AND INFRARED RADIATION CORRECTION",
     "units": "CODE TABLE",
@@ -45,7 +45,7 @@
     "width": 4
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "002014",
     "desc": "TRACKING TECHNIQUE/STATUS OF THE SYSTEM",
     "units": "CODE TABLE",
@@ -54,7 +54,7 @@
     "width": 7
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "002003",
     "desc": "TYPE OF MEASURING INSTRUMENT USED",
     "units": "CODE TABLE",
@@ -63,7 +63,7 @@
     "width": 4
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008021",
     "desc": "TIME SIGNIFICANCE",
     "units": "CODE TABLE",
@@ -171,7 +171,7 @@
     "width": 17
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "033024",
     "desc": "MOBILE STATION ELEVATION QUALITY MARK",
     "units": "CODE TABLE",
@@ -180,7 +180,7 @@
     "width": 4
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -189,7 +189,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020011",
     "desc": "CLOUD AMOUNT",
     "units": "CODE TABLE",
@@ -207,7 +207,7 @@
     "width": 11
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -216,7 +216,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -225,7 +225,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "020012",
     "desc": "CLOUD TYPE",
     "units": "CODE TABLE",
@@ -234,7 +234,7 @@
     "width": 6
   },
   {
-    "type": "num",
+    "type": "code",
     "fxy": "008002",
     "desc": "VERT. SIGNIFICANCE (SFC OBSERVATIONS)",
     "units": "CODE TABLE",
@@ -276,7 +276,7 @@
     "width": 15
   },
   {
-    "type": "num",
+    "type": "flags",
     "fxy": "008042",
     "desc": "EXTENDED VERTICAL SOUNDING SIGNIFICANCE   *",
     "units": "FLAG TABLE",
@@ -381,7 +381,7 @@
     "width": 15
   },
   {
-    "type": "num",
+    "type": "flags",
     "fxy": "008042",
     "desc": "EXTENDED VERTICAL SOUNDING SIGNIFICANCE   *",
     "units": "FLAG TABLE",
