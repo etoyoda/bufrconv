@@ -230,10 +230,10 @@ class Bufr2temp
     stdlevs, id = scanlevs(levdb)
 
     # YYGGId
-    yy = @reftime.day
+    yy = find(tree, '004003') || @reftime.day
     yy += 50 if @knot
-    gg = @reftime.hour
-    report.push [itoa2(yy), itoa2(gg), id].join
+    _GG1 = find(tree, '004004') || @reftime.hour
+    report.push [itoa2(yy), itoa2(_GG1), id].join
 
     # IIiii
     _II = find(tree, '001001')

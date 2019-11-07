@@ -43,3 +43,4 @@ overwrite:
 	-ruby ../bufrdump.rb -j $(IUSN01BABJ) > iusn01babj.j.txt
 	-ruby ../bufrdump.rb -d $(IUSN01BABJ) > iusn01babj.d.txt
 	-ruby ../bufr2temp.rb $(IUSN01BABJ) > iusn01babj.t.txt
+	-ruby ../bufr2temp.rb $(IUSC60RJTD) > iusc60rjtd.t.txt
