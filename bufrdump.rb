@@ -400,11 +400,11 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
+  # raises ENOSPC
   def decode bufrmsg, outmode = :json, out = $stdout
     prt = DataOrganizer.new(outmode, out)
     bufrmsg.decode_primary
     tabconfig bufrmsg
-    rc = nil
     begin
       prt.newbufr bufrmsg.to_h
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
@@ -418,18 +418,18 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         end
       }
     rescue Errno::ENOSPC => e
-      $stderr.puts e.message
-      rc = 16
+      $stderr.puts e.message + bufrmsg[:meta].inspect
     ensure
       prt.endbufr
     end
-    exit(rc) if rc
   end
 
+  # raises ENOSPC
   def decode_plain bufrmsg, out = $stdout
     decode bufrmsg, :plain, out
   end
 
+  # raises ENOSPC
   def decode_json bufrmsg, out = $stdout
     decode bufrmsg, :json, out
   end
