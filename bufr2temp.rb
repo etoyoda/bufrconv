@@ -33,10 +33,9 @@ class Bufr2temp
     return if @ahl
     tt = 'US' # Part A
     aa = AA[@hdr[:ctr]] || 'XX'
-    cccc = 'RJXX'
-    yygg = @reftime.strftime('%d%H')
-    @ahl = "ZCZC 000     \r\r\n#{tt}#{aa}99 #{cccc} #{yygg}00\r\r"
-    @out.puts @ahl
+    ttaaii = [tt, aa, '99'].join
+    yygggg = @reftime.strftime('%d%H00')
+    @ahl = @out.startmsg(ttaaii, yygggg)
   end
 
   # returns the first element
@@ -283,7 +282,6 @@ class Bufr2temp
 
   def endbufr
     return unless @ahl
-    @out.puts "\n\n\n\n\n\n\n\nNNNN\r\r"
     @out.flush
     @hdr = @reftime = nil
     @ahl = nil

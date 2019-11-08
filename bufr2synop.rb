@@ -2,13 +2,14 @@
 
 $LOAD_PATH.push File.dirname($0)
 require 'bufrdump'
+require 'output'
 
 class Bufr2synop
 
-  def initialize
+  def initialize out
     @hdr = @reftime = nil
     @ahl_hour = @knot = nil
-    @out = $stdout
+    @out = out
   end
 
   AA = { 28=>'IN', 34=>'JP', 36=>'TH', 37=>'MO', 38=>'CI', 40=>'KR', 67=>'AU',
@@ -33,10 +34,9 @@ class Bufr2synop
       end
     aa = AA[@hdr[:ctr]] || 'XX'
     @knot = true if 'JP' == aa
-    cccc = 'RJXX'
+    ttaaii = [tt, aa, '99'].join
     yygg = @reftime.strftime('%d%H')
-    @out.puts "ZCZC 000     \r\r"
-    @out.puts "#{tt}#{aa}99 #{cccc} #{yygg}00\r\r"
+    @out.startmsg(ttaaii, yygg + '00')
     @out.puts "AAXX #{yygg}#{@knot ? '4' : '1'}\r\r"
     @ahl_hour = @reftime.hour
   end
@@ -241,7 +241,7 @@ class Bufr2synop
 
   def endbufr
     return unless @ahl_hour
-    @out.puts "\n\n\n\n\n\n\n\nNNNN\r\r"
+    @out.flush
     @hdr = @reftime = nil
     @ahl_hour = false
   end
@@ -250,7 +250,9 @@ end
 
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
-  pseudo_io = Bufr2synop.new
+  outopts = ''
+  outopts = ARGV.shift if /^-o/ =~ ARGV.first
+  pseudo_io = Bufr2synop.new(Output.new(outopts))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
