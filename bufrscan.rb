@@ -268,7 +268,7 @@ class BUFRMsg
     brt2 = rt2.year << 10 | rt2.month << 6 | rt2.day
     brtx = getnum(@ptr + opts[:ymd], 22)
     case brtx
-    when brt1, brt2
+    when brt1, brt2, 0x3FFFFF
       return nil
     end
     $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s\n",
