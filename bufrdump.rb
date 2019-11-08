@@ -432,6 +432,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         result.push({ :type => :op02, :fxy => fxy, :yyy => $1.to_i })
       when /^204(\d\d\d)/ then
         result.push({ :type => :op04, :fxy => fxy, :yyy => $1.to_i })
+      when /^205(\d\d\d)/ then
+        result.push({ :type => :str, :fxy => fxy, :width=>$1.to_i * 8,
+          :scale=>0, :refv=>0, :desc=>"OPERATOR #{fxy}", :units=>'CCITT IA5' })
       when /^206(\d\d\d)/ then
         y = $1.to_i
         desc = { :type => :op06, :fxy => fxy, :set_width => y }
