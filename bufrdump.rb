@@ -122,6 +122,9 @@ end
 
 class BufrDecode
 
+  class ENOSYS < BUFRMsg::ENOSYS
+  end
+
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
     @pos = nil
@@ -192,6 +195,16 @@ BUFRの反復はネストできなければいけないので（用例がある�
     if clast[:ctr].zero? then
       if clast[:niter].zero? then
         @cstack.pop
+        if @cstack.last[:resume] == clast[:resume] then
+          $stderr.puts "hack resume"
+          @cstack.last[:ctr] -= 1
+          if @cstack.last[:ctr] <= 0 then
+             prt.endloop
+             raise ENOSYS, "nested replication"
+          else
+            @pos -= @cstack.last[:ndesc]
+          end
+        end
         loopdebug 'endloop' if $VERBOSE
         prt.endloop
       else
