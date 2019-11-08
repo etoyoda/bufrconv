@@ -1,4 +1,4 @@
-# burconv
+# bufrconv
 A quick-hack pure-ruby program to convert BUFR into usable formats (TAC or JSON).
 Supported templates: SYNOP and TEMP.
 
