@@ -2,13 +2,14 @@
 
 $LOAD_PATH.push File.dirname($0)
 require 'bufrdump'
+require 'output'
 
 class Bufr2temp
 
   class EDOM < Errno::EDOM
   end
 
-  def initialize out = $stdout
+  def initialize out
     @out = out
     @hdr = @reftime = nil
     @ahl = nil
@@ -283,6 +284,7 @@ class Bufr2temp
   def endbufr
     return unless @ahl
     @out.puts "\n\n\n\n\n\n\n\nNNNN\r\r"
+    @out.flush
     @hdr = @reftime = nil
     @ahl = nil
   end
@@ -291,7 +293,9 @@ end
 
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
-  pseudo_io = Bufr2temp.new($stdout)
+  outopts = ''
+  outopts = ARGV.shift if /^-o/ =~ ARGV.first
+  pseudo_io = Bufr2temp.new(Output.new(outopts))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary

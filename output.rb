@@ -2,20 +2,26 @@
 
 class Output
 
-  def initialize opts = {}
-    @file = opts[:file]
+  def initialize cfgstr = ''
+    @file = nil
+    @fmt = :ia2
+    cfgstr.strip.split(/,/).each{|spec|
+      case spec
+      when /^fmt=(.+)/ then @fmt = $1.to_sym
+      when /^file=(.+)/, /^\W/ then @file = $1
+      when /^\w+=/ then $stderr.puts "unknown option #{spec}"
+      else @file = spec
+      end
+    }
     @fp = @file ? File.open(@file, 'wb') : $stdout
-    @fmt = (opts[:fmt] || :ia2).to_sym
-    if @fp.tty? and :ia2 != @fmt then
-      @fmt = :ia2
-    end
-    @buf = nil
+    @fmt = :ia2 if @fp.tty?
+    # failsafe
+    @buf = []
   end
 
   def beginmsg ahl
     case @fmt
     when :ia2
-      @buf = :unused
     when :bso
       @buf = []
     else raise Errno::ENOSYS, "fmt = #@fmt"
@@ -23,7 +29,7 @@ class Output
   end
 
   def puts line
-    raise "call beginmsg before puts" if @buf.nil?
+    #raise "call beginmsg before puts" if @buf.nil?
     case @fmt
     when :ia2
       @fp.puts line
@@ -33,12 +39,7 @@ class Output
   end
 
   def flush
-    @fp.flush if :ia2 === @fmt
-  end
-
-  def endmsg
     @fp.write @buf.join if @buf
-    flush
     @buf = nil
   end
 
