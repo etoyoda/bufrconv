@@ -36,10 +36,11 @@ class Output
     @ahldict[@ahl] = true
     case @fmt
     when :IA2
-      raise Errno::EDOM, "too many msgs in FMT=ia2" if @n > 999
+      @n = 0 if @n > 999
       nnn = format('%03u', @n)
       @fp.puts "ZCZC #{nnn}     \r\r\n#{@ahl}\r\r\n"
     when :BSO
+      raise Errno::EDOM, "more than 999 messages" if @n > 999
       @buf = ["\n", @ahl, "\n"]
     else raise Errno::ENOSYS, "fmt = #@fmt"
     end
