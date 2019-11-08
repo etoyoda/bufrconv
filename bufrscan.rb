@@ -96,11 +96,8 @@ class BUFRMsg
     [@ptr, @ptrmax]
   end
 
-  def peeknum_uncompress ptr, width
-    raise ENOSYS, "compressed file not supported"
-  end
-
   def peeknum ptr, width
+    raise ENOSYS, "compressed file" if @props[:compress]
     ifirst = ptr / 8
     raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
@@ -229,10 +226,6 @@ class BUFRMsg
     ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
     @props[:obsp] = !(ddsflags & 0x80).zero?
     @props[:compress] = !(ddsflags & 0x40).zero?
-    if @props[:compress] then
-      # so far the latter raises ENOSYS
-      alias :peeknum :peeknum_uncompress
-    end
     @props[:descs] = @buf[@ddsofs+7, @ddslen-7].unpack('n*').map{|d|
       f = d >> 14
       x = (d >> 8) & 0x3F
