@@ -213,6 +213,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
       ent = ent.dup
       ent[:scale] += @addscale
     end
+    $stderr.puts "return nil; pos=#{@pos}\n" if $VERBOSE and ent.nil?
     ent
   end
 
