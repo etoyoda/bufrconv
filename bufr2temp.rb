@@ -102,7 +102,7 @@ class Bufr2temp
       r[pres] = levset if 0 != (flags & 0x10000)
       r[:SURF] = levset if 0 != (flags & 0x20000)
       r[:MAXW] = levset if 0 != (flags & 0x04000)
-      if 0 != (flags & 0x08000) and pres > 100 then
+      if 0 != (flags & 0x08000) and pres and pres > 100 then
         if r[:TRP1] and not r[:TRP2] then
           r[:TRP2] = levset
         else 
