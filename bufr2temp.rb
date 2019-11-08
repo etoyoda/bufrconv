@@ -93,21 +93,6 @@ class Bufr2temp
     case ival when 0..9999 then format('%04u', ival) else '////' end
   end
 
-  def println words
-    print_ahl
-    buf = []
-    for word in words
-      buflen = buf.inject(0){|len, tok| len + 1 + tok.length}
-      if buflen + word.length > 64 then
-        @out.puts(buf.join(' ') + "\r\r")
-        buf = [word]
-      else
-        buf.push word
-      end
-    end
-    @out.puts(buf.join(' ') + "\r\r") unless buf.empty?
-  end
-
   def levsort levbranch
     r = {}
     levbranch.each{|levset|
@@ -275,7 +260,8 @@ class Bufr2temp
     report.push ['8', itoa2(_GG), itoa2(gg)].join
 
     report.last.sub!(/$/, '=')
-    println(report)
+    print_ahl
+    @out.print_fold(report)
   rescue EDOM => e
     $stderr.puts e.message + @hdr[:meta].inspect
   end

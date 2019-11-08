@@ -37,7 +37,8 @@ class Bufr2synop
     ttaaii = [tt, aa, '99'].join
     yygg = @reftime.strftime('%d%H')
     @out.startmsg(ttaaii, yygg + '00')
-    @out.puts "AAXX #{yygg}#{@knot ? '4' : '1'}\r\r"
+    # section 0
+    @out.print_fold(["AAXX", "#{yygg}#{@knot ? '4' : '1'}"])
     @ahl_hour = @reftime.hour
   end
 
@@ -236,7 +237,8 @@ class Bufr2synop
       report.push ['9', itoa2(_GG), itoa2(gg)].join
     end
 
-    @out.puts report.join(' ') + "=\r\r"
+    report.last.sub!(/$/, '=')
+    @out.print_fold(report)
   end
 
   def endbufr

@@ -29,7 +29,7 @@ class Output
       ahl = "#{ttaaii} #{@cccc} #{yygggg}"
       raise Errno::EDOM, "too many msgs in FMT=ia2" if @n > 999
       nnn = format('%03u', @n)
-      @fp.puts "ZCZC #{nnn}     \r\r\n#{ahl}\r\r"
+      @fp.puts "ZCZC #{nnn}     \r\r\n#{ahl}\r\r\n"
     when :bso
       @buf = []
     else raise Errno::ENOSYS, "fmt = #@fmt"
@@ -47,10 +47,24 @@ class Output
     end
   end
 
+  def print_fold words
+    buf = []
+    for word in words
+      buflen = buf.inject(0){|len, tok| len + 1 + tok.length}
+      if buflen + word.length > 64 then
+        puts(buf.join(' ') + "\r\r\n")
+        buf = [word]
+      else
+        buf.push word
+      end
+    end
+    puts(buf.join(' ') + "\r\r\n") unless buf.empty?
+  end
+
   def flush
     case @fmt
     when :ia2
-      @fp.puts "\n\n\n\n\n\n\n\nNNNN\r\r"
+      @fp.puts "\n\n\n\n\n\n\n\nNNNN\r\r\n"
       @fp.flush
     when :bso
       @fp.write @buf.join if @buf
