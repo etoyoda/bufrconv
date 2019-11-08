@@ -8,11 +8,11 @@ class Bufr2temp
   class EDOM < Errno::EDOM
   end
 
-  def initialize
+  def initialize out = $stdout
+    @out = out
     @hdr = @reftime = nil
     @ahl = nil
     @knot = nil
-    @out = $stdout
   end
 
   AA = { 28=>'IN', 34=>'JP', 36=>'TH', 37=>'MO', 38=>'CI', 40=>'KR', 67=>'AU',
@@ -291,7 +291,7 @@ end
 
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
-  pseudo_io = Bufr2temp.new
+  pseudo_io = Bufr2temp.new($stdout)
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
