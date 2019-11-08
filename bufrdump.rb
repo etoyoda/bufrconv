@@ -286,6 +286,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
         if desc[:yyy].zero? then
           @addfield = nil
         else
+          raise ENOSYS, "nested 204YYY" if @addfield
           @addfield = { :type => :code,
             :width => desc[:yyy], :scale => 0, :refv => 0,
             :units => 'CODE TABLE', :desc => 'ASSOCIATED FIELD',
