@@ -96,31 +96,49 @@ class Bufr2synop
   end
 
   def checkprecip tree
-    precip = {}
+    rdata = {}
+    precip = []
     if rainblk = find_replication(tree, '013011') then
       rainblk.each {|subtree|
         dt = find(subtree, '004024')
 	next if dt.nil? or dt == 0
+	# 記述子 004024 には負値を記載せねばならないが (B/C1.10.3.2)
+	# 誤って正で通報している例がみられるので救済
 	dt = -dt if dt > 0
 	rv = find(subtree, '013011')
-	precip[dt] = rv if rv
+	rdata[dt] = rv if rv
       }
     end
-    # この時点では precp に nil は値として含まれない
-    # mm (kg.m-2) 単位から Code table 3590 符号への変換
-    for k in precip.keys
-      rrr = (precip[k] * 10 + 0.5).floor
+    # この時点では rdata に nil は値として含まれない
+    rdata.keys.each{|dt|
+      # mm (kg.m-2) 単位から Code table 3590 (RRR) への変換
+      # to_i で丸めると -0.1 が 0 になってしまうので不可
+      rrr = (rdata[dt] * 10 + 0.5).floor
       rrr = case rrr
+        # 990 が微量 trace をあらわす
 	when -1 then 990
 	when 0 then 0
 	when 1..9 then 990 + rrr
-	# Code table 3590 は丸めについて明確ではない
+	# Code table 3590 は丸めに方向について明確ではない
 	# 現状では 0.5 mm が 1 にならないことと整合的に切捨てにしている
 	when 10..989.9 then (rrr / 10).to_i
 	else 989
 	end
-      precip[k] = rrr
-    end
+      # Code table 4019 (tR) の実装
+      tr = case dt
+	when -12 then '2'
+	when -18 then '3'
+	when -24 then '4'
+	when -1 then '5'
+	when -2 then '6'
+	when -3 then '7'
+	when -9 then '8'
+	when -15 then '9'
+	# 表にない間隔の場合も省略はしない。利用価値はないだろうが。
+	else '0'
+	end
+      precip.push ['6', itoa3(rrr), tr].join
+    }
     precip
   end
 
@@ -133,13 +151,24 @@ class Bufr2synop
     iii = find(tree, '001002')
     report.push [itoa2(_II), itoa3(iii)].join
 
+
     # iRixhVV
-    ## check precip reports
-    precip = checkprecip(tree)
-    iR = if precip.empty? then '4'
-      elsif precip.include?(-6) and precip.size > 1 then '0'
-      elsif precip.include?(-6) then '1'
-      else '2'
+    # 記述子 013011 の降水量に12時間または6時間のものがあれば第１節に、
+    # 残りは第３節に記載する。厳密には地区毎に取り決めが違いうるがさしあたり。
+    precip3 = checkprecip(tree)
+    precip1 = []
+    if precip3.any?(/2$/) then
+      precip1 = precip3.grep(/2$/)
+      precip3 = precip3.grep_v(/2$/)
+    elsif precip3.any?(/1$/) then
+      precip1 = precip3.grep(/1$/)
+      precip3 = precip3.grep_v(/1$/)
+    end
+
+    iR = if precip1.empty? and precip3.empty? then '4'
+      elsif precip1.empty? then '2'
+      elsif precip3.empty? then '1'
+      else '0'
       end
 
     ## check weather reports
@@ -262,9 +291,7 @@ class Bufr2synop
     report.push ['5', itoa1(a), itoa3(ppp)].join if a
 
     # 6RRRtR
-    if rrr = precip[-6] then
-      report.push ['6', itoa3(rrr), '1'].join
-    end
+    report.push(*precip1)
 
     # 7wwW1W2
     w1 = find(tree, '020004')
@@ -302,22 +329,7 @@ class Bufr2synop
 
     sec3 = ['333']
 
-    precip.keys.reject{|h| h == -6}.each{|h|
-      rrr = precip[h]
-      # Code table 4019 (tR) の実装
-      tr = case h
-	when -12 then '2'
-	when -18 then '3'
-	when -24 then '4'
-	when -1 then '5'
-	when -2 then '6'
-	when -3 then '7'
-	when -9 then '8'
-	when -15 then '9'
-	else '0'
-	end
-      sec3.push ['6', itoa3(rrr), tr].join
-    }
+    sec3.push(*precip3)
 
     if r24 = find(tree, '013023') then
       r24 = (r24 * 10 + 0.5).floor
