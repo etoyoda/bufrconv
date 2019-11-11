@@ -58,7 +58,7 @@ class Bufr2synop
   # caution -- this does not go recursive
   def find_nth tree, fxy, nth = 2
     for elem in tree
-      if elem.first == fxy then
+      if fxy === elem.first then
         nth -= 1
         return elem[1] if nth.zero?
       end
