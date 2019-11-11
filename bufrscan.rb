@@ -248,6 +248,10 @@ class BUFRMsg
     @props.dup
   end
 
+  def ahl
+    @props[:meta] ? @props[:meta][:ahl] : nil
+  end
+
   def inspect
     to_h.inspect
   end
@@ -340,9 +344,15 @@ end
 class BUFRScan
 
   def self.filescan fnam
+    ahlsel = nil
+    if /:AHL=/ === fnam then
+      fnam = $`
+      ahlsel = Regexp.new($')
+    end
     File.open(fnam, 'r:BINARY'){|fp|
       fp.binmode
       BUFRScan.new(fp, fnam).scan{|msg|
+        next if ahlsel and ahlsel !~ msg.ahl
         yield msg
       }
     }
