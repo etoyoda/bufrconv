@@ -324,8 +324,18 @@ class Bufr2synop
 
     sec3 = ['333']
 
+    # 1snTxTxTx - maximum temperature
+    tx = find(tree, '012111')
+    sec3.push temperature('1', tx) if tx
+
+    # 2snTnTnTn - minimum temperature
+    tn = find(tree, '012112')
+    sec3.push temperature('2', tn) if tn
+
+    # 6RRRtR
     sec3.push(*precip3)
 
+    # 7R24R24R24R24
     if r24 = find(tree, '013023') then
       r24 = (r24 * 10 + 0.5).floor
       r24 = case r24
