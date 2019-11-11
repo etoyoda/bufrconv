@@ -168,10 +168,10 @@ class Bufr2synop
     # 残りは第３節に記載する。厳密には地区毎に取り決めが違いうるがさしあたり。
     precip3 = checkprecip(tree)
     precip1 = []
-    if precip3.any?(/2$/) then
+    if precip3.any?{|desc| /2$/ === desc} then
       precip1 = precip3.grep(/2$/)
       precip3 = precip3.grep_v(/2$/)
-    elsif precip3.any?(/1$/) then
+    elsif precip3.any?{|desc| /1$/ === desc} then
       precip1 = precip3.grep(/1$/)
       precip3 = precip3.grep_v(/1$/)
     end
