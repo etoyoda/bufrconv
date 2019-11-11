@@ -66,6 +66,21 @@ class Bufr2synop
     return nil
   end
 
+=begin
+  def find_replication tree, containing
+    tree.size.times{|i|
+      elem = tree[i]
+      next unless /^1/ === elem.first
+      ofs = 1
+      ofs += 1 if /^031/ === tree[i + ofs].first
+      next if tree[i + ofs].empty?
+      next unless tree[i + ofs][0].any?{|k, v| containing === k}
+      return tree[i + ofs]
+    }
+    return nil
+  end
+=end
+
   def itoa1 ival
     case ival when 0..9 then format('%01u', ival) else '/' end
   end
@@ -82,6 +97,23 @@ class Bufr2synop
     case ival when 0..9999 then format('%04u', ival) else '////' end
   end
 
+=begin
+  def checkprecip tree
+    r = {}
+    if rainblk = find_replication(tree, '013011') then
+      rainblk.each {|subtree|
+        dt = find(subtree, '004024')
+	next if dt.nil? or dt >= 0
+	rv = find(subtree, '013011')
+	r[dt] = rv if rv
+      }
+    end
+    r24 = find(tree, '013023')
+    r[-24] = r24 if r24
+    r
+  end
+=end
+
   def subset tree
     print_ahl
     report = []
@@ -92,17 +124,38 @@ class Bufr2synop
     report.push [itoa2(_II), itoa3(iii)].join
 
     # iRixhVV
+    ## check precip reports
+=begin
+    precip = checkprecip(tree)
+    iR = if precip.empty? then '4'
+      elsif precip[-6] and precip.size > 1 then '0'
+      elsif precip[-6] then '1'
+      else '2'
+      end
+=end
     iR = '4'
+
+    ## check weather reports
+    stntype = find(tree, '002001')
     weather = find(tree, '020003')
     case weather
     when 0..99 then 
+      # present weather in Code table 4677 (ww)
       ix, ww = '1', weather
+      ix = '4' if stntype.zero?
     when 508 then
-      ix, ww = '2', 0
+      # "no significant weather as present weather"
+      ix, ww = '2', nil
+      # this could be ---
+      # ix = '5' if stntype.zero?
+      ix, ww = '7', 0 if stntype.zero?
     when 100..199 then
+      # present weather in Code table 4680 (wawa)
       ix, ww = '7', weather - 100
     else
+      # present weather is nil or other codes not convertible to ww
       ix, ww = '3', nil
+      ix = '6' if stntype.zero?
     end
     h = case find(tree, '020013')
       when 0...50 then 0
