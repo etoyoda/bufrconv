@@ -324,13 +324,36 @@ class Bufr2synop
 
     sec3 = ['333']
 
-    # 1snTxTxTx - maximum temperature
+    # 1snTxTxTx - 最高気温
+    # 期間は地区決定しだいであるがTACには表現不能、データがあれば落とさず出す
     tx = find(tree, '012111')
     sec3.push temperature('1', tx) if tx
 
-    # 2snTnTnTn - minimum temperature
+    # 2snTnTnTn - 最低気温
+    # 期間は地区決定しだいであるがTACには表現不能、データがあれば落とさず出す
     tn = find(tree, '012112')
     sec3.push temperature('2', tn) if tn
+
+    # 4E'sss - 積雪深
+    _E_ = find(tree, '020062')
+    _E_ = case _E_
+      when 10..19 then _E_ - 10
+      else nil
+      end
+    sss = find(tree, '013013')
+    sss = (sss * 100 + 0.5).floor if sss
+    sss = 997 if sss and sss > 997
+    unless sss
+      # 数値的に積雪深が表現できないだろう場合
+      case _E_
+      # 998 連続していない積雪
+      when 11, 12, 15, 16 then sss = 998
+      # 999 測定不能な場合（E' により積雪があることがわかるので）
+      when 13, 14, 17..19 then sss = 999
+      end
+    end
+    sss = nil if 0 == sss and _E_.nil? and stntype.zero?
+    sec3.push ['4', itoa1(_E_), itoa3(sss)].join if _E_ or sss
 
     # 6RRRtR
     sec3.push(*precip3)
