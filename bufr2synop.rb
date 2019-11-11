@@ -48,8 +48,8 @@ class Bufr2synop
       if elem.first == fxy then
         return elem[1]
       elsif Array === elem.first
-        r = find(elem.first, fxy)
-        return r if r
+        ret = find(elem.first, fxy)
+        return ret if ret
       end
     end
     return nil
@@ -66,7 +66,6 @@ class Bufr2synop
     return nil
   end
 
-=begin
   def find_replication tree, containing
     tree.size.times{|i|
       elem = tree[i]
@@ -79,7 +78,6 @@ class Bufr2synop
     }
     return nil
   end
-=end
 
   def itoa1 ival
     case ival when 0..9 then format('%01u', ival) else '/' end
@@ -97,22 +95,37 @@ class Bufr2synop
     case ival when 0..9999 then format('%04u', ival) else '////' end
   end
 
-=begin
   def checkprecip tree
-    r = {}
+    precip = {}
     if rainblk = find_replication(tree, '013011') then
       rainblk.each {|subtree|
         dt = find(subtree, '004024')
-	next if dt.nil? or dt >= 0
+	next if dt.nil? or dt == 0
+	dt = -dt if dt > 0
 	rv = find(subtree, '013011')
-	r[dt] = rv if rv
+	precip[dt] = rv if rv
       }
     end
     r24 = find(tree, '013023')
-    r[-24] = r24 if r24
-    r
+    precip[-24] = r24 if r24
+    # この時点では precp に nil は値として含まれない
+    # mm (kg.m-2) 単位から Code table 3590 符号への変換
+    for k in precip.keys
+      rrr = (precip[k] * 10 + 0.5).floor
+      rrr = case rrr
+	when -1 then 990
+	when 0 then 0
+	when 1..9 then 990 + rrr
+	# Code table 3590 は丸めについて明確ではない
+	# 現状では 0.5 mm が 1 にならないことと整合的に切捨てにしている
+	when 10..989.9 then (rrr / 10).to_i
+	else 989
+	end
+      $stderr.puts "@@@ RRR=#{rrr} < #{precip[k]} #{k}"
+      precip[k] = rrr
+    end
+    precip
   end
-=end
 
   def subset tree
     print_ahl
@@ -125,15 +138,12 @@ class Bufr2synop
 
     # iRixhVV
     ## check precip reports
-=begin
     precip = checkprecip(tree)
     iR = if precip.empty? then '4'
       elsif precip[-6] and precip.size > 1 then '0'
       elsif precip[-6] then '1'
       else '2'
       end
-=end
-    iR = '4'
 
     ## check weather reports
     stntype = find(tree, '002001')
@@ -255,6 +265,9 @@ class Bufr2synop
     report.push ['5', itoa1(a), itoa3(ppp)].join if a
 
     # 6RRRtR
+    if rrr = precip[-6] then
+      report.push ['6', itoa3(rrr), '1'].join
+    end
 
     # 7wwW1W2
     w1 = find(tree, '020004')
@@ -288,6 +301,30 @@ class Bufr2synop
     gg = find(tree, '004005')
     if _GG and _GG != @ahl_hour
       report.push ['9', itoa2(_GG), itoa2(gg)].join
+    end
+
+    sec3p = !(precip.keys.reject{|h| h == -6}.empty?)
+    if sec3p then
+
+      report.push('333')
+
+      precip.keys.reject{|h| h == -6}.each{|h|
+        rrr = precip[h]
+	# Code table 4019 (tR) の実装
+	tr = case h
+	  when -12 then '2'
+	  when -18 then '3'
+	  when -24 then '4'
+	  when -1 then '5'
+	  when -2 then '6'
+	  when -3 then '7'
+	  when -9 then '8'
+	  when -15 then '9'
+	  else '0'
+	  end
+        report.push ['6', itoa3(rrr), tr].join
+      }
+
     end
 
     report.last.sub!(/$/, '=')
