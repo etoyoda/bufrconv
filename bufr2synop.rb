@@ -106,8 +106,6 @@ class Bufr2synop
 	precip[dt] = rv if rv
       }
     end
-    r24 = find(tree, '013023')
-    precip[-24] = r24 if r24
     # この時点では precp に nil は値として含まれない
     # mm (kg.m-2) 単位から Code table 3590 符号への変換
     for k in precip.keys
@@ -121,7 +119,6 @@ class Bufr2synop
 	when 10..989.9 then (rrr / 10).to_i
 	else 989
 	end
-      $stderr.puts "@@@ RRR=#{rrr} < #{precip[k]} #{k}"
       precip[k] = rrr
     end
     precip
@@ -140,8 +137,8 @@ class Bufr2synop
     ## check precip reports
     precip = checkprecip(tree)
     iR = if precip.empty? then '4'
-      elsif precip[-6] and precip.size > 1 then '0'
-      elsif precip[-6] then '1'
+      elsif precip.include?(-6) and precip.size > 1 then '0'
+      elsif precip.include?(-6) then '1'
       else '2'
       end
 
@@ -303,29 +300,36 @@ class Bufr2synop
       report.push ['9', itoa2(_GG), itoa2(gg)].join
     end
 
-    sec3p = !(precip.keys.reject{|h| h == -6}.empty?)
-    if sec3p then
+    sec3 = ['333']
 
-      report.push('333')
+    precip.keys.reject{|h| h == -6}.each{|h|
+      rrr = precip[h]
+      # Code table 4019 (tR) の実装
+      tr = case h
+	when -12 then '2'
+	when -18 then '3'
+	when -24 then '4'
+	when -1 then '5'
+	when -2 then '6'
+	when -3 then '7'
+	when -9 then '8'
+	when -15 then '9'
+	else '0'
+	end
+      sec3.push ['6', itoa3(rrr), tr].join
+    }
 
-      precip.keys.reject{|h| h == -6}.each{|h|
-        rrr = precip[h]
-	# Code table 4019 (tR) の実装
-	tr = case h
-	  when -12 then '2'
-	  when -18 then '3'
-	  when -24 then '4'
-	  when -1 then '5'
-	  when -2 then '6'
-	  when -3 then '7'
-	  when -9 then '8'
-	  when -15 then '9'
-	  else '0'
-	  end
-        report.push ['6', itoa3(rrr), tr].join
-      }
-
+    if r24 = find(tree, '013023') then
+      r24 = (r24 * 10 + 0.5).floor
+      r24 = case r24
+	when -1 then 9999
+	when 0..9998 then r24
+	else 9998
+	end
+      sec3.push ['7', itoa4(r24)].join
     end
+
+    report.push(*sec3) if sec3.size > 1
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
