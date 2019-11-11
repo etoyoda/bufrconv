@@ -142,6 +142,17 @@ class Bufr2synop
     precip
   end
 
+  def temperature indicator, kelvin
+    case kelvin
+    when 173.25 ... 273.15
+      [indicator, '1', itoa3(((273.2 - kelvin) * 10).to_i)].join
+    when 273.15 ... 373.05
+      [indicator, '0', itoa3(((kelvin - 273.1) * 10).to_i)].join
+    else
+      [indicator, '////'].join
+    end
+  end
+
   def subset tree
     print_ahl
     report = []
@@ -236,27 +247,11 @@ class Bufr2synop
 
     # 1sTTT
     _TTT = find(tree, '012101')
-    case _TTT
-    when 173.25 ... 273.15
-      s, _TTT = '1', ((273.2 - _TTT) * 10).to_i
-    when 273.15 ... 373.05
-      s, _TTT = '0', ((_TTT - 273.1) * 10).to_i
-    else
-      s, _TTT = '/', nil
-    end
-    report.push ['1', s, itoa3(_TTT)].join if _TTT
+    report.push temperature('1', _TTT)
 
     # 2snTdTdTd
     _TdTdTd = find(tree, '012103')
-    case _TdTdTd
-    when 173.25 ... 273.15
-      sn, _TdTdTd = '1', ((273.2 - _TdTdTd) * 10).to_i
-    when 273.15 ... 373.05
-      sn, _TdTdTd = '0', ((_TdTdTd - 273.1) * 10).to_i
-    else
-      sn, _TdTdTd = '/', nil
-    end
-    report.push ['2', sn, itoa3(_TdTdTd)].join if _TdTdTd
+    report.push temperature('2', _TdTdTd)
 
     # 3P0P0P0P0
     _P0P0P0P0 = find(tree, '010004')
