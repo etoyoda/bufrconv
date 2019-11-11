@@ -334,6 +334,18 @@ class Bufr2synop
     tn = find(tree, '012112')
     sec3.push temperature('2', tn) if tn
 
+    # 3snTgTgTg - 地表最低気温
+    # 通報形式が地区次第で、そちらの資料は未見
+    if tg = find(tree, '012113') then
+      if tg < 273.15 then
+        tg = ((273.2 - tg) * 10).floor
+	sec3.push ['3', '1', itoa3(tg)].join
+      else
+        tg = ((tg - 273.1) * 10).floor
+	sec3.push ['3', '0', itoa3(tg)].join
+      end
+    end
+
     # 4E'sss - 積雪深
     _E_ = find(tree, '020062')
     _E_ = case _E_
