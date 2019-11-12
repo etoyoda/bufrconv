@@ -45,36 +45,51 @@ class Output
     expire = @now - 86400 * @keep
     File.open(@histin, 'r'){|ifp|
       ifp.each_line{|line|
-        ahl, stime = line.chomp.split(/\t/)
+        ahl, stime, fingerprint = line.chomp.split(/\t/)
         time = Time.parse(stime)
 	next if time < expire
-	@hist[ahl] = time
+	@hist[ahl] = [time, fingerprint]
       }
     }
   rescue StandardError => e
-    $stderr.puts e.message
+    $stderr.puts("init_hist: #{e.message}; RRY/CCY mode")
+    @hist['RRYMODE'] = [@now, '-']
   end
 
   def save_hist
     return unless @histout
     File.open(@histout, 'w'){|ofp|
-      @hist.each{|ahl, time|
-        ofp.puts [ahl, time].join("\t")
+      @hist.each{|ahl, vals|
+        next if 'RRYMODE' == ahl
+        time, fingerprint = vals
+        stime = time.utc.strftime('%Y-%m-%dT%H:%M:%S.%L')
+        ofp.puts [ahl, stime, fingerprint].join("\t")
       }
     }
   rescue StandardError => e
-    $stderr.puts e.message
+    $stderr.puts("save_hist: " + e.message)
   end
 
   def make_ahl ttaaii, yygggg, cflag
     @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
+    # 履歴ファイルの読み込みに失敗した場合
+    if @hist['RRYMODE'] then
+      @hist[@ahl] = [@now, 'RRYMODE']
+      @ahl += (cflag ? ' CCY' : ' RRY')
+      @hist[@ahl] = [@now, '-']
+      return @ahl
+    end
     if @hist.include? @ahl then
-      @ahl += (cflag ? ' CCA' : ' RRA')
-      while @hist.include? @ahl and /[XYZ]$/ !~ @ahl
-        @ahl = @ahl.succ
+      if @hist[@ahl][1] == 'RRYMODE' then
+	@ahl += (cflag ? ' CCY' : ' RRY')
+      else
+	@ahl += (cflag ? ' CCA' : ' RRA')
+	while @hist.include? @ahl and /[A-W]$/ =~ @ahl
+	  @ahl = @ahl.succ
+	end
       end
     end
-    @hist[@ahl] = @now
+    @hist[@ahl] = [@now, '-']
     return @ahl
   end
 
@@ -146,6 +161,7 @@ class Output
       @fp.write format('%08u00', msg.bytesize)
       @fp.write msg
     end
+    save_hist
   end
 
 end
