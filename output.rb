@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
 require 'time'
+require 'digest/md5'
 
 class Output
 
@@ -147,12 +148,16 @@ class Output
     case @fmt
     when :IA2
       @buf.push "\n\n\n\n\n\n\n\nNNNN\r\r\n"
-      @fp.write @buf.join
+      msg = @buf.join
+      md5 = Digest::MD5.hexdigest(msg)
+      @buf = nil
+      @fp.write msg
       @fp.flush
     when :BSO
       @buf.unshift(makebch())
       @buf.push "\x03"
       msg = @buf.join
+      md5 = Digest::MD5.hexdigest(msg)
       @buf = nil
       @fp.write format('%08u00', msg.bytesize)
       @fp.write msg
