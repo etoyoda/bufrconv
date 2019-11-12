@@ -99,7 +99,7 @@ class Output
     when :IA2
       @n = 0 if @n > 999
       nnn = format('%03u', @n)
-      @fp.puts "ZCZC #{nnn}     \r\r\n#{@ahl}\r\r\n"
+      @buf = ["ZCZC #{nnn}     \r\r\n", @ahl, "\r\r\n"]
     when :BSO
       raise Errno::EDOM, "more than 999 messages" if @n > 999
       @buf = ["\n", @ahl, "\n"]
@@ -110,12 +110,7 @@ class Output
   end
 
   def puts line
-    case @fmt
-    when :IA2
-      @fp.puts line
-    when :BSO
-      @buf.push line
-    end
+    @buf.push line
   end
 
   def print_fold words
@@ -151,7 +146,8 @@ class Output
   def flush
     case @fmt
     when :IA2
-      @fp.puts "\n\n\n\n\n\n\n\nNNNN\r\r\n"
+      @buf.push "\n\n\n\n\n\n\n\nNNNN\r\r\n"
+      @fp.write @buf.join
       @fp.flush
     when :BSO
       @buf.unshift(makebch())
@@ -160,6 +156,7 @@ class Output
       @buf = nil
       @fp.write format('%08u00', msg.bytesize)
       @fp.write msg
+      @fp.flush
     end
     save_hist
   end
