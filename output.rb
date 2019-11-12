@@ -76,6 +76,7 @@ class Output
     for ahl in @hist.keys
       t, m = @hist[ahl]
       if md5 == m then
+        $stderr.puts "dup #{ahl} on #{t}"
         return nil
       end
     end
