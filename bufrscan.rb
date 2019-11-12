@@ -32,7 +32,6 @@ class BUFRMsg
   end
 
   def initialize buf, ofs, msglen, fnam = '-', ahl = nil
-    ahl = '-' unless ahl
     @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
     @ed = @buf[ofs+7].unpack('C').first
     @props = {
@@ -221,7 +220,25 @@ class BUFRMsg
         BUFRMsg::unpack1(@buf[@idsofs+16]),
         0
       )
+    else # 現時点では build_sections で不明版数は排除される
+      raise "BUG"
     end
+    # 訂正報であるフラグ
+    @props[:cflag] = if @props[:upd] > 0 then
+        # Update Sequence Number が正ならば意識してやっていると信用する
+        true
+      elsif @props[:meta][:ahl]
+        # 電文ヘッダ AHL が認識できるならばそれが訂正報であるかどうか
+        if / CC.\b/ =~ @props[:meta][:ahl] then
+	  true
+	else
+	  false
+	end
+      else
+	# USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
+        nil
+      end
+
     @props[:nsubset] = BUFRMsg::unpack2(@buf[@ddsofs+4,2])
     ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
     @props[:obsp] = !(ddsflags & 0x80).zero?

@@ -1,50 +1,85 @@
 #!/usr/bin/ruby
 
+require 'time'
+
 class Output
 
   def initialize cfgstr = ''
+    @now = Time.now.utc
+    # 動作オプションの設定
     @ofile = @fmt = @histin = @histout = nil
+    # デフォルトの発信官署４字略号
     @cccc = 'RJXX'
+    # 注意：保存期間を27日以上に設定してはならない。3月に事故を起こす。
+    @keep = 20
     cfgstr.strip.sub(/^-o/, '').split(/,/).each{|spec|
       case spec
       when /^FMT=(.+)/i then @fmt = $1.to_sym
       when /^FILE=(.+)/i then @ofile = $1
       when /^HIN=(.+)/i then @histin = $1
       when /^HOUT=(.+)/i then @histout = $1
+      when /^KEEP=(\d+)/i then @keep = $1.to_i
       when /^CCCC=(.+)/i then @cccc = $1
       when /^\w+=/ then $stderr.puts "unknown option #{spec}"
       else @ofile = spec
       end
     }
+    # いくつかのオプションは省略時に暗黙設定
     if @fmt.nil? then
       @fmt = if @ofile then :BSO else :IA2 end
     end
-    @hist = {}
-    if @histin then
-      File.open(@histin, 'r:ASCII-8BIT'){|ifp|
-        ifp.each_line{|line|
-          ent = JSON.parse(line)
-          @hist[ent['id']] = ent
-        }
-      }
+    if @histout and @histin.nil? then
+      @histin = @histout
     end
+    # 内部変数
+    @hist = {}
+    init_hist
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
-    # failsafe
     @buf = []
     @ahl = nil
     @n = 0
-    @ahldict = {}
   end
 
-  def startmsg ttaaii, yygggg
+  def init_hist
+    return unless @histin
+    expire = @now - 86400 * @keep
+    File.open(@histin, 'r'){|ifp|
+      ifp.each_line{|line|
+        ahl, stime = line.chomp.split(/\t/)
+        time = Time.parse(stime)
+	next if time < expire
+	@hist[ahl] = time
+      }
+    }
+  rescue StandardError => e
+    $stderr.puts e.message
+  end
+
+  def save_hist
+    return unless @histout
+    File.open(@histout, 'w'){|ofp|
+      @hist.each{|ahl, time|
+        ofp.puts [ahl, time].join("\t")
+      }
+    }
+  rescue StandardError => e
+    $stderr.puts e.message
+  end
+
+  def make_ahl ttaaii, yygggg, cflag
     @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
-    if @ahldict.include? @ahl then
-      @ahl += ' RRA'
-      while @ahldict.include? @ahl and / RRX$/ !~ @ahl
+    if @hist.include? @ahl then
+      @ahl += (cflag ? ' CCA' : ' RRA')
+      while @hist.include? @ahl and /[XYZ]$/ !~ @ahl
         @ahl = @ahl.succ
       end
     end
-    @ahldict[@ahl] = true
+    @hist[@ahl] = @now
+    return @ahl
+  end
+
+  def startmsg ttaaii, yygggg, cflag
+    make_ahl(ttaaii, yygggg, cflag)
     case @fmt
     when :IA2
       @n = 0 if @n > 999

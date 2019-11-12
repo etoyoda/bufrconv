@@ -35,7 +35,7 @@ class Bufr2temp
     aa = AA[@hdr[:ctr]] || 'XX'
     ttaaii = [tt, aa, '99'].join
     yygggg = @reftime.strftime('%d%H00')
-    @ahl = @out.startmsg(ttaaii, yygggg)
+    @ahl = @out.startmsg(ttaaii, yygggg, @hdr[:cflag])
   end
 
   # returns the first element

@@ -36,7 +36,7 @@ class Bufr2synop
     @knot = true if 'JP' == aa
     ttaaii = [tt, aa, '99'].join
     yygg = @reftime.strftime('%d%H')
-    @out.startmsg(ttaaii, yygg + '00')
+    @out.startmsg(ttaaii, yygg + '00', @hdr[:cflag])
     # section 0
     @out.print_fold(["AAXX", "#{yygg}#{@knot ? '4' : '1'}"])
     @ahl_hour = @reftime.hour
