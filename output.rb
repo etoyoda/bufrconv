@@ -147,17 +147,17 @@ class Output
   def flush
     case @fmt
     when :IA2
+      md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
       @buf.push "\n\n\n\n\n\n\n\nNNNN\r\r\n"
       msg = @buf.join
-      md5 = Digest::MD5.hexdigest(msg)
       @buf = nil
       @fp.write msg
       @fp.flush
     when :BSO
+      md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
       @buf.unshift(makebch())
       @buf.push "\x03"
       msg = @buf.join
-      md5 = Digest::MD5.hexdigest(msg)
       @buf = nil
       @fp.write format('%08u00', msg.bytesize)
       @fp.write msg
