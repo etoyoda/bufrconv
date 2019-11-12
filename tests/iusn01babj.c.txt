@@ -6,7 +6,8 @@
     "units": "NUMERIC",
     "scale": 0,
     "refv": 0,
-    "width": 7
+    "width": 7,
+    "pos": 0
   },
   {
     "type": "num",
@@ -15,7 +16,8 @@
     "units": "NUMERIC",
     "scale": 0,
     "refv": 0,
-    "width": 10
+    "width": 10,
+    "pos": 1
   },
   {
     "type": "str",
@@ -24,7 +26,8 @@
     "units": "CCITT IA5",
     "scale": 0,
     "refv": 0,
-    "width": 72
+    "width": 72,
+    "pos": 2
   },
   {
     "type": "code",
@@ -33,7 +36,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 8
+    "width": 8,
+    "pos": 3
   },
   {
     "type": "code",
@@ -42,7 +46,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 4
+    "width": 4,
+    "pos": 4
   },
   {
     "type": "code",
@@ -51,7 +56,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 7
+    "width": 7,
+    "pos": 5
   },
   {
     "type": "code",
@@ -60,7 +66,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 4
+    "width": 4,
+    "pos": 6
   },
   {
     "type": "code",
@@ -69,7 +76,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 5
+    "width": 5,
+    "pos": 7
   },
   {
     "type": "num",
@@ -78,7 +86,8 @@
     "units": "YEAR",
     "scale": 0,
     "refv": 0,
-    "width": 12
+    "width": 12,
+    "pos": 8
   },
   {
     "type": "num",
@@ -87,7 +96,8 @@
     "units": "MONTH",
     "scale": 0,
     "refv": 0,
-    "width": 4
+    "width": 4,
+    "pos": 9
   },
   {
     "type": "num",
@@ -96,7 +106,8 @@
     "units": "DAY",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 10
   },
   {
     "type": "num",
@@ -105,7 +116,8 @@
     "units": "HOUR",
     "scale": 0,
     "refv": 0,
-    "width": 5
+    "width": 5,
+    "pos": 11
   },
   {
     "type": "num",
@@ -114,7 +126,8 @@
     "units": "MINUTES",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 12
   },
   {
     "type": "num",
@@ -123,7 +136,8 @@
     "units": "S",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 13
   },
   {
     "type": "num",
@@ -132,7 +146,8 @@
     "units": "DEGREE",
     "scale": 5,
     "refv": -9000000,
-    "width": 25
+    "width": 25,
+    "pos": 14
   },
   {
     "type": "num",
@@ -141,7 +156,8 @@
     "units": "DEGREE",
     "scale": 5,
     "refv": -18000000,
-    "width": 26
+    "width": 26,
+    "pos": 15
   },
   {
     "type": "num",
@@ -150,7 +166,8 @@
     "units": "M",
     "scale": 1,
     "refv": -4000,
-    "width": 17
+    "width": 17,
+    "pos": 16
   },
   {
     "type": "num",
@@ -159,7 +176,8 @@
     "units": "M",
     "scale": 1,
     "refv": -4000,
-    "width": 17
+    "width": 17,
+    "pos": 17
   },
   {
     "type": "num",
@@ -168,7 +186,8 @@
     "units": "M",
     "scale": 0,
     "refv": -1000,
-    "width": 17
+    "width": 17,
+    "pos": 18
   },
   {
     "type": "code",
@@ -177,7 +196,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 4
+    "width": 4,
+    "pos": 19
   },
   {
     "type": "code",
@@ -186,7 +206,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 20
   },
   {
     "type": "code",
@@ -195,7 +216,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 4
+    "width": 4,
+    "pos": 21
   },
   {
     "type": "num",
@@ -204,7 +226,8 @@
     "units": "M",
     "scale": -1,
     "refv": -40,
-    "width": 11
+    "width": 11,
+    "pos": 22
   },
   {
     "type": "code",
@@ -213,7 +236,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 23
   },
   {
     "type": "code",
@@ -222,7 +246,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 24
   },
   {
     "type": "code",
@@ -231,7 +256,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 25
   },
   {
     "type": "code",
@@ -240,7 +266,8 @@
     "units": "CODE TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 6
+    "width": 6,
+    "pos": 26
   },
   {
     "type": "num",
@@ -249,13 +276,15 @@
     "units": "K",
     "scale": 2,
     "refv": 0,
-    "width": 15
+    "width": 15,
+    "pos": 27
   },
   {
     "type": "repl",
     "fxy": "101000",
     "ndesc": 10,
-    "niter": 0
+    "niter": 0,
+    "pos": 28
   },
   {
     "type": "num",
@@ -264,7 +293,8 @@
     "units": "NUMERIC",
     "scale": 0,
     "refv": 0,
-    "width": 16
+    "width": 16,
+    "pos": 29
   },
   {
     "type": "num",
@@ -273,7 +303,8 @@
     "units": "S",
     "scale": 0,
     "refv": -8192,
-    "width": 15
+    "width": 15,
+    "pos": 30
   },
   {
     "type": "flags",
@@ -282,7 +313,8 @@
     "units": "FLAG TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 18
+    "width": 18,
+    "pos": 31
   },
   {
     "type": "num",
@@ -291,7 +323,8 @@
     "units": "PA",
     "scale": -1,
     "refv": 0,
-    "width": 14
+    "width": 14,
+    "pos": 32
   },
   {
     "type": "num",
@@ -300,7 +333,8 @@
     "units": "GPM",
     "scale": 0,
     "refv": -1000,
-    "width": 17
+    "width": 17,
+    "pos": 33
   },
   {
     "type": "num",
@@ -309,7 +343,8 @@
     "units": "DEGREE",
     "scale": 5,
     "refv": -9000000,
-    "width": 25
+    "width": 25,
+    "pos": 34
   },
   {
     "type": "num",
@@ -318,7 +353,8 @@
     "units": "DEGREE",
     "scale": 5,
     "refv": -18000000,
-    "width": 26
+    "width": 26,
+    "pos": 35
   },
   {
     "type": "num",
@@ -327,7 +363,8 @@
     "units": "K",
     "scale": 2,
     "refv": 0,
-    "width": 16
+    "width": 16,
+    "pos": 36
   },
   {
     "type": "num",
@@ -336,7 +373,8 @@
     "units": "K",
     "scale": 2,
     "refv": 0,
-    "width": 16
+    "width": 16,
+    "pos": 37
   },
   {
     "type": "num",
@@ -345,7 +383,8 @@
     "units": "DEG TRUE",
     "scale": 0,
     "refv": 0,
-    "width": 9
+    "width": 9,
+    "pos": 38
   },
   {
     "type": "num",
@@ -354,17 +393,20 @@
     "units": "M/S",
     "scale": 1,
     "refv": 0,
-    "width": 12
+    "width": 12,
+    "pos": 39
   },
   {
     "type": "endloop",
-    "ndesc": 10
+    "ndesc": 10,
+    "pos": 40
   },
   {
     "type": "repl",
     "fxy": "101000",
     "ndesc": 7,
-    "niter": 0
+    "niter": 0,
+    "pos": 41
   },
   {
     "type": "num",
@@ -373,7 +415,8 @@
     "units": "NUMERIC",
     "scale": 0,
     "refv": 0,
-    "width": 8
+    "width": 8,
+    "pos": 42
   },
   {
     "type": "num",
@@ -382,7 +425,8 @@
     "units": "S",
     "scale": 0,
     "refv": -8192,
-    "width": 15
+    "width": 15,
+    "pos": 43
   },
   {
     "type": "flags",
@@ -391,7 +435,8 @@
     "units": "FLAG TABLE",
     "scale": 0,
     "refv": 0,
-    "width": 18
+    "width": 18,
+    "pos": 44
   },
   {
     "type": "num",
@@ -400,7 +445,8 @@
     "units": "PA",
     "scale": -1,
     "refv": 0,
-    "width": 14
+    "width": 14,
+    "pos": 45
   },
   {
     "type": "num",
@@ -409,7 +455,8 @@
     "units": "DEGREE",
     "scale": 5,
     "refv": -9000000,
-    "width": 25
+    "width": 25,
+    "pos": 46
   },
   {
     "type": "num",
@@ -418,7 +465,8 @@
     "units": "DEGREE",
     "scale": 5,
     "refv": -18000000,
-    "width": 26
+    "width": 26,
+    "pos": 47
   },
   {
     "type": "num",
@@ -427,7 +475,8 @@
     "units": "M/S",
     "scale": 1,
     "refv": 0,
-    "width": 12
+    "width": 12,
+    "pos": 48
   },
   {
     "type": "num",
@@ -436,10 +485,12 @@
     "units": "M/S",
     "scale": 1,
     "refv": 0,
-    "width": 12
+    "width": 12,
+    "pos": 49
   },
   {
     "type": "endloop",
-    "ndesc": 7
+    "ndesc": 7,
+    "pos": 50
   }
 ]

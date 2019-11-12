@@ -128,10 +128,6 @@ class BufrDecode
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
     @pos = nil
-    # tape marker for debugging -- note a descriptor may appear twice or more
-    (0 ... @tape.size).each{|i|
-      @tape[i][:pos] = i
-    }
     # replication counter: nesting implemented using stack push/pop
     @cstack = []
     # operators
@@ -198,16 +194,20 @@ BUFRの反復はネストできなければいけないので（用例がある�
     while :endloop == @tape[@pos][:type]
       @cstack.last[:count] -= 1
       if @cstack.last[:count] > 0 then
+        # 反復対象記述子列の最初に戻る。
+	# そこに :endloop はないので while を抜ける
         @pos = @cstack.last[:next]
         prt.newcycle
         loopdebug 'nextloop' if $VERBOSE
       else
+        # 当該レベルのループを終了し :endloop の次に行く。
+	# そこに :endloop があれば while が繰り返される。
         @cstack.pop
         @pos += 1
         prt.endloop
         loopdebug 'endloop' if $VERBOSE
         if @tape[@pos].nil? then
-          loopdebug "ret-nil-a" if $VERBOSE
+          loopdebug "ret-nil-b" if $VERBOSE
           return nil
         end
       end
@@ -465,6 +465,10 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       else
         raise ENOSYS, "unknown fxy=#{fxy}"
       end
+    }
+    # デバッグ用位置サイン
+    (0 ... result.size).each{|i|
+      result[i][:pos] = i
     }
     return result
   end
