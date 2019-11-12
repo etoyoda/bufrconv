@@ -518,6 +518,10 @@ end
 
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+  case ARGV.first
+  when '-xstr' then ARGV.shift; puts JSON.generate(db.expand(ARGV)); exit
+  when '-cstr' then ARGV.shift; puts JSON.generate(db.compile(ARGV)); exit
+  end
   action = :decode_json
   ARGV.each{|fnam|
     case fnam
