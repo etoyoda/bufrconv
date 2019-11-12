@@ -3,21 +3,32 @@
 class Output
 
   def initialize cfgstr = ''
-    @file = @fmt = nil
+    @ofile = @fmt = @histin = @histout = nil
     @cccc = 'RJXX'
     cfgstr.strip.sub(/^-o/, '').split(/,/).each{|spec|
       case spec
       when /^FMT=(.+)/i then @fmt = $1.to_sym
-      when /^FILE=(.+)/i then @file = $1
+      when /^FILE=(.+)/i then @ofile = $1
+      when /^HIN=(.+)/i then @histin = $1
+      when /^HOUT=(.+)/i then @histout = $1
       when /^CCCC=(.+)/i then @cccc = $1
       when /^\w+=/ then $stderr.puts "unknown option #{spec}"
-      else @file = spec
+      else @ofile = spec
       end
     }
     if @fmt.nil? then
-      @fmt = if @file then :BSO else :IA2 end
+      @fmt = if @ofile then :BSO else :IA2 end
     end
-    @fp = @file ? File.open(@file, 'wb:BINARY') : $stdout
+    @hist = {}
+    if @histin then
+      File.open(@histin, 'r:ASCII-8BIT'){|ifp|
+        ifp.each_line{|line|
+          ent = JSON.parse(line)
+          @hist[ent['id']] = ent
+        }
+      }
+    end
+    @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     # failsafe
     @buf = []
     @ahl = nil
