@@ -37,7 +37,7 @@ class Output
     init_hist
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     @buf = []
-    @ahl = nil
+    @ahl = @cflag = nil
     @n = 0
   end
 
@@ -48,8 +48,8 @@ class Output
       ifp.each_line{|line|
         ahl, stime, fingerprint = line.chomp.split(/\t/)
         time = Time.parse(stime)
-	next if time < expire
-	@hist[ahl] = [time, fingerprint]
+        next if time < expire
+        @hist[ahl] = [time, fingerprint]
       }
     }
   rescue StandardError => e
@@ -71,31 +71,42 @@ class Output
     $stderr.puts("save_hist: " + e.message)
   end
 
-  def make_ahl ttaaii, yygggg, cflag
-    @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
+  def make_ahl md5
+    # 既存に同一内容電文を出していたら nil を返す
+    for ahl in @hist.keys
+      t, m = @hist[ahl]
+      if md5 == m then
+        return nil
+      end
+    end
     # 履歴ファイルの読み込みに失敗した場合
     if @hist['RRYMODE'] then
       @hist[@ahl] = [@now, 'RRYMODE']
-      @ahl += (cflag ? ' CCY' : ' RRY')
-      @hist[@ahl] = [@now, '-']
+      @ahl += (@cflag ? ' CCY' : ' RRY')
+      @hist[@ahl] = [@now, md5]
       return @ahl
     end
     if @hist.include? @ahl then
       if @hist[@ahl][1] == 'RRYMODE' then
-	@ahl += (cflag ? ' CCY' : ' RRY')
+        @ahl += (@cflag ? ' CCY' : ' RRY')
       else
-	@ahl += (cflag ? ' CCA' : ' RRA')
-	while @hist.include? @ahl and /[A-W]$/ =~ @ahl
-	  @ahl = @ahl.succ
-	end
+        @ahl += (@cflag ? ' CCA' : ' RRA')
+        while @hist.include? @ahl and /[A-W]$/ =~ @ahl
+          @ahl = @ahl.succ
+        end
       end
     end
-    @hist[@ahl] = [@now, '-']
-    return @ahl
+    @hist[@ahl] = [@now, md5]
+    @ahl
   end
 
   def startmsg ttaaii, yygggg, cflag
-    make_ahl(ttaaii, yygggg, cflag)
+    @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
+    @cflag = cflag
+    #
+    # 新形式を追加する場合、 @buf は 3 要素、 @ahl は 2 つめになるようにする
+    # （flush で個数・位置決め打ちで処理しているから）
+    #
     case @fmt
     when :IA2
       @n = 0 if @n > 999
@@ -145,24 +156,25 @@ class Output
   end
 
   def flush
+    md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
+    @buf[1] = make_ahl(md5)
+    if @buf[1].nil? then
+      return
+    end
     case @fmt
     when :IA2
-      md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
       @buf.push "\n\n\n\n\n\n\n\nNNNN\r\r\n"
       msg = @buf.join
-      @buf = nil
-      @fp.write msg
-      @fp.flush
     when :BSO
-      md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
       @buf.unshift(makebch())
       @buf.push "\x03"
       msg = @buf.join
-      @buf = nil
       @fp.write format('%08u00', msg.bytesize)
-      @fp.write msg
-      @fp.flush
     end
+    @fp.write msg
+    @fp.flush
+  ensure
+    @buf = @cflag = nil
     save_hist
   end
 
