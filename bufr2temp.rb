@@ -131,13 +131,12 @@ class Bufr2temp
   def scanlevs levdb
     # levels to be included in the result
     stdlevs = nil
-    id = nil
+    id = '1'
     # first levels missing in BUFR are omitted
     for pres, pp, pid in STDLEVS
       next if :SURF === pres
       if levdb.include? pres
         stdlevs = [] unless stdlevs
-        id = pid
       end
       stdlevs.push([pres, pp]) if stdlevs
     end
