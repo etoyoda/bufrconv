@@ -357,6 +357,10 @@
     "width": 12
   },
   {
+    "type": "endloop",
+    "ndesc": 10
+  },
+  {
     "type": "repl",
     "fxy": "101000",
     "ndesc": 7,
@@ -433,5 +437,9 @@
     "scale": 1,
     "refv": 0,
     "width": 12
+  },
+  {
+    "type": "endloop",
+    "ndesc": 7
   }
 ]

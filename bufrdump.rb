@@ -133,7 +133,7 @@ class BufrDecode
       @tape[i][:pos] = i
     }
     # replication counter: nesting implemented using stack push/pop
-    @cstack = [{:type=>:dummy, :ctr=>-1}]
+    @cstack = []
     # operators
     @addwidth = @addscale = @addfield = nil
     @ymdhack = ymdhack_ini
@@ -178,9 +178,8 @@ BUFRの反復はネストできなければいけないので（用例がある�
 =end
 
   def loopdebug title
-    desc = @cstack.last
-    $stderr.printf("%-7s pos=%3u nit=%-3s ctr=%-3s nds=%-3s %s\n",
-      title, @pos, desc[:niter], desc[:ctr], desc[:ndesc], @cstack.size)
+    $stderr.printf("%-7s pos=%3u %s\n",
+      title, @pos, @cstack.inspect)
   end
 
   def read_tape_simple
@@ -190,33 +189,32 @@ BUFRの反復はネストできなければいけないので（用例がある�
 
   def read_tape prt
     @pos += 1
-    clast = @cstack.last
-    loopdebug 'chkloop' if $VERBOSE
-    if clast[:ctr].zero? then
-      if clast[:niter].zero? then
-        @cstack.pop
-        if @cstack.last[:resume] == clast[:resume] then
-          $stderr.puts "hack resume"
-          @cstack.last[:ctr] -= 1
-          if @cstack.last[:ctr] <= 0 then
-             prt.endloop
-             raise ENOSYS, "nested replication"
-          else
-            @pos -= @cstack.last[:ndesc]
-          end
-        end
-        loopdebug 'endloop' if $VERBOSE
-        prt.endloop
-      else
-        clast[:niter] -= 1
-        clast[:ctr] = clast[:ndesc] - 1
-        loopdebug 'nexloop' if $VERBOSE
-        prt.newcycle
-        @pos -= clast[:ndesc]
-      end
-    else
-      clast[:ctr] -= 1
+    loopdebug 'read_tape1' if $VERBOSE
+    if @tape[@pos].nil? then
+      loopdebug "ret-nil-a" if $VERBOSE
+      return nil
     end
+
+    while :endloop == @tape[@pos][:type]
+      @cstack.last[:count] -= 1
+      if @cstack.last[:count] > 0 then
+        @pos = @cstack.last[:next]
+        prt.newcycle
+        loopdebug 'nextloop' if $VERBOSE
+      else
+        @cstack.pop
+        @pos += 1
+        prt.endloop
+        loopdebug 'endloop' if $VERBOSE
+        if @tape[@pos].nil? then
+          loopdebug "ret-nil-a" if $VERBOSE
+          return nil
+        end
+      end
+    end
+    #
+    # operators
+    #
     ent = @tape[@pos]
     if @addwidth and :num === ent[:type] then
       ent = ent.dup
@@ -226,14 +224,16 @@ BUFRの反復はネストできなければいけないので（用例がある�
       ent = ent.dup
       ent[:scale] += @addscale
     end
-    $stderr.puts "return nil; pos=#{@pos}\n" if $VERBOSE and ent.nil?
     ent
   end
 
   def setloop niter, ndesc
-    @pos += ndesc
-    @cstack.push({:niter=>niter, :ndesc=>ndesc, :ctr=>0, :resume=>@pos })
-    loopdebug 'setloop' if $VERBOSE
+    loopdebug 'setloop1' if $VERBOSE
+    @cstack.push({:next => @pos + 1, :niter => niter, :count => niter})
+    if niter.zero? then
+      @pos += ndesc
+    end
+    loopdebug 'setloop2' if $VERBOSE
   end
 
 =begin
@@ -403,6 +403,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         rep = expand(a.shift(x))
         newx = rep.flatten.reject{|s|/^#/ === s}.size
         newx -= 1 if y.zero?
+        rep.push "#END #{newx}"
         rep.unshift format('1%02u%03u:%s', newx, y, fxy)
         result.push rep
       when /^3/ then
@@ -417,7 +418,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 
   def compile descs
     result = []
-    xd = expand(descs).flatten.reject{|s| /^#/ === s}
+    xd = expand(descs).flatten.reject{|s| /^#3/ === s}
     xd.size.times{|i|
       fxy = xd[i]
       case fxy
@@ -440,6 +441,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       when /^1(\d\d)(\d\d\d):/ then
         x, y, z = $1.to_i, $2.to_i, $'
         desc = { :type => :repl, :fxy => z, :ndesc => x, :niter => y }
+        result.push desc
+      when /^#END (\d+)/ then
+        desc = { :type => :endloop, :ndesc => $1.to_i }
         result.push desc
       when /^201(\d\d\d)/ then
         result.push({ :type => :op01, :fxy => fxy, :yyy => $1.to_i })

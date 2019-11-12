@@ -375,6 +375,10 @@
     "width": 11
   },
   {
+    "type": "endloop",
+    "ndesc": 4
+  },
+  {
     "type": "repl",
     "fxy": "105000",
     "ndesc": 5,
@@ -435,6 +439,10 @@
     "width": 4
   },
   {
+    "type": "endloop",
+    "ndesc": 5
+  },
+  {
     "type": "repl",
     "fxy": "102003",
     "ndesc": 2,
@@ -457,6 +465,10 @@
     "scale": 0,
     "refv": 0,
     "width": 9
+  },
+  {
+    "type": "endloop",
+    "ndesc": 2
   },
   {
     "type": "code",
@@ -600,6 +612,10 @@
     "width": 11
   },
   {
+    "type": "endloop",
+    "ndesc": 2
+  },
+  {
     "type": "num",
     "fxy": "007032",
     "desc": "HEIGHT OF SENSOR ABV LCL GND OR SHIP DECK",
@@ -631,6 +647,10 @@
     "scale": 1,
     "refv": -1,
     "width": 14
+  },
+  {
+    "type": "endloop",
+    "ndesc": 2
   },
   {
     "type": "num",
@@ -792,6 +812,10 @@
     "width": 12
   },
   {
+    "type": "endloop",
+    "ndesc": 3
+  },
+  {
     "type": "num",
     "fxy": "007032",
     "desc": "HEIGHT OF SENSOR ABV LCL GND OR SHIP DECK",
@@ -895,6 +919,10 @@
     "scale": -2,
     "refv": 0,
     "width": 20
+  },
+  {
+    "type": "endloop",
+    "ndesc": 7
   },
   {
     "type": "num",
