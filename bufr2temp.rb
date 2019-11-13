@@ -16,8 +16,27 @@ class Bufr2temp
     @knot = nil
   end
 
-  AA = { 28=>'IN', 34=>'JP', 36=>'TH', 37=>'MO', 38=>'CI', 40=>'KR', 67=>'AU',
-    110=>'HK', 116=>'KP' }
+  AA = {
+    1=>'AU', # WMC Melbourne
+    8=>'US',
+    21=>'AL',
+    24=>'ZA',
+    28=>'IN',
+    34=>'JP',
+    36=>'TH',
+    37=>'MO',
+    38=>'CI',
+    40=>'KR',
+    67=>'AU', # RSMC Melbourne
+    94=>'DN',
+    110=>'HK',
+    113=>'BW',
+    116=>'KP',
+    195=>'ID',
+    201=>'PH',
+    213=>'IL',
+    235=>'JD'
+  }
 
   def newbufr hdr
     @hdr = hdr
@@ -33,6 +52,7 @@ class Bufr2temp
     return if @ahl
     tt = 'US' # Part A
     aa = AA[@hdr[:ctr]] || 'XX'
+    $stderr.puts "! unknown centre #{@hdr[:ctr]} #{@hdr[:meta][:ahl]}" if aa == 'XX'
     ttaaii = [tt, aa, '99'].join
     yygggg = @reftime.strftime('%d%H00')
     @ahl = @out.startmsg(ttaaii, yygggg, @hdr[:cflag])
