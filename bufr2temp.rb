@@ -277,7 +277,7 @@ end
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
   # コマンドラインオプションは最初の引数だけ
-  outopts = if /^-o/ =~ ARGV.first then ARGV.shift else ''
+  outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
   pseudo_io = Bufr2temp.new(Output.new(outopts))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
