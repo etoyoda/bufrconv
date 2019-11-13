@@ -192,6 +192,8 @@ BUFRの反復はネストできなければいけないので（用例がある�
     end
 
     while :endloop == @tape[@pos][:type]
+      # 暫定バグ対策 quick hack
+      break if @cstack.empty?
       @cstack.last[:count] -= 1
       if @cstack.last[:count] > 0 then
         # 反復対象記述子列の最初に戻る。
