@@ -194,7 +194,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
     while :endloop == @tape[@pos][:type]
       # quick hack workaround
       if @cstack.empty? then
-        $stderr.puts "skip one :endloop #{@bufrmsg.ahl}"
+        $stderr.puts "skip :endloop pos=#{@pos} #{@bufrmsg.ahl}"
         break
       end
       @cstack.last[:count] -= 1
