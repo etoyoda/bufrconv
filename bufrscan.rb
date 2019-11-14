@@ -268,6 +268,11 @@ class BUFRMsg
     @props[:meta] ? @props[:meta][:ahl] : nil
   end
 
+  def compressed?
+    decode_primary
+    @props[:compress]
+  end
+
   def inspect
     to_h.inspect
   end

@@ -493,8 +493,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
-  # raises ENOSPC
-  def decode bufrmsg, outmode = :json, out = $stdout
+  # 圧縮を使わない場合のデコード。
+  def decode1 bufrmsg, outmode = :json, out = $stdout
     prt = DataOrganizer.new(outmode, out)
     bufrmsg.decode_primary
     tabconfig bufrmsg
@@ -517,14 +517,20 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     end
   end
 
-  # raises ENOSPC
-  def decode_plain bufrmsg, out = $stdout
-    decode bufrmsg, :plain, out
+  def decode bufrmsg, outmode = :json, out = $stdout
+    if bufrmsg.compressed? then
+      decode2(bufrmsg, outmode, out)
+    else
+      decode1(bufrmsg, outmode, out)
+    end
   end
 
-  # raises ENOSPC
+  def decode_plain bufrmsg, out = $stdout
+    decode(bufrmsg, :plain, out)
+  end
+
   def decode_json bufrmsg, out = $stdout
-    decode bufrmsg, :json, out
+    decode(bufrmsg, :json, out)
   end
 
 end
