@@ -1,8 +1,8 @@
 #!/usr/bin/ruby
 
-$LOAD_PATH.push File.dirname($0)
-require 'bufrdump'
-require 'output'
+$LOAD_PATH.push File.dirname($0) ##del
+require 'bufrdump' ##del
+require 'output' ##del
 
 class Bufr2temp
 
