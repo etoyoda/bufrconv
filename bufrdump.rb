@@ -1,10 +1,8 @@
 #!/usr/bin/ruby
 
 require 'json'
-if __FILE__ == $0
-  $LOAD_PATH.push File.dirname($0)
-  require 'bufrscan'
-end
+$LOAD_PATH.push File.dirname($0)  ##del
+require 'bufrscan'  ##del
 
 class DataOrganizer
 
