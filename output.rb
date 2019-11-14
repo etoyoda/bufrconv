@@ -74,6 +74,11 @@ class Output
   def make_ahl md5
     # 既存に同一内容電文を出していたら nil を返す
     for ahl in @hist.keys
+      if ahl == md5 then
+        t, m = @hist[ahl]
+        $stderr.puts "dup #{m} on #{t}"
+        return nil
+      end
       t, m = @hist[ahl]
       if md5 == m then
         $stderr.puts "dup #{ahl} on #{t}"
@@ -85,6 +90,7 @@ class Output
       @hist[@ahl] = [@now, 'RRYMODE']
       @ahl += (@cflag ? ' CCY' : ' RRY')
       @hist[@ahl] = [@now, md5]
+      @hist[md5] = [@now, @ahl]
       return @ahl
     end
     if @hist.include? @ahl then
@@ -98,6 +104,7 @@ class Output
       end
     end
     @hist[@ahl] = [@now, md5]
+    @hist[md5] = [@now, @ahl]
     @ahl
   end
 
