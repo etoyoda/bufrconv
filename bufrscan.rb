@@ -96,7 +96,6 @@ class BUFRMsg
   end
 
   def peeknum ptr, width
-    raise ENOSYS, "compressed file" if @props[:compress]
     ifirst = ptr / 8
     raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
