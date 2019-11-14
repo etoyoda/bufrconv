@@ -1,8 +1,8 @@
 #!/usr/bin/ruby
 
 require 'json'
-$LOAD_PATH.push File.dirname($0)
-require 'bufrscan'
+$LOAD_PATH.push File.dirname($0)  ##del
+require 'bufrscan'  ##del
 
 class DataOrganizer
 
@@ -200,13 +200,13 @@ BUFRの反復はネストできなければいけないので（用例がある�
       @cstack.last[:count] -= 1
       if @cstack.last[:count] > 0 then
         # 反復対象記述子列の最初に戻る。
-	# そこに :endloop はないので while を抜ける
+        # そこに :endloop はないので while を抜ける
         @pos = @cstack.last[:next]
         prt.newcycle
         loopdebug 'nextloop' if $VERBOSE
       else
         # 当該レベルのループを終了し :endloop の次に行く。
-	# そこに :endloop があれば while が繰り返される。
+        # そこに :endloop があれば while が繰り返される。
         @cstack.pop
         @pos += 1
         prt.endloop
@@ -236,7 +236,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
     loopdebug 'setloop1' if $VERBOSE
     @cstack.push({:next => @pos + 1, :niter => niter, :count => niter})
     if niter.zero? then
-      @pos += ndesc
+      n = ndesc
+      while n > 0
+        d = read_tape_simple
+        n -= 1 unless d[:type] == :repl
+      end
     end
     loopdebug 'setloop2' if $VERBOSE
   end
@@ -254,7 +258,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
       when :str
         if @addfield then
           @addfield[:pos] = desc[:pos]
-	  num = @bufrmsg.readnum(@addfield)
+          num = @bufrmsg.readnum(@addfield)
           prt.showval @addfield, num
         end
         str = @bufrmsg.readstr(desc)
@@ -262,7 +266,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
       when :num, :code, :flags
         if @addfield and not /^031021/ === desc[:fxy] then
           @addfield[:pos] = desc[:pos]
-	  num = @bufrmsg.readnum(@addfield)
+          num = @bufrmsg.readnum(@addfield)
           prt.showval @addfield, num
         end
         num = @bufrmsg.readnum(desc)
