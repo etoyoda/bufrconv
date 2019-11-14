@@ -236,7 +236,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
     loopdebug 'setloop1' if $VERBOSE
     @cstack.push({:next => @pos + 1, :niter => niter, :count => niter})
     if niter.zero? then
-      @pos += ndesc
+      n = ndesc
+      while n > 0
+        d = read_tape_simple
+        n -= 1 unless d[:type] == :repl
+      end
     end
     loopdebug 'setloop2' if $VERBOSE
   end
