@@ -1535,7 +1535,7 @@ class Bufr2synop
     sec3.push(*precip3)
 
     # 7R24R24R24R24
-    if r24 = find(tree, '013023') then
+    if r24 then
       r24 = (r24 * 10 + 0.5).floor
       r24 = case r24
 	when -1 then 9999
