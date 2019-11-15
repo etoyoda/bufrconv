@@ -85,15 +85,11 @@ class Output
         return nil
       end
     end
-    # 履歴ファイルの読み込みに失敗した場合
     if @hist['RRYMODE'] then
+      # 履歴ファイルの読み込みに失敗した場合
       @hist[@ahl] = [@now, 'RRYMODE']
       @ahl += (@cflag ? ' CCY' : ' RRY')
-      @hist[@ahl] = [@now, md5]
-      @hist[md5] = [@now, @ahl]
-      return @ahl
-    end
-    if @hist.include? @ahl then
+    elsif @hist.include? @ahl then
       if @hist[@ahl][1] == 'RRYMODE' then
         @ahl += (@cflag ? ' CCY' : ' RRY')
       else
@@ -103,6 +99,7 @@ class Output
         end
       end
     end
+    $stderr.puts "ok #{@ahl} text=#{md5}"
     @hist[@ahl] = [@now, md5]
     @hist[md5] = [@now, @ahl]
     @ahl
@@ -117,10 +114,13 @@ class Output
     #
     case @fmt
     when :IA2
+      # IA2: GTS マニュアルに定める IA2 文字セット回線での電文形式。
+      # すべての文字が printable なのでデバッグ用にも使っている。
       @n = 0 if @n > 999
       nnn = format('%03u', @n)
       @buf = ["ZCZC #{nnn}     \r\r\n", @ahl, "\r\r\n"]
     when :BSO
+      # BSO: NAPS→アデスで用いる国内バッチFTP形式。
       raise Errno::EDOM, "more than 999 messages" if @n > 999
       @buf = ["\n", @ahl, "\n"]
     else raise Errno::ENOSYS, "fmt = #@fmt"
@@ -164,6 +164,9 @@ class Output
   end
 
   def flush
+    # MD5 を計算する対象は、AHL の次の行からエンド行を除く本文。
+    # 先頭に CR CR LF を加えたものが GTS マニュアルでいう text になる。
+    # BSO 形式ではそれが LF なので、混乱を避けるため計算から除外している。
     md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
     @buf[1] = make_ahl(md5)
     if @buf[1].nil? then
