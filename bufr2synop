@@ -113,7 +113,42 @@ class BUFRMsg
     (imask & ival) >> ishift
   end
 
+  def readnum2 desc
+    width, scale, refv = desc[:width], desc[:scale], desc[:refv]
+    do_missing = !(/^(031|204)/ === desc[:fxy])
+    if @ptr + width + 6 > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width} + 6"
+    end
+    # reference value R0
+    iwidth, ishift, imask, ival = peeknum(@ptr, width)
+    @ptr += width
+    jwidth, jshift, jmask, jval = peeknum(@ptr, 6)
+    @ptr += 6
+    n = (jmask & jval) >> jshift
+    if ival & imask == imask and do_missing then
+      raise "difference #{n} bits cannot follow missing value R0" if n != 0
+      return [nil] * nsubset
+    end
+    r0 = ((imask & ival) >> ishift) + refv
+    # data array
+    rval = [r0] * nsubset
+    if n > 0 then
+      nsubset.times{|i|
+        kwidth, kshift, kmask, kval = peeknum(@ptr, n)
+        @ptr += n
+        if kval & kmask == kmask and do_missing then
+          rval[i] = nil
+        else
+          rval[i] += ((kmask & kval) >> kshift)
+          rval[i] = rval[i].to_f * (10.0 ** -scale) unless scale.zero?
+        end
+      }
+    end
+    return rval
+  end
+
   def readnum desc
+    return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
     do_missing = !(/^(031|204)/ === desc[:fxy])
     if @ptr + width > @ptrmax
@@ -130,6 +165,7 @@ class BUFRMsg
   end
 
   def readstr desc
+    return readstr2 desc if compressed?
     width = desc[:width]
     len = width / 8
     if @ptr + width > @ptrmax
@@ -261,6 +297,11 @@ class BUFRMsg
     @props[:compress]
   end
 
+  def nsubset
+    decode_primary
+    @props[:nsubset]
+  end
+
   def inspect
     to_h.inspect
   end
@@ -268,6 +309,7 @@ class BUFRMsg
   def ymdhack opts
     decode_primary
     return unless opts[:ymd]
+    return if @props[:compress]
     rt1 = @props[:reftime]
     brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
     rt2 = rt1 - 86400
@@ -950,7 +992,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       prt.newbufr bufrmsg.to_h
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
       begin
-        prt.newsubset isubset, bufrmsg.ptrcheck
+        prt.newsubset :all, bufrmsg.ptrcheck
         BufrDecode.new(tape, bufrmsg).run(prt)
       ensure
         prt.endsubset

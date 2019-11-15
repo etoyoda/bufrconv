@@ -525,7 +525,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       prt.newbufr bufrmsg.to_h
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
       begin
-        prt.newsubset isubset, bufrmsg.ptrcheck
+        prt.newsubset :all, bufrmsg.ptrcheck
         BufrDecode.new(tape, bufrmsg).run(prt)
       ensure
         prt.endsubset
