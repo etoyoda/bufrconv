@@ -282,6 +282,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
           end
           num = @bufrmsg.readnum(d)
           prt.showval d, num
+          if @bufrmsg.compressed? then
+            a = num
+            num = num.first
+            raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
+          end
           if num.zero? then
             setloop(0, ndesc)
             prt.setloop

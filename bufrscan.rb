@@ -120,9 +120,8 @@ class BUFRMsg
     # reference value R0
     iwidth, ishift, imask, ival = peeknum(@ptr, width)
     @ptr += width
-    jwidth, jshift, jmask, jval = peeknum(@ptr, 6)
+    n = getnum(@ptr, 6)
     @ptr += 6
-    n = (jmask & jval) >> jshift
     if ival & imask == imask and do_missing then
       raise "difference #{n} bits cannot follow missing value R0" if n != 0
       return [nil] * nsubset
@@ -162,9 +161,7 @@ class BUFRMsg
     rval
   end
 
-  def readstr desc
-    return readstr2 desc if compressed?
-    width = desc[:width]
+  def readstr1 width
     len = width / 8
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
@@ -185,6 +182,19 @@ class BUFRMsg
     @ptr += width
     return nil if /^\xFF+$/n === rval
     rval.force_encoding(Encoding::ASCII_8BIT)
+  end
+
+  def readstr desc
+    return readstr1(desc[:width]) unless compressed?
+    s0 = readstr1(desc[:width])
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if n.zero? then
+      return [s0] * nsubset
+    end
+    raise EDOM, 'readstr: ref str not nul' unless /^\x00+$/n === s0
+    rval = (0 ... nsubset).map{ readstr1(n * 8) }
+    return rval
   end
 
   def decode_primary
