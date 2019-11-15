@@ -496,7 +496,6 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   # 圧縮を使わない場合のデコード。
   def decode1 bufrmsg, outmode = :json, out = $stdout
     prt = DataOrganizer.new(outmode, out)
-    bufrmsg.decode_primary
     tabconfig bufrmsg
     begin
       prt.newbufr bufrmsg.to_h
@@ -510,6 +509,27 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
           prt.endsubset
         end
       }
+    rescue Errno::ENOSPC => e
+      $stderr.puts e.message + bufrmsg[:meta].inspect
+    ensure
+      prt.endbufr
+    end
+  end
+
+  # 圧縮時のデコード。
+  def decode2 bufrmsg, outmode = :json, out = $stdout
+    nsubset = bufrmsg[:nsubset]
+    prt = DataOrganizer.new(outmode, out)
+    tabconfig bufrmsg
+    begin
+      prt.newbufr bufrmsg.to_h
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      begin
+        prt.newsubset isubset, bufrmsg.ptrcheck
+        BufrDecode.new(tape, bufrmsg).run(prt)
+      ensure
+        prt.endsubset
+      end
     rescue Errno::ENOSPC => e
       $stderr.puts e.message + bufrmsg[:meta].inspect
     ensure
