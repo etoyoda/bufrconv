@@ -118,25 +118,11 @@ class BUFRMsg
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
     iwidth, ishift, imask, ival = peeknum(@ptr, width)
-    if $DEBUG then
-      $stderr.puts({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr,
-      :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift}.inspect)
-    end
     @ptr += width
     if ival & imask == imask and do_missing then
-      if $DEBUG
-        fmt = format('%%0%ub', iwidth * 8)
-        $stderr.puts({:readnum=>:miss, :ival=>format(fmt, ival),
-          :imask=>format(fmt, imask)}.inspect)
-      end
       return nil
     end
     rval = ((imask & ival) >> ishift) + refv
-    if $DEBUG then
-      fmt = format('%%0%ub', iwidth * 8)
-      $stderr.puts({:readnum=>:okay, :ival=>format(fmt, ival),
-        :imask=>format(fmt, imask), :rval=>format(fmt, rval)}.inspect)
-    end
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     rval
   end
