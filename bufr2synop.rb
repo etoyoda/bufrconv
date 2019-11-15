@@ -182,6 +182,16 @@ class Bufr2synop
       else '0'
       end
 
+    # 内的整合性による補正
+    # 第１節および第３節 6RRRtR 群に反映すべき情報がなく、
+    # 12時間または6時間の降水有無を知ることができない場合でも、
+    # 24時間降水量が非欠損で 0.0 mm または trace であれば、
+    # 指示符 iR を降水なしの '3' とする。
+    r24 = find(tree, '013023')
+    if iR == '4' and r24 and r24 <= 0.0 then
+      iR = '3'
+    end
+
     ## check weather reports
     stntype = find(tree, '002001')
     weather = find(tree, '020003')
@@ -371,7 +381,7 @@ class Bufr2synop
     sec3.push(*precip3)
 
     # 7R24R24R24R24
-    if r24 = find(tree, '013023') then
+    if r24 then
       r24 = (r24 * 10 + 0.5).floor
       r24 = case r24
 	when -1 then 9999
