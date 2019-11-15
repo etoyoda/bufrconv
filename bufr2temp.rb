@@ -292,6 +292,10 @@ class Bufr2temp
     @ahl = nil
   end
 
+  def close
+    @out.close
+  end
+
 end
 
 if $0 == __FILE__
@@ -310,4 +314,5 @@ if $0 == __FILE__
       db.decode(bufrmsg, :direct, pseudo_io)
     }
   }
+  pseudo_io.close
 end

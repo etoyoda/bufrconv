@@ -932,10 +932,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
-  # raises ENOSPC
-  def decode bufrmsg, outmode = :json, out = $stdout
+  # 圧縮を使わない場合のデコード。
+  def decode1 bufrmsg, outmode = :json, out = $stdout
     prt = DataOrganizer.new(outmode, out)
-    bufrmsg.decode_primary
     tabconfig bufrmsg
     begin
       prt.newbufr bufrmsg.to_h
@@ -956,14 +955,41 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     end
   end
 
-  # raises ENOSPC
-  def decode_plain bufrmsg, out = $stdout
-    decode bufrmsg, :plain, out
+  # 圧縮時のデコード。
+  def decode2 bufrmsg, outmode = :json, out = $stdout
+    nsubset = bufrmsg[:nsubset]
+    prt = DataOrganizer.new(outmode, out)
+    tabconfig bufrmsg
+    begin
+      prt.newbufr bufrmsg.to_h
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      begin
+        prt.newsubset isubset, bufrmsg.ptrcheck
+        BufrDecode.new(tape, bufrmsg).run(prt)
+      ensure
+        prt.endsubset
+      end
+    rescue Errno::ENOSPC => e
+      $stderr.puts e.message + bufrmsg[:meta].inspect
+    ensure
+      prt.endbufr
+    end
   end
 
-  # raises ENOSPC
+  def decode bufrmsg, outmode = :json, out = $stdout
+    if bufrmsg.compressed? then
+      decode2(bufrmsg, outmode, out)
+    else
+      decode1(bufrmsg, outmode, out)
+    end
+  end
+
+  def decode_plain bufrmsg, out = $stdout
+    decode(bufrmsg, :plain, out)
+  end
+
   def decode_json bufrmsg, out = $stdout
-    decode bufrmsg, :json, out
+    decode(bufrmsg, :json, out)
   end
 
 end
@@ -1154,6 +1180,9 @@ class Output
     @fp.flush
   ensure
     @buf = @cflag = nil
+  end
+
+  def close
     save_hist
   end
 
@@ -1552,6 +1581,10 @@ class Bufr2synop
     @ahl_hour = false
   end
 
+  def close
+    @out.close
+  end
+
 end
 
 if $0 == __FILE__
@@ -1570,4 +1603,5 @@ if $0 == __FILE__
       db.decode(bufrmsg, :direct, pseudo_io)
     }
   }
+  pseudo_io.close
 end
