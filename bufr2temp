@@ -98,7 +98,6 @@ class BUFRMsg
   end
 
   def peeknum ptr, width
-    raise ENOSYS, "compressed file" if @props[:compress]
     ifirst = ptr / 8
     raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
@@ -269,6 +268,11 @@ class BUFRMsg
 
   def ahl
     @props[:meta] ? @props[:meta][:ahl] : nil
+  end
+
+  def compressed?
+    decode_primary
+    @props[:compress]
   end
 
   def inspect
@@ -671,7 +675,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
     loopdebug 'setloop1' if $VERBOSE
     @cstack.push({:next => @pos + 1, :niter => niter, :count => niter})
     if niter.zero? then
-      @pos += ndesc
+      n = ndesc
+      while n > 0
+        d = read_tape_simple
+        n -= 1 unless d[:type] == :repl
+      end
     end
     loopdebug 'setloop2' if $VERBOSE
   end
