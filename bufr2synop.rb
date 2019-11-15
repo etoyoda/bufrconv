@@ -101,12 +101,12 @@ class Bufr2synop
     if rainblk = find_replication(tree, '013011') then
       rainblk.each {|subtree|
         dt = find(subtree, '004024')
-	next if dt.nil? or dt == 0
-	# 記述子 004024 には負値を記載せねばならないが (B/C1.10.3.2)
-	# 誤って正で通報している例がみられるので救済
-	dt = -dt if dt > 0
-	rv = find(subtree, '013011')
-	rdata[dt] = rv if rv
+        next if dt.nil? or dt == 0
+        # 記述子 004024 には負値を記載せねばならないが (B/C1.10.3.2)
+        # 誤って正で通報している例がみられるので救済
+        dt = -dt if dt > 0
+        rv = find(subtree, '013011')
+        rdata[dt] = rv if rv
       }
     end
     # この時点では rdata に nil は値として含まれない
@@ -116,27 +116,27 @@ class Bufr2synop
       rrr = (rdata[dt] * 10 + 0.5).floor
       rrr = case rrr
         # 990 が微量 trace をあらわす
-	when -1 then 990
-	when 0 then 0
-	when 1..9 then 990 + rrr
-	# Code table 3590 は丸めに方向について明確ではない
-	# 現状では 0.5 mm が 1 にならないことと整合的に切捨てにしている
-	when 10..989.9 then (rrr / 10).to_i
-	else 989
-	end
+        when -1 then 990
+        when 0 then 0
+        when 1..9 then 990 + rrr
+        # Code table 3590 は丸めに方向について明確ではない
+        # 現状では 0.5 mm が 1 にならないことと整合的に切捨てにしている
+        when 10..989.9 then (rrr / 10).to_i
+        else 989
+        end
       # Code table 4019 (tR) の実装
       tr = case dt
-	when -12 then '2'
-	when -18 then '3'
-	when -24 then '4'
-	when -1 then '5'
-	when -2 then '6'
-	when -3 then '7'
-	when -9 then '8'
-	when -15 then '9'
-	# 表にない間隔の場合も省略はしない。利用価値はないだろうが。
-	else '0'
-	end
+        when -12 then '2'
+        when -18 then '3'
+        when -24 then '4'
+        when -1 then '5'
+        when -2 then '6'
+        when -3 then '7'
+        when -9 then '8'
+        when -15 then '9'
+        # 表にない間隔の場合も省略はしない。利用価値はないだろうが。
+        else '0'
+        end
       precip.push ['6', itoa3(rrr), tr].join
     }
     precip
@@ -339,10 +339,10 @@ class Bufr2synop
     if tg = find(tree, '012113') then
       if tg < 273.15 then
         tg = ((273.2 - tg) * 10).floor
-	sec3.push ['3', '1', itoa3(tg)].join
+        sec3.push ['3', '1', itoa3(tg)].join
       else
         tg = ((tg - 273.1) * 10).floor
-	sec3.push ['3', '0', itoa3(tg)].join
+        sec3.push ['3', '0', itoa3(tg)].join
       end
     end
 
@@ -374,10 +374,10 @@ class Bufr2synop
     if r24 = find(tree, '013023') then
       r24 = (r24 * 10 + 0.5).floor
       r24 = case r24
-	when -1 then 9999
-	when 0..9998 then r24
-	else 9998
-	end
+        when -1 then 9999
+        when 0..9998 then r24
+        else 9998
+        end
       sec3.push ['7', itoa4(r24)].join
     end
 

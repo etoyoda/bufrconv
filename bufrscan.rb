@@ -261,12 +261,12 @@ class BUFRMsg
       elsif @props[:meta][:ahl]
         # 電文ヘッダ AHL が認識できるならばそれが訂正報であるかどうか
         if / CC.\b/ =~ @props[:meta][:ahl] then
-	  true
-	else
-	  false
-	end
+          true
+        else
+          false
+        end
       else
-	# USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
+        # USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
         nil
       end
 
