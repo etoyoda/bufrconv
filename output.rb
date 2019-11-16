@@ -69,6 +69,7 @@ class Output
     }
   rescue StandardError => e
     $stderr.puts("save_hist: " + e.message)
+    exit 16
   end
 
   def make_ahl md5
@@ -186,6 +187,9 @@ class Output
     @fp.flush
   ensure
     @buf = @cflag = nil
+  end
+
+  def close
     save_hist
   end
 

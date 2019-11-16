@@ -98,7 +98,6 @@ class BUFRMsg
   end
 
   def peeknum ptr, width
-    raise ENOSYS, "compressed file" if @props[:compress]
     ifirst = ptr / 8
     raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
@@ -114,38 +113,57 @@ class BUFRMsg
     (imask & ival) >> ishift
   end
 
+  def readnum2 desc
+    width, scale, refv = desc[:width], desc[:scale], desc[:refv]
+    do_missing = !(/^(031|204)/ === desc[:fxy])
+    if @ptr + width + 6 > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width} + 6"
+    end
+    # reference value R0
+    iwidth, ishift, imask, ival = peeknum(@ptr, width)
+    @ptr += width
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if ival & imask == imask and do_missing then
+      raise "difference #{n} bits cannot follow missing value R0" if n != 0
+      return [nil] * nsubset
+    end
+    r0 = ((imask & ival) >> ishift) + refv
+    # data array
+    rval = [r0] * nsubset
+    if n > 0 then
+      nsubset.times{|i|
+        kwidth, kshift, kmask, kval = peeknum(@ptr, n)
+        @ptr += n
+        if kval & kmask == kmask and do_missing then
+          rval[i] = nil
+        else
+          rval[i] += ((kmask & kval) >> kshift)
+          rval[i] = rval[i].to_f * (10.0 ** -scale) unless scale.zero?
+        end
+      }
+    end
+    return rval
+  end
+
   def readnum desc
+    return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
     do_missing = !(/^(031|204)/ === desc[:fxy])
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
     iwidth, ishift, imask, ival = peeknum(@ptr, width)
-    if $DEBUG then
-      $stderr.puts({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr,
-      :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift}.inspect)
-    end
     @ptr += width
     if ival & imask == imask and do_missing then
-      if $DEBUG
-        fmt = format('%%0%ub', iwidth * 8)
-        $stderr.puts({:readnum=>:miss, :ival=>format(fmt, ival),
-          :imask=>format(fmt, imask)}.inspect)
-      end
       return nil
     end
     rval = ((imask & ival) >> ishift) + refv
-    if $DEBUG then
-      fmt = format('%%0%ub', iwidth * 8)
-      $stderr.puts({:readnum=>:okay, :ival=>format(fmt, ival),
-        :imask=>format(fmt, imask), :rval=>format(fmt, rval)}.inspect)
-    end
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     rval
   end
 
-  def readstr desc
-    width = desc[:width]
+  def readstr1 width
     len = width / 8
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
@@ -166,6 +184,24 @@ class BUFRMsg
     @ptr += width
     return nil if /^\xFF+$/n === rval
     rval.force_encoding(Encoding::ASCII_8BIT)
+  end
+
+  def readstr desc
+    return readstr1(desc[:width]) unless compressed?
+    s0 = readstr1(desc[:width])
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if n.zero? then
+      return [s0] * nsubset
+    end
+    # カナダのSYNOPでは圧縮された文字列の参照値が通報式に定めるヌルでなく欠損値になっているので救済
+    case s0
+    when nil, /^\x00+$/ then
+      rval = (0 ... nsubset).map{ readstr1(n * 8) }
+      return rval
+    else
+      raise EBADF, "readstr: R0=#{s0.inspect} not nul"
+    end
   end
 
   def decode_primary
@@ -232,12 +268,12 @@ class BUFRMsg
       elsif @props[:meta][:ahl]
         # 電文ヘッダ AHL が認識できるならばそれが訂正報であるかどうか
         if / CC.\b/ =~ @props[:meta][:ahl] then
-	  true
-	else
-	  false
-	end
+          true
+        else
+          false
+        end
       else
-	# USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
+        # USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
         nil
       end
 
@@ -271,6 +307,16 @@ class BUFRMsg
     @props[:meta] ? @props[:meta][:ahl] : nil
   end
 
+  def compressed?
+    decode_primary
+    @props[:compress]
+  end
+
+  def nsubset
+    decode_primary
+    @props[:nsubset]
+  end
+
   def inspect
     to_h.inspect
   end
@@ -278,6 +324,7 @@ class BUFRMsg
   def ymdhack opts
     decode_primary
     return unless opts[:ymd]
+    return if @props[:compress]
     rt1 = @props[:reftime]
     brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
     rt2 = rt1 - 86400
@@ -443,6 +490,7 @@ class DataOrganizer
 
   def initialize mode, out = $stdout
     @mode, @out = mode, out
+    @compress = nil
     # internals for :json
     @root = @tos = @tosstack = nil
     # internals for :plain
@@ -450,6 +498,7 @@ class DataOrganizer
   end
 
   def newbufr h
+    @compress = h[:compress] ? h[:nsubset] : false
     case @mode
     when :direct
       @out.newbufr h
@@ -480,8 +529,14 @@ class DataOrganizer
       @tos.push [desc[:fxy], val]
     when :plain
       sval = if val and :flags === desc[:type]
-        then format(format('0x%%0%uX', (desc[:width]+3)/4), val)
-        else val.inspect
+          fmt = format('0x%%0%uX', (desc[:width]+3)/4)
+          if Array === val then
+            '[' + val.map{|v| format(fmt, v)}.join(', ') + ']'
+          else
+            format(fmt, val)
+          end
+        else
+          val.inspect
         end
       @out.printf "%6s %15s #%03u %s\n", desc[:fxy], sval, desc[:pos], desc[:desc]
       @out.flush if $VERBOSE
@@ -528,13 +583,60 @@ class DataOrganizer
     end
   end
 
+  def split_r subsets, croot
+    croot.size.times {|j|
+      kv = croot[j]
+      if not Array === kv then
+        raise "something wrong #{kv.inspect}"
+      elsif Array === kv[0] or kv.empty? then
+        zip = []
+        @compress.times{|i|
+          repl = []
+          zip.push repl
+          subsets[i].push repl
+        }
+        kv.each{|branch|
+          bzip = []
+          @compress.times{|i|
+            bseq = []
+            bzip.push bseq
+            zip[i].push bseq
+          }
+          split_r(bzip, branch)
+        }
+      elsif /^1\d{5}/ === kv[0] then
+        subsets.each{|ss| ss.push kv}
+      elsif /^\d{6}/ === kv[0] then
+        @compress.times{|i| subsets[i].push [kv[0], kv[1][i]] }
+      else 
+        raise "something wrong #{j} #{kv.inspect}"
+      end
+    }
+  end
+
+  def split croot
+    return [croot] unless @compress
+    subsets = []
+    @compress.times{ subsets.push [] }
+    split_r(subsets, croot)
+    subsets
+  end
+
   def endsubset
     case @mode
     when :direct
-      @out.subset @root
+      if @compress then
+        split(@root).each{|subset| @out.subset subset }
+      else
+        @out.subset @root
+      end
       @root = @tos = @tosstack = nil
     when :json
-      @out.puts JSON.generate(@root)
+      if @compress then
+        split(@root).each{|subset| @out.puts JSON.generate(subset) }
+      else
+        @out.puts JSON.generate(@root)
+      end
       @root = @tos = @tosstack = nil
       @out.flush
     when :plain
@@ -717,6 +819,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
           end
           num = @bufrmsg.readnum(d)
           prt.showval d, num
+          if @bufrmsg.compressed? then
+            a = num
+            num = num.first
+            raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
+          end
           if num.zero? then
             setloop(0, ndesc)
             prt.setloop
@@ -928,10 +1035,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
-  # raises ENOSPC
-  def decode bufrmsg, outmode = :json, out = $stdout
+  # 圧縮を使わない場合のデコード。
+  def decode1 bufrmsg, outmode = :json, out = $stdout
     prt = DataOrganizer.new(outmode, out)
-    bufrmsg.decode_primary
     tabconfig bufrmsg
     begin
       prt.newbufr bufrmsg.to_h
@@ -952,14 +1058,41 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     end
   end
 
-  # raises ENOSPC
-  def decode_plain bufrmsg, out = $stdout
-    decode bufrmsg, :plain, out
+  # 圧縮時のデコード。
+  def decode2 bufrmsg, outmode = :json, out = $stdout
+    nsubset = bufrmsg[:nsubset]
+    prt = DataOrganizer.new(outmode, out)
+    tabconfig bufrmsg
+    begin
+      prt.newbufr bufrmsg.to_h
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      begin
+        prt.newsubset :all, bufrmsg.ptrcheck
+        BufrDecode.new(tape, bufrmsg).run(prt)
+      ensure
+        prt.endsubset
+      end
+    rescue Errno::ENOSPC, Errno::EBADF => e
+      $stderr.puts e.message + bufrmsg[:meta].inspect
+    ensure
+      prt.endbufr
+    end
   end
 
-  # raises ENOSPC
+  def decode bufrmsg, outmode = :json, out = $stdout
+    if bufrmsg.compressed? then
+      decode2(bufrmsg, outmode, out)
+    else
+      decode1(bufrmsg, outmode, out)
+    end
+  end
+
+  def decode_plain bufrmsg, out = $stdout
+    decode(bufrmsg, :plain, out)
+  end
+
   def decode_json bufrmsg, out = $stdout
-    decode bufrmsg, :json, out
+    decode(bufrmsg, :json, out)
   end
 
 end
@@ -1036,6 +1169,7 @@ class Output
     }
   rescue StandardError => e
     $stderr.puts("save_hist: " + e.message)
+    exit 16
   end
 
   def make_ahl md5
@@ -1153,6 +1287,9 @@ class Output
     @fp.flush
   ensure
     @buf = @cflag = nil
+  end
+
+  def close
     save_hist
   end
 
@@ -1258,12 +1395,12 @@ class Bufr2synop
     if rainblk = find_replication(tree, '013011') then
       rainblk.each {|subtree|
         dt = find(subtree, '004024')
-	next if dt.nil? or dt == 0
-	# 記述子 004024 には負値を記載せねばならないが (B/C1.10.3.2)
-	# 誤って正で通報している例がみられるので救済
-	dt = -dt if dt > 0
-	rv = find(subtree, '013011')
-	rdata[dt] = rv if rv
+        next if dt.nil? or dt == 0
+        # 記述子 004024 には負値を記載せねばならないが (B/C1.10.3.2)
+        # 誤って正で通報している例がみられるので救済
+        dt = -dt if dt > 0
+        rv = find(subtree, '013011')
+        rdata[dt] = rv if rv
       }
     end
     # この時点では rdata に nil は値として含まれない
@@ -1273,27 +1410,27 @@ class Bufr2synop
       rrr = (rdata[dt] * 10 + 0.5).floor
       rrr = case rrr
         # 990 が微量 trace をあらわす
-	when -1 then 990
-	when 0 then 0
-	when 1..9 then 990 + rrr
-	# Code table 3590 は丸めに方向について明確ではない
-	# 現状では 0.5 mm が 1 にならないことと整合的に切捨てにしている
-	when 10..989.9 then (rrr / 10).to_i
-	else 989
-	end
+        when -1 then 990
+        when 0 then 0
+        when 1..9 then 990 + rrr
+        # Code table 3590 は丸めに方向について明確ではない
+        # 現状では 0.5 mm が 1 にならないことと整合的に切捨てにしている
+        when 10..989.9 then (rrr / 10).to_i
+        else 989
+        end
       # Code table 4019 (tR) の実装
       tr = case dt
-	when -12 then '2'
-	when -18 then '3'
-	when -24 then '4'
-	when -1 then '5'
-	when -2 then '6'
-	when -3 then '7'
-	when -9 then '8'
-	when -15 then '9'
-	# 表にない間隔の場合も省略はしない。利用価値はないだろうが。
-	else '0'
-	end
+        when -12 then '2'
+        when -18 then '3'
+        when -24 then '4'
+        when -1 then '5'
+        when -2 then '6'
+        when -3 then '7'
+        when -9 then '8'
+        when -15 then '9'
+        # 表にない間隔の場合も省略はしない。利用価値はないだろうが。
+        else '0'
+        end
       precip.push ['6', itoa3(rrr), tr].join
     }
     precip
@@ -1319,25 +1456,29 @@ class Bufr2synop
     iii = find(tree, '001002')
     report.push [itoa2(_II), itoa3(iii)].join
 
+    # これが欠損しているときは全欠損
+    if find(tree, '005001').nil? and find(tree, '012101').nil? then
+      report.push "NIL"
+    else
 
-    # iRixhVV
-    # 記述子 013011 の降水量に12時間または6時間のものがあれば第１節に、
-    # 残りは第３節に記載する。厳密には地区毎に取り決めが違いうるがさしあたり。
-    precip3 = checkprecip(tree)
-    precip1 = []
-    if precip3.any?{|desc| /2$/ === desc} then
-      precip1 = precip3.grep(/2$/)
-      precip3 = precip3.grep_v(/2$/)
-    elsif precip3.any?{|desc| /1$/ === desc} then
-      precip1 = precip3.grep(/1$/)
-      precip3 = precip3.grep_v(/1$/)
-    end
-
-    iR = if precip1.empty? and precip3.empty? then '4'
-      elsif precip1.empty? then '2'
-      elsif precip3.empty? then '1'
-      else '0'
+      # iRixhVV
+      # 記述子 013011 の降水量に12時間または6時間のものがあれば第１節に、
+      # 残りは第３節に記載する。厳密には地区毎に取り決めが違いうるがさしあたり。
+      precip3 = checkprecip(tree)
+      precip1 = []
+      if precip3.any?{|desc| /2$/ === desc} then
+        precip1 = precip3.grep(/2$/)
+        precip3 = precip3.grep_v(/2$/)
+      elsif precip3.any?{|desc| /1$/ === desc} then
+        precip1 = precip3.grep(/1$/)
+        precip3 = precip3.grep_v(/1$/)
       end
+
+      iR = if precip1.empty? and precip3.empty? then '4'
+        elsif precip1.empty? then '2'
+        elsif precip3.empty? then '1'
+        else '0'
+        end
 
     # 内的整合性による補正
     # 第１節および第３節 6RRRtR 群に反映すべき情報がなく、
@@ -1392,166 +1533,171 @@ class Bufr2synop
       when 70_000..999_000 then 89
       else nil
       end
-    report.push [iR, ix, itoa1(h), itoa2(_VV)].join
 
-    # Nddff
-    _N = find(tree, '020010')
-    _N = ((_N + 6) / 12.5).to_i if _N
-    dd = find(tree, '011001')
-    dd = (dd + 5) / 10 if dd
-    ff = find(tree, '011002')
-    ff *= 1.9438 if ff and @knot
-    case ff
-    when 0 ... 99.5
-      ff = (ff + 0.5).to_i
-      fff = nil
-    when 99.5 ... 999
-      fff = ff.to_i
-      ff = 99
-    end
-    report.push [itoa1(_N), itoa2(dd), itoa2(ff)].join
-    report.push ['00', itoa3(fff)] if fff
+      report.push [iR, ix, itoa1(h), itoa2(_VV)].join
 
-    # 1sTTT
-    _TTT = find(tree, '012101')
-    report.push temperature('1', _TTT)
+      # Nddff
+      _N = find(tree, '020010')
+      _N = ((_N + 6) / 12.5).to_i if _N
+      dd = find(tree, '011001')
+      dd = (dd + 5) / 10 if dd
+      ff = find(tree, '011002')
+      ff *= 1.9438 if ff and @knot
+      case ff
+      when 0 ... 99.5
+        ff = (ff + 0.5).to_i
+        fff = nil
+      when 99.5 ... 999
+        fff = ff.to_i
+        ff = 99
+      end
+      report.push [itoa1(_N), itoa2(dd), itoa2(ff)].join
+      report.push ['00', itoa3(fff)] if fff
 
-    # 2snTdTdTd
-    _TdTdTd = find(tree, '012103')
-    report.push temperature('2', _TdTdTd)
+      # 1sTTT
+      _TTT = find(tree, '012101')
+      report.push temperature('1', _TTT)
 
-    # 3P0P0P0P0
-    _P0P0P0P0 = find(tree, '010004')
-    _P0P0P0P0 = ((_P0P0P0P0 + 5) / 10) % 1000_0 if _P0P0P0P0 
-    report.push ['3', itoa4(_P0P0P0P0)].join if _P0P0P0P0 
+      # 2snTdTdTd
+      _TdTdTd = find(tree, '012103')
+      report.push temperature('2', _TdTdTd)
 
-    # 4PPPP
-    _PPPP = find(tree, '010051')
-    _PPPP = ((_PPPP + 5) / 10) % 1000_0 if _PPPP 
-    case _PPPP
-    when 1000...9000
-      a3 = find(tree, '007004')
-      a3 = case a3
-        when 1000_0 then '1'
-        when 925_0 then '2'
-        when 850_0 then '8'
-        when 700_0 then '7'
-        when 500_0 then '5'
+      # 3P0P0P0P0
+      _P0P0P0P0 = find(tree, '010004')
+      _P0P0P0P0 = ((_P0P0P0P0 + 5) / 10) % 1000_0 if _P0P0P0P0 
+      report.push ['3', itoa4(_P0P0P0P0)].join if _P0P0P0P0 
+
+      # 4PPPP
+      _PPPP = find(tree, '010051')
+      _PPPP = ((_PPPP + 5) / 10) % 1000_0 if _PPPP 
+      case _PPPP
+      when 1000...9000
+        a3 = find(tree, '007004')
+        a3 = case a3
+          when 1000_0 then '1'
+          when 925_0 then '2'
+          when 850_0 then '8'
+          when 700_0 then '7'
+          when 500_0 then '5'
+          else nil
+          end
+        hhh = find(tree, '010009')
+        hhh = hhh % 1000 if hhh
+        report.push ['4', a3, itoa3(hhh)].join if a3
+      else
+        report.push ['4', itoa4(_PPPP)].join if _PPPP 
+      end
+
+      # 5appp
+      a = find(tree, '010063')
+      ppp = find(tree, '010061')
+      ppp = (ppp.abs + 5) / 10 if ppp
+      report.push ['5', itoa1(a), itoa3(ppp)].join if a
+
+      # 6RRRtR
+      report.push(*precip1)
+
+      # 7wwW1W2
+      w1 = find(tree, '020004')
+      w2 = find(tree, '020005')
+      w1 = case w1
+        when 0..9 then w1
+        when 10..19 then w1 - 10
         else nil
         end
-      hhh = find(tree, '010009')
-      hhh = hhh % 1000 if hhh
-      report.push ['4', a3, itoa3(hhh)].join if a3
-    else
-      report.push ['4', itoa4(_PPPP)].join if _PPPP 
-    end
+      w2 = case w2
+        when 0..9 then w2
+        when 10..19 then w2 - 10
+        else nil
+        end
+      report.push ['7', itoa2(ww), itoa1(w1), itoa1(w2)].join if ww or w1
 
-    # 5appp
-    a = find(tree, '010063')
-    ppp = find(tree, '010061')
-    ppp = (ppp.abs + 5) / 10 if ppp
-    report.push ['5', itoa1(a), itoa3(ppp)].join if a
+      # 8NhCLCMCH
+      # only the first instance of 020011 represents Nh. the rest in replication are Ns.
+      _Nh = find(tree, '020011')
+      _Nh = ((_Nh + 6) / 12.5).to_i if _Nh
+      _CL = find(tree, '020012')
+      _CL = case _CL when 30..39 then _CL - 30 else nil end
+      _CM = find_nth(tree, '020012', 2)
+      _CM = case _CM when 20..29 then _CM - 20 else nil end
+      _CH = find_nth(tree, '020012', 3)
+      _CH = case _CH when 10..19 then _CH - 10 else nil end
+      report.push ['8', itoa1(_Nh), itoa1(_CL), itoa1(_CM), itoa1(_CH)].join if _Nh or _CL
 
-    # 6RRRtR
-    report.push(*precip1)
-
-    # 7wwW1W2
-    w1 = find(tree, '020004')
-    w2 = find(tree, '020005')
-    w1 = case w1
-      when 0..9 then w1
-      when 10..19 then w1 - 10
-      else nil
+      # 9GGgg
+      _GG = find(tree, '004004')
+      gg = find(tree, '004005')
+      if _GG and _GG != @ahl_hour
+        report.push ['9', itoa2(_GG), itoa2(gg)].join
       end
-    w2 = case w2
-      when 0..9 then w2
-      when 10..19 then w2 - 10
-      else nil
+
+      sec3 = ['333']
+
+      # 1snTxTxTx - 最高気温
+      # 期間は地区決定しだいであるがTACには表現不能、データがあれば落とさず出す
+      tx = find(tree, '012111')
+      sec3.push temperature('1', tx) if tx
+
+      # 2snTnTnTn - 最低気温
+      # 期間は地区決定しだいであるがTACには表現不能、データがあれば落とさず出す
+      tn = find(tree, '012112')
+      sec3.push temperature('2', tn) if tn
+
+      # 3snTgTgTg - 地表最低気温
+      # 通報形式が地区次第で、そちらの資料は未見
+      if tg = find(tree, '012113') then
+        if tg < 273.15 then
+          tg = ((273.2 - tg) * 10).floor
+          sec3.push ['3', '1', itoa3(tg)].join
+        else
+          tg = ((tg - 273.1) * 10).floor
+          sec3.push ['3', '0', itoa3(tg)].join
+        end
       end
-    report.push ['7', itoa2(ww), itoa1(w1), itoa1(w2)].join if ww or w1
 
-    # 8NhCLCMCH
-    # only the first instance of 020011 represents Nh. the rest in replication are Ns.
-    _Nh = find(tree, '020011')
-    _Nh = ((_Nh + 6) / 12.5).to_i if _Nh
-    _CL = find(tree, '020012')
-    _CL = case _CL when 30..39 then _CL - 30 else nil end
-    _CM = find_nth(tree, '020012', 2)
-    _CM = case _CM when 20..29 then _CM - 20 else nil end
-    _CH = find_nth(tree, '020012', 3)
-    _CH = case _CH when 10..19 then _CH - 10 else nil end
-    report.push ['8', itoa1(_Nh), itoa1(_CL), itoa1(_CM), itoa1(_CH)].join if _Nh or _CL
-
-    # 9GGgg
-    _GG = find(tree, '004004')
-    gg = find(tree, '004005')
-    if _GG and _GG != @ahl_hour
-      report.push ['9', itoa2(_GG), itoa2(gg)].join
-    end
-
-    sec3 = ['333']
-
-    # 1snTxTxTx - 最高気温
-    # 期間は地区決定しだいであるがTACには表現不能、データがあれば落とさず出す
-    tx = find(tree, '012111')
-    sec3.push temperature('1', tx) if tx
-
-    # 2snTnTnTn - 最低気温
-    # 期間は地区決定しだいであるがTACには表現不能、データがあれば落とさず出す
-    tn = find(tree, '012112')
-    sec3.push temperature('2', tn) if tn
-
-    # 3snTgTgTg - 地表最低気温
-    # 通報形式が地区次第で、そちらの資料は未見
-    if tg = find(tree, '012113') then
-      if tg < 273.15 then
-        tg = ((273.2 - tg) * 10).floor
-	sec3.push ['3', '1', itoa3(tg)].join
-      else
-        tg = ((tg - 273.1) * 10).floor
-	sec3.push ['3', '0', itoa3(tg)].join
+      # 4E'sss - 積雪深
+      _E_ = find(tree, '020062')
+      _E_ = case _E_
+        when 10..19 then _E_ - 10
+        else nil
+        end
+      sss = find(tree, '013013')
+      sss = (sss * 100 + 0.5).floor if sss
+      sss = 997 if sss and sss > 997
+      unless sss
+        # 数値的に積雪深が表現できないだろう場合
+        case _E_
+        # 998 連続していない積雪
+        when 11, 12, 15, 16 then sss = 998
+        # 999 測定不能な場合（E' により積雪があることがわかるので）
+        when 13, 14, 17..19 then sss = 999
+        end
       end
-    end
+      sss = nil if 0 == sss and _E_.nil? and stntype.zero?
+      sec3.push ['4', itoa1(_E_), itoa3(sss)].join if _E_ or sss
 
-    # 4E'sss - 積雪深
-    _E_ = find(tree, '020062')
-    _E_ = case _E_
-      when 10..19 then _E_ - 10
-      else nil
+      # 6RRRtR
+      sec3.push(*precip3)
+
+      # 7R24R24R24R24
+      if r24 then
+        r24 = (r24 * 10 + 0.5).floor
+        r24 = case r24
+          when -1 then 9999
+          when 0..9998 then r24
+          else 9998
+          end
+        sec3.push ['7', itoa4(r24)].join
       end
-    sss = find(tree, '013013')
-    sss = (sss * 100 + 0.5).floor if sss
-    sss = 997 if sss and sss > 997
-    unless sss
-      # 数値的に積雪深が表現できないだろう場合
-      case _E_
-      # 998 連続していない積雪
-      when 11, 12, 15, 16 then sss = 998
-      # 999 測定不能な場合（E' により積雪があることがわかるので）
-      when 13, 14, 17..19 then sss = 999
-      end
+
+      report.push(*sec3) if sec3.size > 1
+
     end
-    sss = nil if 0 == sss and _E_.nil? and stntype.zero?
-    sec3.push ['4', itoa1(_E_), itoa3(sss)].join if _E_ or sss
-
-    # 6RRRtR
-    sec3.push(*precip3)
-
-    # 7R24R24R24R24
-    if r24 then
-      r24 = (r24 * 10 + 0.5).floor
-      r24 = case r24
-	when -1 then 9999
-	when 0..9998 then r24
-	else 9998
-	end
-      sec3.push ['7', itoa4(r24)].join
-    end
-
-    report.push(*sec3) if sec3.size > 1
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
+  rescue NoMethodError => e
+    $stderr.puts e.message + @hdr[:meta].inspect + tree.inspect
   end
 
   def endbufr
@@ -1559,6 +1705,10 @@ class Bufr2synop
     @out.flush
     @hdr = @reftime = nil
     @ahl_hour = false
+  end
+
+  def close
+    @out.close
   end
 
 end
@@ -1579,4 +1729,5 @@ if $0 == __FILE__
       db.decode(bufrmsg, :direct, pseudo_io)
     }
   }
+  pseudo_io.close
 end

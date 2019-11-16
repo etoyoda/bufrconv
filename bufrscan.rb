@@ -96,7 +96,6 @@ class BUFRMsg
   end
 
   def peeknum ptr, width
-    raise ENOSYS, "compressed file" if @props[:compress]
     ifirst = ptr / 8
     raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
@@ -112,38 +111,57 @@ class BUFRMsg
     (imask & ival) >> ishift
   end
 
+  def readnum2 desc
+    width, scale, refv = desc[:width], desc[:scale], desc[:refv]
+    do_missing = !(/^(031|204)/ === desc[:fxy])
+    if @ptr + width + 6 > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width} + 6"
+    end
+    # reference value R0
+    iwidth, ishift, imask, ival = peeknum(@ptr, width)
+    @ptr += width
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if ival & imask == imask and do_missing then
+      raise "difference #{n} bits cannot follow missing value R0" if n != 0
+      return [nil] * nsubset
+    end
+    r0 = ((imask & ival) >> ishift) + refv
+    # data array
+    rval = [r0] * nsubset
+    if n > 0 then
+      nsubset.times{|i|
+        kwidth, kshift, kmask, kval = peeknum(@ptr, n)
+        @ptr += n
+        if kval & kmask == kmask and do_missing then
+          rval[i] = nil
+        else
+          rval[i] += ((kmask & kval) >> kshift)
+          rval[i] = rval[i].to_f * (10.0 ** -scale) unless scale.zero?
+        end
+      }
+    end
+    return rval
+  end
+
   def readnum desc
+    return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
     do_missing = !(/^(031|204)/ === desc[:fxy])
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
     iwidth, ishift, imask, ival = peeknum(@ptr, width)
-    if $DEBUG then
-      $stderr.puts({:readnum=>:start, :w=>width, :s=>scale, :r=>refv, :ptr=>@ptr,
-      :byte=>@ptr/8, :bit=>@ptr%8, :iwidth=>iwidth, :ishift=>ishift}.inspect)
-    end
     @ptr += width
     if ival & imask == imask and do_missing then
-      if $DEBUG
-        fmt = format('%%0%ub', iwidth * 8)
-        $stderr.puts({:readnum=>:miss, :ival=>format(fmt, ival),
-          :imask=>format(fmt, imask)}.inspect)
-      end
       return nil
     end
     rval = ((imask & ival) >> ishift) + refv
-    if $DEBUG then
-      fmt = format('%%0%ub', iwidth * 8)
-      $stderr.puts({:readnum=>:okay, :ival=>format(fmt, ival),
-        :imask=>format(fmt, imask), :rval=>format(fmt, rval)}.inspect)
-    end
     rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
     rval
   end
 
-  def readstr desc
-    width = desc[:width]
+  def readstr1 width
     len = width / 8
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
@@ -164,6 +182,24 @@ class BUFRMsg
     @ptr += width
     return nil if /^\xFF+$/n === rval
     rval.force_encoding(Encoding::ASCII_8BIT)
+  end
+
+  def readstr desc
+    return readstr1(desc[:width]) unless compressed?
+    s0 = readstr1(desc[:width])
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if n.zero? then
+      return [s0] * nsubset
+    end
+    # カナダのSYNOPでは圧縮された文字列の参照値が通報式に定めるヌルでなく欠損値になっているので救済
+    case s0
+    when nil, /^\x00+$/ then
+      rval = (0 ... nsubset).map{ readstr1(n * 8) }
+      return rval
+    else
+      raise EBADF, "readstr: R0=#{s0.inspect} not nul"
+    end
   end
 
   def decode_primary
@@ -230,12 +266,12 @@ class BUFRMsg
       elsif @props[:meta][:ahl]
         # 電文ヘッダ AHL が認識できるならばそれが訂正報であるかどうか
         if / CC.\b/ =~ @props[:meta][:ahl] then
-	  true
-	else
-	  false
-	end
+          true
+        else
+          false
+        end
       else
-	# USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
+        # USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
         nil
       end
 
@@ -269,6 +305,16 @@ class BUFRMsg
     @props[:meta] ? @props[:meta][:ahl] : nil
   end
 
+  def compressed?
+    decode_primary
+    @props[:compress]
+  end
+
+  def nsubset
+    decode_primary
+    @props[:nsubset]
+  end
+
   def inspect
     to_h.inspect
   end
@@ -276,6 +322,7 @@ class BUFRMsg
   def ymdhack opts
     decode_primary
     return unless opts[:ymd]
+    return if @props[:compress]
     rt1 = @props[:reftime]
     brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
     rt2 = rt1 - 86400

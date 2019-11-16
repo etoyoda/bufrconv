@@ -8,6 +8,7 @@ class DataOrganizer
 
   def initialize mode, out = $stdout
     @mode, @out = mode, out
+    @compress = nil
     # internals for :json
     @root = @tos = @tosstack = nil
     # internals for :plain
@@ -15,6 +16,7 @@ class DataOrganizer
   end
 
   def newbufr h
+    @compress = h[:compress] ? h[:nsubset] : false
     case @mode
     when :direct
       @out.newbufr h
@@ -45,8 +47,14 @@ class DataOrganizer
       @tos.push [desc[:fxy], val]
     when :plain
       sval = if val and :flags === desc[:type]
-        then format(format('0x%%0%uX', (desc[:width]+3)/4), val)
-        else val.inspect
+          fmt = format('0x%%0%uX', (desc[:width]+3)/4)
+          if Array === val then
+            '[' + val.map{|v| format(fmt, v)}.join(', ') + ']'
+          else
+            format(fmt, val)
+          end
+        else
+          val.inspect
         end
       @out.printf "%6s %15s #%03u %s\n", desc[:fxy], sval, desc[:pos], desc[:desc]
       @out.flush if $VERBOSE
@@ -93,13 +101,60 @@ class DataOrganizer
     end
   end
 
+  def split_r subsets, croot
+    croot.size.times {|j|
+      kv = croot[j]
+      if not Array === kv then
+        raise "something wrong #{kv.inspect}"
+      elsif Array === kv[0] or kv.empty? then
+        zip = []
+        @compress.times{|i|
+          repl = []
+          zip.push repl
+          subsets[i].push repl
+        }
+        kv.each{|branch|
+          bzip = []
+          @compress.times{|i|
+            bseq = []
+            bzip.push bseq
+            zip[i].push bseq
+          }
+          split_r(bzip, branch)
+        }
+      elsif /^1\d{5}/ === kv[0] then
+        subsets.each{|ss| ss.push kv}
+      elsif /^\d{6}/ === kv[0] then
+        @compress.times{|i| subsets[i].push [kv[0], kv[1][i]] }
+      else 
+        raise "something wrong #{j} #{kv.inspect}"
+      end
+    }
+  end
+
+  def split croot
+    return [croot] unless @compress
+    subsets = []
+    @compress.times{ subsets.push [] }
+    split_r(subsets, croot)
+    subsets
+  end
+
   def endsubset
     case @mode
     when :direct
-      @out.subset @root
+      if @compress then
+        split(@root).each{|subset| @out.subset subset }
+      else
+        @out.subset @root
+      end
       @root = @tos = @tosstack = nil
     when :json
-      @out.puts JSON.generate(@root)
+      if @compress then
+        split(@root).each{|subset| @out.puts JSON.generate(subset) }
+      else
+        @out.puts JSON.generate(@root)
+      end
       @root = @tos = @tosstack = nil
       @out.flush
     when :plain
@@ -282,6 +337,11 @@ BUFRの反復はネストできなければいけないので（用例がある�
           end
           num = @bufrmsg.readnum(d)
           prt.showval d, num
+          if @bufrmsg.compressed? then
+            a = num
+            num = num.first
+            raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
+          end
           if num.zero? then
             setloop(0, ndesc)
             prt.setloop
@@ -493,10 +553,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.pretty_generate(compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
-  # raises ENOSPC
-  def decode bufrmsg, outmode = :json, out = $stdout
+  # 圧縮を使わない場合のデコード。
+  def decode1 bufrmsg, outmode = :json, out = $stdout
     prt = DataOrganizer.new(outmode, out)
-    bufrmsg.decode_primary
     tabconfig bufrmsg
     begin
       prt.newbufr bufrmsg.to_h
@@ -517,14 +576,41 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     end
   end
 
-  # raises ENOSPC
-  def decode_plain bufrmsg, out = $stdout
-    decode bufrmsg, :plain, out
+  # 圧縮時のデコード。
+  def decode2 bufrmsg, outmode = :json, out = $stdout
+    nsubset = bufrmsg[:nsubset]
+    prt = DataOrganizer.new(outmode, out)
+    tabconfig bufrmsg
+    begin
+      prt.newbufr bufrmsg.to_h
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      begin
+        prt.newsubset :all, bufrmsg.ptrcheck
+        BufrDecode.new(tape, bufrmsg).run(prt)
+      ensure
+        prt.endsubset
+      end
+    rescue Errno::ENOSPC, Errno::EBADF => e
+      $stderr.puts e.message + bufrmsg[:meta].inspect
+    ensure
+      prt.endbufr
+    end
   end
 
-  # raises ENOSPC
+  def decode bufrmsg, outmode = :json, out = $stdout
+    if bufrmsg.compressed? then
+      decode2(bufrmsg, outmode, out)
+    else
+      decode1(bufrmsg, outmode, out)
+    end
+  end
+
+  def decode_plain bufrmsg, out = $stdout
+    decode(bufrmsg, :plain, out)
+  end
+
   def decode_json bufrmsg, out = $stdout
-    decode bufrmsg, :json, out
+    decode(bufrmsg, :json, out)
   end
 
 end
