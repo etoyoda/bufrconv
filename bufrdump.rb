@@ -590,7 +590,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       ensure
         prt.endsubset
       end
-    rescue Errno::ENOSPC => e
+    rescue Errno::ENOSPC, Errno::EBADF => e
       $stderr.puts e.message + bufrmsg[:meta].inspect
     ensure
       prt.endbufr
