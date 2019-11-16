@@ -1686,8 +1686,6 @@ class Bufr2synop
     @out.print_fold(report)
   rescue NoMethodError => e
     $stderr.puts e.message + @hdr[:meta].inspect + tree.inspect
-    #DEBUG
-    exit 1
   end
 
   def endbufr
