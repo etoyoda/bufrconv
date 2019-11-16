@@ -163,7 +163,7 @@ class Bufr2synop
     report.push [itoa2(_II), itoa3(iii)].join
 
     # これが欠損しているときは全欠損
-    if find(tree, '002001').nil? and find(tree, '012101').nil? then
+    if find(tree, '005001').nil? and find(tree, '012101').nil? then
       report.push "NIL"
     else
 
@@ -188,6 +188,8 @@ class Bufr2synop
 
       ## check weather reports
       stntype = find(tree, '002001')
+      # rescue Indonesian reports
+      stntype = 0 if stntype.nil?
       weather = find(tree, '020003')
       case weather
       when 0..99 then 
@@ -387,10 +389,14 @@ class Bufr2synop
 
       report.push(*sec3) if sec3.size > 1
 
-      end
+    end
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
+  rescue NoMethodError => e
+    $stderr.puts e.message + @hdr[:meta].inspect + tree.inspect
+    #DEBUG
+    exit 1
   end
 
   def endbufr
