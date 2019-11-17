@@ -403,8 +403,7 @@ class Bufr2synop
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
   rescue NoMethodError => e
-    $stderr.puts [e.message, e.backtrace.first,
-      @hdr[:meta].inspect, tree.inspect].join(' ')
+    $stderr.puts [e.message, e.backtrace.first, @hdr[:meta].inspect].join(' ')
   end
 
   def endbufr
