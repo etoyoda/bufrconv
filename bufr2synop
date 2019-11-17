@@ -1492,6 +1492,7 @@ class Bufr2synop
 
     ## check weather reports
     stntype = find(tree, '002001')
+    stntype = 0 if stntype.nil?
     weather = find(tree, '020003')
     case weather
     when 0..99 then 
