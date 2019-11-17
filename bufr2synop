@@ -1456,8 +1456,9 @@ class Bufr2synop
     iii = find(tree, '001002')
     report.push [itoa2(_II), itoa3(iii)].join
 
-    # これが欠損しているときは全欠損
-    if find(tree, '005001').nil? and find(tree, '012101').nil? then
+    # 現地気圧と気温の両方が欠損しているときは全欠損。
+    # see https://github.com/etoyoda/bufrconv/issues/10
+    if find(tree, '010004').nil? and find(tree, '012101').nil? then
       report.push "NIL"
     else
 
