@@ -1085,6 +1085,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     else
       decode1(bufrmsg, outmode, out)
     end
+  rescue Errno::EPIPE
   end
 
   def decode_plain bufrmsg, out = $stdout
