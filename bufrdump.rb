@@ -336,13 +336,13 @@ BUFRの反復はネストできなければいけないので（用例がある�
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
-	  num = 0 if num.nil?
           prt.showval d, num
           if @bufrmsg.compressed? then
             a = num
             num = num.first
             raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
           end
+	  raise EDOM, "repl num missing" if num.nil?
           if num.zero? then
             setloop(0, ndesc)
             prt.setloop
