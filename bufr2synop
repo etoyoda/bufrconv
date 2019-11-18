@@ -1474,10 +1474,10 @@ class Bufr2synop
       precip1 = []
       if precip3.any?{|desc| /2$/ === desc} then
         precip1 = precip3.grep(/2$/)
-        precip3 = precip3.grep_v(/2$/)
+        precip3 = precip3.reject{|desc| /2$/ === desc}
       elsif precip3.any?{|desc| /1$/ === desc} then
         precip1 = precip3.grep(/1$/)
-        precip3 = precip3.grep_v(/1$/)
+        precip3 = precip3.reject{|desc| /1$/ === desc}
       end
 
       iR = if precip1.empty? and precip3.empty? then '4'
