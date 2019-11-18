@@ -330,8 +330,11 @@ class BUFRMsg
     rt2 = rt1 - 86400
     brt2 = rt2.year << 10 | rt2.month << 6 | rt2.day
     brtx = getnum(@ptr + opts[:ymd], 22)
-    case brtx
-    when brt1, brt2, 0x3FFFFF
+    if brtx == brt1 or brtx == brt2 or brtx == 0x3FFFFF
+      return nil
+    end
+    if (brtx >> 10) == rt1.year and (0b1111 & (brtx >> 6)) == rt1.mon and
+       (1 ... rt1.day) === (0b111111 & brtx) then
       return nil
     end
     $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u\n",
