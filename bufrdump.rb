@@ -336,6 +336,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
+	  num = 0 if num.nil?
           prt.showval d, num
           if @bufrmsg.compressed? then
             a = num

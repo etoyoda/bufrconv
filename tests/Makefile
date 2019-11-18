@@ -32,7 +32,7 @@ ismc01rjtd.ok:
 	ruby ../bufr2synop.rb $(ISMC01RJTD) | diff -u ismc01rjtd.t.txt -
 
 ismb01mxba.ok:
-	ruby ../bufrdump.rb -d $(ISMB01RJTD) | diff -u ismb01rjtd.d.txt -
+	ruby ../bufrdump.rb -d $(ISMB01MXBA) | diff -u ismb01mxba.d.txt -
 
 overwrite:
 	-ruby ../bufrdump.rb -x $(ISMN01BABJ) > ismn01babj.x.txt

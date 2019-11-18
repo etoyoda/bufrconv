@@ -113,7 +113,7 @@ class BUFRMsg
 
   def readnum2 desc
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
-    do_missing = !(/^(031|204)/ === desc[:fxy])
+    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
     if @ptr + width + 6 > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width} + 6"
     end
@@ -147,7 +147,7 @@ class BUFRMsg
   def readnum desc
     return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
-    do_missing = !(/^(031|204)/ === desc[:fxy])
+    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
@@ -332,9 +332,9 @@ class BUFRMsg
     when brt1, brt2, 0x3FFFFF
       return nil
     end
-    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s\n",
+    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u\n",
       brtx >> 10, 0b1111 & (brtx >> 6), 0b111111 & brtx,
-      rt1.strftime('%Y-%m-%d'))
+      rt1.strftime('%Y-%m-%d'), @ptr)
     (-80 .. 10).each{|ofs|
       next if ofs.zero?
       xptr = @ptr + ofs
