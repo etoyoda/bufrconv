@@ -8,6 +8,7 @@ class DataOrganizer
 
   def initialize mode, out = $stdout
     @mode, @out = mode, out
+    @compress = nil
     # internals for :json
     @root = @tos = @tosstack = nil
     # internals for :plain
@@ -15,6 +16,7 @@ class DataOrganizer
   end
 
   def newbufr h
+    @compress = h[:compress] ? h[:nsubset] : false
     case @mode
     when :direct
       @out.newbufr h
@@ -45,12 +47,12 @@ class DataOrganizer
       @tos.push [desc[:fxy], val]
     when :plain
       sval = if val and :flags === desc[:type]
-	  fmt = format('0x%%0%uX', (desc[:width]+3)/4)
-	  if Array === val then
-	    '[' + val.map{|v| format(fmt, v)}.join(', ') + ']'
-	  else
-	    format(fmt, val)
-	  end
+          fmt = format('0x%%0%uX', (desc[:width]+3)/4)
+          if Array === val then
+            '[' + val.map{|v| format(fmt, v)}.join(', ') + ']'
+          else
+            format(fmt, val)
+          end
         else
           val.inspect
         end
@@ -99,13 +101,60 @@ class DataOrganizer
     end
   end
 
+  def split_r subsets, croot
+    croot.size.times {|j|
+      kv = croot[j]
+      if not Array === kv then
+        raise "something wrong #{kv.inspect}"
+      elsif Array === kv[0] or kv.empty? then
+        zip = []
+        @compress.times{|i|
+          repl = []
+          zip.push repl
+          subsets[i].push repl
+        }
+        kv.each{|branch|
+          bzip = []
+          @compress.times{|i|
+            bseq = []
+            bzip.push bseq
+            zip[i].push bseq
+          }
+          split_r(bzip, branch)
+        }
+      elsif /^1\d{5}/ === kv[0] then
+        subsets.each{|ss| ss.push kv}
+      elsif /^\d{6}/ === kv[0] then
+        @compress.times{|i| subsets[i].push [kv[0], kv[1][i]] }
+      else 
+        raise "something wrong #{j} #{kv.inspect}"
+      end
+    }
+  end
+
+  def split croot
+    return [croot] unless @compress
+    subsets = []
+    @compress.times{ subsets.push [] }
+    split_r(subsets, croot)
+    subsets
+  end
+
   def endsubset
     case @mode
     when :direct
-      @out.subset @root
+      if @compress then
+        split(@root).each{|subset| @out.subset subset }
+      else
+        @out.subset @root
+      end
       @root = @tos = @tosstack = nil
     when :json
-      @out.puts JSON.generate(@root)
+      if @compress then
+        split(@root).each{|subset| @out.puts JSON.generate(subset) }
+      else
+        @out.puts JSON.generate(@root)
+      end
       @root = @tos = @tosstack = nil
       @out.flush
     when :plain
@@ -541,7 +590,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       ensure
         prt.endsubset
       end
-    rescue Errno::ENOSPC => e
+    rescue Errno::ENOSPC, Errno::EBADF => e
       $stderr.puts e.message + bufrmsg[:meta].inspect
     ensure
       prt.endbufr

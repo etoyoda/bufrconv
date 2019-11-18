@@ -192,9 +192,14 @@ class BUFRMsg
     if n.zero? then
       return [s0] * nsubset
     end
-    raise EDOM, 'readstr: ref str not nul' unless /^\x00+$/n === s0
-    rval = (0 ... nsubset).map{ readstr1(n * 8) }
-    return rval
+    # カナダのSYNOPでは圧縮された文字列の参照値が通報式に定めるヌルでなく欠損値になっているので救済
+    case s0
+    when nil, /^\x00+$/ then
+      rval = (0 ... nsubset).map{ readstr1(n * 8) }
+      return rval
+    else
+      raise EBADF, "readstr: R0=#{s0.inspect} not nul"
+    end
   end
 
   def decode_primary
@@ -261,12 +266,12 @@ class BUFRMsg
       elsif @props[:meta][:ahl]
         # 電文ヘッダ AHL が認識できるならばそれが訂正報であるかどうか
         if / CC.\b/ =~ @props[:meta][:ahl] then
-	  true
-	else
-	  false
-	end
+          true
+        else
+          false
+        end
       else
-	# USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
+        # USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
         nil
       end
 
