@@ -220,7 +220,9 @@ class Bufr2temp
     # IIiii
     _II = find(tree, '001001')
     iii = find(tree, '001002')
-    report.push [itoa2(_II), itoa3(iii)].join
+    stnid = [itoa2(_II), itoa3(iii)].join
+    report.push stnid
+    @out.station stnid
 
     # Section 2
     stdlevs.each{|pres, pp|

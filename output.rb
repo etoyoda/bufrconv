@@ -39,6 +39,7 @@ class Output
     init_table_c11(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     @buf = []
+    @stnlist = []
     @ahl = @cflag = nil
     @n = 0
   end
@@ -75,7 +76,7 @@ class Output
   end
 
   def make_ahl md5
-    # 既存に同一内容電文を出していたら nil を返す
+    # ヘッダの如何を問わず、既存に同一内容電文を出していたら nil を返す
     for ahl in @hist.keys
       if ahl == md5 then
         t, m = @hist[ahl]
@@ -88,6 +89,9 @@ class Output
         return nil
       end
     end
+    # 南極ヘッダ修正
+    @ahl.sub!(/^(..)../, "\\1AA") if @stnlist.any?{|idx| /^89/ === idx}
+    # BBB 付与
     if @hist['RRYMODE'] then
       # 履歴ファイルの読み込みに失敗した場合
       @hist[@ahl] = [@now, 'RRYMODE']
@@ -148,8 +152,13 @@ class Output
       @buf = ["\n", @ahl, "\n"]
     else raise Errno::ENOSYS, "fmt = #@fmt"
     end
+    @stnlist = []
     @n += 1
     @ahl
+  end
+
+  def station idx
+    @stnlist.push idx
   end
 
   def puts line
@@ -208,7 +217,7 @@ class Output
     @fp.write msg
     @fp.flush
   ensure
-    @buf = @cflag = nil
+    @stnlist = @buf = @cflag = nil
   end
 
   def close

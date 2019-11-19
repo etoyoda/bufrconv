@@ -158,7 +158,9 @@ class Bufr2synop
     # IIiii
     _II = find(tree, '001001')
     iii = find(tree, '001002')
-    report.push [itoa2(_II), itoa3(iii)].join
+    stnid = [itoa2(_II), itoa3(iii)].join
+    report.push stnid
+    @out.station(stnid)
 
     # 現地気圧と気温の両方が欠損しているときは全欠損。
     # see https://github.com/etoyoda/bufrconv/issues/10
