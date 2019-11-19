@@ -181,7 +181,10 @@ class BUFRMsg
     end
     @ptr += width
     return nil if /^\xFF+$/n === rval
-    rval.force_encoding(Encoding::ASCII_8BIT)
+    # 通報式のいう CCITT IA5 とは ASCII だが、実際にはメキシコが
+    # U+00D1 LATIN CAPITAL LETTER N WITH TILDE を入れてくるので救済。
+    # 救済しすぎるのも考え物なので Windows-1252 にはしない
+    rval.force_encoding(Encoding::ISO_8859_1)
   end
 
   def readstr desc
