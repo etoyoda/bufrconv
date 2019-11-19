@@ -5,7 +5,7 @@ require 'digest/md5'
 
 class Output
 
-  def initialize cfgstr = ''
+  def initialize cfgstr = '', dbpath = '.'
     @now = Time.now.utc
     # 動作オプションの設定
     @ofile = @fmt = @histin = @histout = nil
@@ -35,6 +35,8 @@ class Output
     # 内部変数
     @hist = {}
     init_hist
+    @table_c11 = {}
+    init_table_c11(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     @buf = []
     @ahl = @cflag = nil
@@ -106,9 +108,29 @@ class Output
     @ahl
   end
 
-  def startmsg ttaaii, yygggg, cflag
+  def init_table_c11 dbpath
+    require 'time'
+    File.open(File.join(dbpath, 'table_c11'), 'r') {|fp|
+      fp.each_line{|line|
+        next if /^\s*#/ === line
+        line.chomp!
+	tfilter, ctr, aa, desc = line.split(/\t/, 4)
+	stime, etime = tfilter.split(/\//, 2)
+	next if Time.parse(stime) > @now
+	next if Time.parse(etime) < @now
+	@table_c11[ctr.to_i] = aa
+      }
+    }
+  end
+
+  def make_aa hdr
+    @table_c11[hdr[:ctr]] or 'XX'
+  end
+
+  def startmsg tt, yygggg, hdr
+    ttaaii = [tt, make_aa(hdr), '99'].join
     @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
-    @cflag = cflag
+    @cflag = hdr[:cflag]
     #
     # 新形式を追加する場合、 @buf は 3 要素、 @ahl は 2 つめになるようにする
     # （flush で個数・位置決め打ちで処理しているから）

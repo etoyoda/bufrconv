@@ -906,8 +906,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   end
 
   def initialize dir = '.'
-    table_b = File.join(dir, 'table_b_bufr')
-    table_d = File.join(dir, 'table_d_bufr')
+    @path = dir
+    table_b = File.join(@path, 'table_b_bufr')
+    table_d = File.join(@path, 'table_d_bufr')
     @table_b = {}
     @table_b_v13 = {}
     @table_d = {}
@@ -934,6 +935,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     }
     @v13p = false
   end
+
+  attr_reader :path
 
   def tabconfig bufrmsg
     raise ENOSYS, "master version missing" unless bufrmsg[:masver]
@@ -1119,7 +1122,7 @@ require 'digest/md5'
 
 class Output
 
-  def initialize cfgstr = ''
+  def initialize cfgstr = '', dbpath = '.'
     @now = Time.now.utc
     # 動作オプションの設定
     @ofile = @fmt = @histin = @histout = nil
@@ -1149,6 +1152,8 @@ class Output
     # 内部変数
     @hist = {}
     init_hist
+    @table_c11 = {}
+    init_table_c11(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     @buf = []
     @ahl = @cflag = nil
@@ -1220,9 +1225,29 @@ class Output
     @ahl
   end
 
-  def startmsg ttaaii, yygggg, cflag
+  def init_table_c11 dbpath
+    require 'time'
+    File.open(File.join(dbpath, 'table_c11'), 'r') {|fp|
+      fp.each_line{|line|
+        next if /^\s*#/ === line
+        line.chomp!
+	tfilter, ctr, aa, desc = line.split(/\t/, 4)
+	stime, etime = tfilter.split(/\//, 2)
+	next if Time.parse(stime) > @now
+	next if Time.parse(etime) < @now
+	@table_c11[ctr.to_i] = aa
+      }
+    }
+  end
+
+  def make_aa hdr
+    @table_c11[hdr[:ctr]] or 'XX'
+  end
+
+  def startmsg tt, yygggg, hdr
+    ttaaii = [tt, make_aa(hdr), '99'].join
     @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
-    @cflag = cflag
+    @cflag = hdr[:cflag]
     #
     # 新形式を追加する場合、 @buf は 3 要素、 @ahl は 2 つめになるようにする
     # （flush で個数・位置決め打ちで処理しているから）
@@ -1324,46 +1349,24 @@ class Bufr2temp
     @knot = nil
   end
 
-  AA = {
-    1=>'AU', # WMC Melbourne
-    8=>'US',
-    21=>'AL',
-    24=>'ZA',
-    28=>'IN',
-    34=>'JP',
-    36=>'TH',
-    37=>'MO',
-    38=>'CI',
-    40=>'KR',
-    67=>'AU', # RSMC Melbourne
-    94=>'DN',
-    110=>'HK',
-    113=>'BW',
-    116=>'KP',
-    195=>'ID',
-    201=>'PH',
-    213=>'IL',
-    235=>'JD'
-  }
-
   def newbufr hdr
     @hdr = hdr
     rt = @hdr[:reftime]
     @reftime = Time.gm(rt.year, rt.mon, rt.day, rt.hour)
     gg = (rt.hour + 2) / 3 * 3
     @reftime += (3600 * (gg - rt.hour))
-    @knot = true if 'JP' === AA[@hdr[:ctr]]
+    case @hdr[:ctr]
+    when 34 then
+      @knot = true
+    end
     @ahl = false
   end
 
   def print_ahl
     return if @ahl
     tt = 'US' # Part A
-    aa = AA[@hdr[:ctr]] || 'XX'
-    $stderr.puts "! unknown centre #{@hdr[:ctr]} #{@hdr[:meta][:ahl]}" if aa == 'XX'
-    ttaaii = [tt, aa, '99'].join
     yygggg = @reftime.strftime('%d%H00')
-    @ahl = @out.startmsg(ttaaii, yygggg, @hdr[:cflag])
+    @ahl = @out.startmsg(tt, yygggg, @hdr)
   end
 
   # returns the first element
@@ -1610,7 +1613,7 @@ if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
   # コマンドラインオプションは最初の引数だけ
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
-  pseudo_io = Bufr2temp.new(Output.new(outopts))
+  pseudo_io = Bufr2temp.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
