@@ -1676,9 +1676,17 @@ class Bufr2synop
         end
       sss = find(tree, '013013')
       sss = (sss * 100 + 0.5).floor if sss
-      sss = 997 if sss and sss > 997
+      sss = 996 if sss and sss > 996
+      if sss == -1 then
+        # 0.5 cm 以下の積雪がある
+        sss = 997
+      elsif sss == -2 then
+        # 不連続な積雪がある
+        sss = 998
+	# 仮に _E_ の値が矛盾したとしても、さしあたり、あえて修正しない
+      end
       unless sss
-        # 数値的に積雪深が表現できないだろう場合
+        # 積雪深が欠損で来そうな場合でも地面状態で値を設定することあり
         case _E_
         # 998 連続していない積雪
         when 11, 12, 15, 16 then sss = 998
