@@ -12,9 +12,6 @@ class Bufr2synop
     @out = out
   end
 
-  AA = { 28=>'IN', 34=>'JP', 36=>'TH', 37=>'MO', 38=>'CI', 40=>'KR', 67=>'AU',
-    110=>'HK', 116=>'KP' }
-
   def newbufr hdr
     @hdr = hdr
     rt = @hdr[:reftime]
@@ -32,11 +29,12 @@ class Bufr2synop
       when 6, 18 then 'SI'
       else 'SN'
       end
-    aa = AA[@hdr[:ctr]] || 'XX'
-    @knot = true if 'JP' == aa
-    ttaaii = [tt, aa, '99'].join
+    case @hdr[:ctr]
+    when 34 then
+      @knot = true
+    end
     yygg = @reftime.strftime('%d%H')
-    @out.startmsg(ttaaii, yygg + '00', @hdr[:cflag])
+    @out.startmsg(tt, yygg + '00', @hdr)
     # section 0
     @out.print_fold(["AAXX", "#{yygg}#{@knot ? '4' : '1'}"])
     @ahl_hour = @reftime.hour
@@ -160,7 +158,9 @@ class Bufr2synop
     # IIiii
     _II = find(tree, '001001')
     iii = find(tree, '001002')
-    report.push [itoa2(_II), itoa3(iii)].join
+    stnid = [itoa2(_II), itoa3(iii)].join
+    report.push stnid
+    @out.station(stnid)
 
     # 現地気圧と気温の両方が欠損しているときは全欠損。
     # see https://github.com/etoyoda/bufrconv/issues/10
@@ -433,7 +433,7 @@ if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
   # コマンドラインオプションは最初の引数だけ
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
-  pseudo_io = Bufr2synop.new(Output.new(outopts))
+  pseudo_io = Bufr2synop.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary

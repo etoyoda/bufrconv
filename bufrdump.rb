@@ -412,8 +412,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   end
 
   def initialize dir = '.'
-    table_b = File.join(dir, 'table_b_bufr')
-    table_d = File.join(dir, 'table_d_bufr')
+    @path = dir
+    table_b = File.join(@path, 'table_b_bufr')
+    table_d = File.join(@path, 'table_d_bufr')
     @table_b = {}
     @table_b_v13 = {}
     @table_d = {}
@@ -440,6 +441,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     }
     @v13p = false
   end
+
+  attr_reader :path
 
   def tabconfig bufrmsg
     raise ENOSYS, "master version missing" unless bufrmsg[:masver]

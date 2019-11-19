@@ -16,46 +16,24 @@ class Bufr2temp
     @knot = nil
   end
 
-  AA = {
-    1=>'AU', # WMC Melbourne
-    8=>'US',
-    21=>'AL',
-    24=>'ZA',
-    28=>'IN',
-    34=>'JP',
-    36=>'TH',
-    37=>'MO',
-    38=>'CI',
-    40=>'KR',
-    67=>'AU', # RSMC Melbourne
-    94=>'DN',
-    110=>'HK',
-    113=>'BW',
-    116=>'KP',
-    195=>'ID',
-    201=>'PH',
-    213=>'IL',
-    235=>'JD'
-  }
-
   def newbufr hdr
     @hdr = hdr
     rt = @hdr[:reftime]
     @reftime = Time.gm(rt.year, rt.mon, rt.day, rt.hour)
     gg = (rt.hour + 2) / 3 * 3
     @reftime += (3600 * (gg - rt.hour))
-    @knot = true if 'JP' === AA[@hdr[:ctr]]
+    case @hdr[:ctr]
+    when 34 then
+      @knot = true
+    end
     @ahl = false
   end
 
   def print_ahl
     return if @ahl
     tt = 'US' # Part A
-    aa = AA[@hdr[:ctr]] || 'XX'
-    $stderr.puts "! unknown centre #{@hdr[:ctr]} #{@hdr[:meta][:ahl]}" if aa == 'XX'
-    ttaaii = [tt, aa, '99'].join
     yygggg = @reftime.strftime('%d%H00')
-    @ahl = @out.startmsg(ttaaii, yygggg, @hdr[:cflag])
+    @ahl = @out.startmsg(tt, yygggg, @hdr)
   end
 
   # returns the first element
@@ -242,7 +220,9 @@ class Bufr2temp
     # IIiii
     _II = find(tree, '001001')
     iii = find(tree, '001002')
-    report.push [itoa2(_II), itoa3(iii)].join
+    stnid = [itoa2(_II), itoa3(iii)].join
+    report.push stnid
+    @out.station stnid
 
     # Section 2
     stdlevs.each{|pres, pp|
@@ -302,7 +282,7 @@ if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
   # コマンドラインオプションは最初の引数だけ
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
-  pseudo_io = Bufr2temp.new(Output.new(outopts))
+  pseudo_io = Bufr2temp.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary

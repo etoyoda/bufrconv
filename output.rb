@@ -5,7 +5,7 @@ require 'digest/md5'
 
 class Output
 
-  def initialize cfgstr = ''
+  def initialize cfgstr = '', dbpath = '.'
     @now = Time.now.utc
     # 動作オプションの設定
     @ofile = @fmt = @histin = @histout = nil
@@ -35,8 +35,11 @@ class Output
     # 内部変数
     @hist = {}
     init_hist
+    @table_c11 = {}
+    init_table_c11(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     @buf = []
+    @stnlist = []
     @ahl = @cflag = nil
     @n = 0
   end
@@ -73,7 +76,7 @@ class Output
   end
 
   def make_ahl md5
-    # 既存に同一内容電文を出していたら nil を返す
+    # ヘッダの如何を問わず、既存に同一内容電文を出していたら nil を返す
     for ahl in @hist.keys
       if ahl == md5 then
         t, m = @hist[ahl]
@@ -86,6 +89,9 @@ class Output
         return nil
       end
     end
+    # 南極ヘッダ修正
+    @ahl.sub!(/^(..)../, "\\1AA") if @stnlist.any?{|idx| /^89/ === idx}
+    # BBB 付与
     if @hist['RRYMODE'] then
       # 履歴ファイルの読み込みに失敗した場合
       @hist[@ahl] = [@now, 'RRYMODE']
@@ -106,9 +112,29 @@ class Output
     @ahl
   end
 
-  def startmsg ttaaii, yygggg, cflag
+  def init_table_c11 dbpath
+    require 'time'
+    File.open(File.join(dbpath, 'table_c11'), 'r') {|fp|
+      fp.each_line{|line|
+        next if /^\s*#/ === line
+        line.chomp!
+	tfilter, ctr, aa, desc = line.split(/\t/, 4)
+	stime, etime = tfilter.split(/\//, 2)
+	next if Time.parse(stime) > @now
+	next if Time.parse(etime) < @now
+	@table_c11[ctr.to_i] = aa
+      }
+    }
+  end
+
+  def make_aa hdr
+    @table_c11[hdr[:ctr]] or 'XX'
+  end
+
+  def startmsg tt, yygggg, hdr
+    ttaaii = [tt, make_aa(hdr), '99'].join
     @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
-    @cflag = cflag
+    @cflag = hdr[:cflag]
     #
     # 新形式を追加する場合、 @buf は 3 要素、 @ahl は 2 つめになるようにする
     # （flush で個数・位置決め打ちで処理しているから）
@@ -126,8 +152,13 @@ class Output
       @buf = ["\n", @ahl, "\n"]
     else raise Errno::ENOSYS, "fmt = #@fmt"
     end
+    @stnlist = []
     @n += 1
     @ahl
+  end
+
+  def station idx
+    @stnlist.push idx
   end
 
   def puts line
@@ -186,7 +217,7 @@ class Output
     @fp.write msg
     @fp.flush
   ensure
-    @buf = @cflag = nil
+    @stnlist = @buf = @cflag = nil
   end
 
   def close
