@@ -1222,6 +1222,11 @@ class Output
           @ahl = @ahl.succ
         end
       end
+    elsif @cflag then
+      @ahl += ' CCA'
+      while @hist.include? @ahl and /[A-W]$/ =~ @ahl
+        @ahl = @ahl.succ
+      end
     end
     $stderr.puts "ok #{@ahl} text=#{md5}"
     @hist[@ahl] = [@now, md5]
