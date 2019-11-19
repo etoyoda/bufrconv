@@ -316,7 +316,13 @@ class BUFRMsg
   end
 
   def inspect
-    to_h.inspect
+    require 'json'
+    JSON.generate(to_h)
+  end
+
+  def show_ctr
+    decode_primary
+    p @props[:ctr]
   end
 
   def ymdhack opts
@@ -488,6 +494,8 @@ if $0 == __FILE__
     case fnam
     when '-d' then
       action = :descs
+    when /^-f(ctr)$/ then
+      action = fnam.sub(/^-f/, 'show_').to_sym
     else
       BUFRScan.filescan(fnam){|msg|
         puts msg.send(action)
