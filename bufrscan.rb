@@ -147,7 +147,7 @@ class BUFRMsg
   def readnum desc
     return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
-    do_missing = !(/^(031|204)/ === desc[:fxy])
+    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end

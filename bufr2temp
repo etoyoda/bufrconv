@@ -149,7 +149,7 @@ class BUFRMsg
   def readnum desc
     return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
-    do_missing = !(/^(031|204)/ === desc[:fxy])
+    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
@@ -674,6 +674,9 @@ class BufrDecode
   class ENOSYS < BUFRMsg::ENOSYS
   end
 
+  class EDOM < Errno::EDOM
+  end
+
   def initialize tape, bufrmsg
     @tape, @bufrmsg = tape, bufrmsg
     @pos = nil
@@ -836,7 +839,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
             num = num.first
             raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
           end
-	  raise EDOM, "repl num missing" if num.nil?
+          raise EDOM, "repl num missing" if num.nil?
           if num.zero? then
             setloop(0, ndesc)
             prt.setloop
@@ -1063,6 +1066,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         begin
           prt.newsubset isubset, bufrmsg.ptrcheck
           BufrDecode.new(tape, bufrmsg).run(prt)
+        rescue Errno::EDOM => e
+          $stderr.puts e.message + bufrmsg[:meta].inspect
         ensure
           prt.endsubset
         end
