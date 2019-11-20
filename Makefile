@@ -12,7 +12,7 @@ overwrite:
 zip: bufrconv.zip
 
 FILES= LICENSE bufr2synop bufr2temp bufrscan.rb bufrdump.rb \
- table_b_bufr table_b_bufr.v13 table_d_bufr
+ table_b_bufr table_b_bufr.v13 table_d_bufr table_c11
 
 bufr2synop: amalgamate.rb bufr2synop.rb bufrscan.rb bufrdump.rb output.rb
 	ruby amalgamate.rb bufr2synop.rb bufrscan.rb bufrdump.rb output.rb > bufr2synop
