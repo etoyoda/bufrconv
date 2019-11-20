@@ -49,7 +49,7 @@ class DataOrganizer
       sval = if val and :flags === desc[:type]
           fmt = format('0x%%0%uX', (desc[:width]+3)/4)
           if Array === val then
-            '[' + val.map{|v| format(fmt, v)}.join(', ') + ']'
+            '[' + val.map{|v| v ? format(fmt, v) : 'nil'}.join(', ') + ']'
           else
             format(fmt, val)
           end
