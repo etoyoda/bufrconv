@@ -187,62 +187,62 @@ class Bufr2synop
         else '0'
         end
 
-    # 内的整合性による補正
-    # 第１節および第３節 6RRRtR 群に反映すべき情報がなく、
-    # 12時間または6時間の降水有無を知ることができない場合でも、
-    # 24時間降水量が非欠損で 0.0 mm または trace であれば、
-    # 指示符 iR を降水なしの '3' とする。
-    r24 = find(tree, '013023')
-    if iR == '4' and r24 and r24 <= 0.0 then
-      iR = '3'
-    end
+      # 内的整合性による補正
+      # 第１節および第３節 6RRRtR 群に反映すべき情報がなく、
+      # 12時間または6時間の降水有無を知ることができない場合でも、
+      # 24時間降水量が非欠損で 0.0 mm または trace であれば、
+      # 指示符 iR を降水なしの '3' とする。
+      r24 = find(tree, '013023')
+      if iR == '4' and r24 and r24 <= 0.0 then
+        iR = '3'
+      end
 
-    ## check weather reports
-    stntype = find(tree, '002001')
-    stntype = 0 if stntype.nil?
-    weather = find(tree, '020003')
-    case weather
-    when 0..99 then 
-      # present weather in Code table 4677 (ww)
-      ix, ww = '1', weather
-      ix = '4' if stntype.zero?
-    when 508 then
-      # "no significant weather as present weather"
-      ix, ww = '2', nil
-      # this could be ---
-      # ix = '5' if stntype.zero?
-      ix, ww = '7', 0 if stntype.zero?
-    when 100..199 then
-      # present weather in Code table 4680 (wawa)
-      ix, ww = '7', weather - 100
-    else
-      # present weather is nil or other codes not convertible to ww
-      ix, ww = '3', nil
-      ix = '6' if stntype.zero?
-    end
-    # 雲底高度： 020013 の最大値は 20060 m
-    h = case find(tree, '020013')
-      when 0...50 then 0
-      when 50...100 then 1
-      when 100...200 then 2
-      when 200...300 then 3
-      when 300...600 then 4
-      when 600...1000 then 5
-      when 1000...1500 then 6
-      when 1500...2000 then 7
-      when 2000...2500 then 8
-      when 2500 ... 99999 then 9
-      else nil
+      ## check weather reports
+      stntype = find(tree, '002001')
+      stntype = 0 if stntype.nil?
+      weather = find(tree, '020003')
+      case weather
+      when 0..99 then 
+        # present weather in Code table 4677 (ww)
+        ix, ww = '1', weather
+        ix = '4' if stntype.zero?
+      when 508 then
+        # "no significant weather as present weather"
+        ix, ww = '2', nil
+        # this could be ---
+        # ix = '5' if stntype.zero?
+        ix, ww = '7', 0 if stntype.zero?
+      when 100..199 then
+        # present weather in Code table 4680 (wawa)
+        ix, ww = '7', weather - 100
+      else
+        # present weather is nil or other codes not convertible to ww
+        ix, ww = '3', nil
+        ix = '6' if stntype.zero?
       end
-    # 視程： 020001 の最大値は 81900 m
-    vis = find(tree, '020001')
-    _VV = case vis
-      when 0..5000 then ((vis + 50) / 100).to_i
-      when 5000..30_000 then ((vis + 50500) / 1000).to_i
-      when 30_000..70_000 then ((vis - 30_000) / 5000).to_i + 80
-      when 70_000..99_000 then 89
-      else nil
-      end
+      # 雲底高度： 020013 の最大値は 20060 m
+      h = case find(tree, '020013')
+        when 0...50 then 0
+        when 50...100 then 1
+        when 100...200 then 2
+        when 200...300 then 3
+        when 300...600 then 4
+        when 600...1000 then 5
+        when 1000...1500 then 6
+        when 1500...2000 then 7
+        when 2000...2500 then 8
+        when 2500 ... 99999 then 9
+        else nil
+        end
+      # 視程： 020001 の最大値は 81900 m
+      vis = find(tree, '020001')
+      _VV = case vis
+        when 0..5000 then ((vis + 50) / 100).to_i
+        when 5000..30_000 then ((vis + 50500) / 1000).to_i
+        when 30_000..70_000 then ((vis - 30_000) / 5000).to_i + 80
+        when 70_000..99_000 then 89
+        else nil
+        end
 
       report.push [iR, ix, itoa1(h), itoa2(_VV)].join
 
@@ -341,6 +341,7 @@ class Bufr2synop
         report.push ['9', itoa2(_GG), itoa2(gg)].join
       end
 
+      # --- 第3節 ---
       sec3 = ['333']
 
       # 1snTxTxTx - 最高気温
@@ -380,7 +381,7 @@ class Bufr2synop
       elsif sss == -2 then
         # 不連続な積雪がある
         sss = 998
-	# 仮に _E_ の値が矛盾したとしても、さしあたり、あえて修正しない
+        # 仮に _E_ の値が矛盾したとしても、さしあたり、あえて修正しない
       end
       unless sss
         # 積雪深が欠損で来そうな場合でも地面状態で値を設定することあり
