@@ -280,16 +280,18 @@ class Bufr2synop
       # 4PPPP 海面気圧
       _PPPP = find(tree, '010051')
       _PPPP = ((_PPPP + 5) / 10) % 1000_0 if _PPPP 
-      # 海面気圧の先頭桁が 1..8 になる場合、つまり 1100 hPa 以上または
+      # 海面気圧が欠けていればジオポテンシャルを探す。
+      # (規則 B/C1.3.5.1 により海面気圧が算出できない地点で与えらえる)
+      # また海面気圧の先頭桁が 1..8 になる場合、つまり 1100 hPa 以上または
       # 900 hPa 未満の場合は、ジオポテンシャル形式にしないと解読不能になる
-      if 1000...9000 === _PPPP then
+      if _PPPP.nil? or (_PPPP > 100_0 and _PPPP < 900_0) then
         a3 = find(tree, '007004')
         a3 = case a3
-          when 1000_0 then '1'
-          when 925_0 then '2'
-          when 850_0 then '8'
-          when 700_0 then '7'
-          when 500_0 then '5'
+          when 1000_00 then '1'
+          when 925_00 then '2'
+          when 850_00 then '8'
+          when 700_00 then '7'
+          when 500_00 then '5'
           else nil
           end
         hhh = find(tree, '010009')
