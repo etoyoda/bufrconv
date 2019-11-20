@@ -263,11 +263,7 @@ class BUFRMsg
     else # 現時点では build_sections で不明版数は排除される
       raise "BUG"
     end
-    begin
-      @props[:reftime] = Time.gm(*reftime)
-    rescue ArgumentError
-      raise EBADF, "Bad reftime #{reftime.inspect} ed=#{@ed} "
-    end
+
     # 訂正報であるフラグ
     @props[:cflag] = if @props[:upd] > 0 then
         # Update Sequence Number が正ならば意識してやっていると信用する
@@ -294,6 +290,16 @@ class BUFRMsg
       y = d & 0xFF
       format('%01u%02u%03u', f, x, y)
     }.join(',')
+
+    if [2000, 0, 0, 0, 0, 0] === reftime then
+      reftime = Time.at(0).utc.to_a
+    end
+    begin
+      @props[:reftime] = Time.gm(*reftime)
+    rescue ArgumentError
+      ep = @props[:descs].empty?
+      raise EBADF, "Bad reftime #{reftime.inspect} ed=#{@ed} empty=#{ep}"
+    end
   end
 
   def [] key
