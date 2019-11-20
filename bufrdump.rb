@@ -4,7 +4,7 @@ require 'json'
 $LOAD_PATH.push File.dirname($0)  ##del
 require 'bufrscan'  ##del
 
-class DataOrganizer
+class TreeBuilder
 
   def initialize mode, out = $stdout
     @mode, @out = mode, out
@@ -241,7 +241,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
     @tape[@pos]
   end
 
-  def read_tape prt
+  def read_tape tb
     @pos += 1
     loopdebug 'read_tape1' if $VERBOSE
     if @tape[@pos].nil? then
@@ -260,14 +260,14 @@ BUFRの反復はネストできなければいけないので（用例がある�
         # 反復対象記述子列の最初に戻る。
         # そこに :endloop はないので while を抜ける
         @pos = @cstack.last[:next]
-        prt.newcycle
+        tb.newcycle
         loopdebug 'nextloop' if $VERBOSE
       else
         # 当該レベルのループを終了し :endloop の次に行く。
         # そこに :endloop があれば while が繰り返される。
         @cstack.pop
         @pos += 1
-        prt.endloop
+        tb.endloop
         loopdebug 'endloop' if $VERBOSE
         if @tape[@pos].nil? then
           loopdebug "ret-nil-b" if $VERBOSE
@@ -308,30 +308,30 @@ BUFRの反復はネストできなければいけないので（用例がある�
 要素記述子を読むたびに、BUFR報 bufrmsg から実データを読み出す。
 =end
 
-  def run prt
+  def run tb
     rewind_tape
     @bufrmsg.ymdhack(@ymdhack) if @ymdhack
-    while desc = read_tape(prt)
+    while desc = read_tape(tb)
       case desc[:type]
       when :str
         if @addfield then
           @addfield[:pos] = desc[:pos]
           num = @bufrmsg.readnum(@addfield)
-          prt.showval @addfield, num
+          tb.showval @addfield, num
         end
         str = @bufrmsg.readstr(desc)
-        prt.showval desc, str
+        tb.showval desc, str
       when :num, :code, :flags
         if @addfield and not /^031021/ === desc[:fxy] then
           @addfield[:pos] = desc[:pos]
           num = @bufrmsg.readnum(@addfield)
-          prt.showval @addfield, num
+          tb.showval @addfield, num
         end
         num = @bufrmsg.readnum(desc)
-        prt.showval desc, num
+        tb.showval desc, num
       when :repl
         r = desc.dup
-        prt.showval r, :REPLICATION
+        tb.showval r, :REPLICATION
         ndesc = r[:ndesc]
         if r[:niter].zero? then
           d = read_tape_simple
@@ -339,7 +339,7 @@ BUFRの反復はネストできなければいけないので（用例がある�
             raise "class 31 must follow delayed replication #{r.inspect}"
           end
           num = @bufrmsg.readnum(d)
-          prt.showval d, num
+          tb.showval d, num
           if @bufrmsg.compressed? then
             a = num
             num = num.first
@@ -348,14 +348,14 @@ BUFRの反復はネストできなければいけないので（用例がある�
           raise EDOM, "repl num missing" if num.nil?
           if num.zero? then
             setloop(0, ndesc)
-            prt.setloop
+            tb.setloop
           else
             setloop(num, ndesc)
-            prt.setloop
+            tb.setloop
           end
         else
           setloop(r[:niter], ndesc)
-          prt.setloop
+          tb.setloop
         end
       when :op01
         if desc[:yyy].zero? then
@@ -562,47 +562,47 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 
   # 圧縮を使わない場合のデコード。
   def decode1 bufrmsg, outmode = :json, out = $stdout
-    prt = DataOrganizer.new(outmode, out)
+    tb = TreeBuilder.new(outmode, out)
     tabconfig bufrmsg
     begin
-      prt.newbufr bufrmsg.to_h
+      tb.newbufr bufrmsg.to_h
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
       nsubset = bufrmsg[:nsubset]
       nsubset.times{|isubset|
         begin
-          prt.newsubset isubset, bufrmsg.ptrcheck
-          BufrDecode.new(tape, bufrmsg).run(prt)
+          tb.newsubset isubset, bufrmsg.ptrcheck
+          BufrDecode.new(tape, bufrmsg).run(tb)
         rescue Errno::EDOM => e
           $stderr.puts e.message + bufrmsg[:meta].inspect
         ensure
-          prt.endsubset
+          tb.endsubset
         end
       }
     rescue Errno::ENOSPC => e
       $stderr.puts e.message + bufrmsg[:meta].inspect
     ensure
-      prt.endbufr
+      tb.endbufr
     end
   end
 
   # 圧縮時のデコード。
   def decode2 bufrmsg, outmode = :json, out = $stdout
     nsubset = bufrmsg[:nsubset]
-    prt = DataOrganizer.new(outmode, out)
+    tb = TreeBuilder.new(outmode, out)
     tabconfig bufrmsg
     begin
-      prt.newbufr bufrmsg.to_h
+      tb.newbufr bufrmsg.to_h
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
       begin
-        prt.newsubset :all, bufrmsg.ptrcheck
-        BufrDecode.new(tape, bufrmsg).run(prt)
+        tb.newsubset :all, bufrmsg.ptrcheck
+        BufrDecode.new(tape, bufrmsg).run(tb)
       ensure
-        prt.endsubset
+        tb.endsubset
       end
     rescue Errno::ENOSPC, Errno::EBADF => e
       $stderr.puts e.message + bufrmsg[:meta].inspect
     ensure
-      prt.endbufr
+      tb.endbufr
     end
   end
 
