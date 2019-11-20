@@ -1641,16 +1641,17 @@ class Bufr2synop
       _TdTdTd = find(tree, '012103')
       report.push temperature('2', _TdTdTd)
 
-      # 3P0P0P0P0
+      # 3P0P0P0P0 現地気圧
       _P0P0P0P0 = find(tree, '010004')
       _P0P0P0P0 = ((_P0P0P0P0 + 5) / 10) % 1000_0 if _P0P0P0P0 
       report.push ['3', itoa4(_P0P0P0P0)].join if _P0P0P0P0 
 
-      # 4PPPP
+      # 4PPPP 海面気圧
       _PPPP = find(tree, '010051')
       _PPPP = ((_PPPP + 5) / 10) % 1000_0 if _PPPP 
-      case _PPPP
-      when 1000...9000
+      # 海面気圧の先頭桁が 1..8 になる場合、つまり 1100 hPa 以上または
+      # 900 hPa 未満の場合は、ジオポテンシャル形式にしないと解読不能になる
+      if 1000...9000 === _PPPP then
         a3 = find(tree, '007004')
         a3 = case a3
           when 1000_0 then '1'
