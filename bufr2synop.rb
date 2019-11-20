@@ -301,16 +301,16 @@ class Bufr2synop
         report.push ['4', itoa4(_PPPP)].join if _PPPP 
       end
 
-      # 5appp
+      # 5appp 気圧変化傾向
       a = find(tree, '010063')
       ppp = find(tree, '010061')
       ppp = (ppp.abs + 5) / 10 if ppp
       report.push ['5', itoa1(a), itoa3(ppp)].join if a
 
-      # 6RRRtR
+      # 6RRRtR 降水量、12時間または6時間
       report.push(*precip1)
 
-      # 7wwW1W2
+      # 7wwW1W2 現在天気と過去天気
       w1 = find(tree, '020004')
       w2 = find(tree, '020005')
       w1 = case w1
@@ -326,7 +326,7 @@ class Bufr2synop
       report.push ['7', itoa2(ww), itoa1(w1), itoa1(w2)].join if ww or w1
 
       # 8NhCLCMCH
-      # only the first instance of 020011 represents Nh. the rest in replication are Ns.
+      # 通報中に 020011 は多数あるが、最初のものが Nh で残りは Ns である
       _Nh = find(tree, '020011')
       _Nh = ((_Nh + 6) / 12.5).to_i if _Nh
       _CL = find(tree, '020012')
