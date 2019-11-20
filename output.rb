@@ -121,13 +121,18 @@ class Output
     require 'time'
     File.open(File.join(dbpath, 'table_c11'), 'r') {|fp|
       fp.each_line{|line|
+      begin
         next if /^\s*#/ === line
         line.chomp!
 	tfilter, ctr, aa, desc = line.split(/\t/, 4)
+	raise ArgumentError, "bad aa=#{aa}" unless /^[A-Z][A-Z]$/ === aa
 	stime, etime = tfilter.split(/\//, 2)
 	next if Time.parse(stime) > @now
 	next if Time.parse(etime) < @now
 	@table_c11[ctr.to_i] = aa
+      rescue ArgumentError => e
+        $stderr.puts ['table_c11:', fp.lineno, ': ', e.message].join
+      end
       }
     }
   end
