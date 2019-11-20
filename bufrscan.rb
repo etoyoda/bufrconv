@@ -207,6 +207,7 @@ class BUFRMsg
 
   def decode_primary
     return if @props[:mastab]
+    reftime = nil
     case @ed
     when 4 then
       @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
@@ -217,14 +218,14 @@ class BUFRMsg
       @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+11])
       @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+13])
       @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+14])
-      @props[:reftime] = Time.gm(
+      reftime = [
         BUFRMsg::unpack2(@buf[@idsofs+15,2]),
         BUFRMsg::unpack1(@buf[@idsofs+17]),
         BUFRMsg::unpack1(@buf[@idsofs+18]),
         BUFRMsg::unpack1(@buf[@idsofs+19]),
         BUFRMsg::unpack1(@buf[@idsofs+20]),
         BUFRMsg::unpack1(@buf[@idsofs+21])
-      )
+      ]
     when 3 then
       @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
       @props[:ctr] = BUFRMsg::unpack1(@buf[@idsofs+5])
@@ -234,14 +235,14 @@ class BUFRMsg
       @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
       @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+10])
       @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+11])
-      @props[:reftime] = Time.gm(
+      reftime = [
         BUFRMsg::unpack1(@buf[@idsofs+12]) + 2000,
         BUFRMsg::unpack1(@buf[@idsofs+13]),
         BUFRMsg::unpack1(@buf[@idsofs+14]),
         BUFRMsg::unpack1(@buf[@idsofs+15]),
         BUFRMsg::unpack1(@buf[@idsofs+16]),
         0
-      )
+      ]
     when 2 then
       @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
       # code table 0 01 031
@@ -251,16 +252,21 @@ class BUFRMsg
       @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
       @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+10])
       @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+11])
-      @props[:reftime] = Time.gm(
+      reftime = [
         BUFRMsg::unpack1(@buf[@idsofs+12]) + 2000,
         BUFRMsg::unpack1(@buf[@idsofs+13]),
         BUFRMsg::unpack1(@buf[@idsofs+14]),
         BUFRMsg::unpack1(@buf[@idsofs+15]),
         BUFRMsg::unpack1(@buf[@idsofs+16]),
         0
-      )
+      ]
     else # 現時点では build_sections で不明版数は排除される
       raise "BUG"
+    end
+    begin
+      @props[:reftime] = Time.gm(*reftime)
+    rescue ArgumentError
+      raise EBADF, "Bad reftime #{reftime.inspect} ed=#{@ed} "
     end
     # 訂正報であるフラグ
     @props[:cflag] = if @props[:upd] > 0 then
@@ -483,7 +489,7 @@ class BUFRScan
         msg = readmsg
         return if msg.nil?
         yield msg
-      rescue BUFRMsg::ENOSYS => e
+      rescue BUFRMsg::ENOSYS, BUFRMsg::EBADF => e
         STDERR.puts e.message + [@ahl].inspect
       end
     }
