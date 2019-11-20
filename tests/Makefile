@@ -1,4 +1,4 @@
-test: ismn01babj.ok ismc01rjtd.ok iusn01babj.ok iusc10rjtd.ok iusc60rjtd.ok ismd10rums.ok ismb01mxba.ok isml01rjtd.ok
+test: ismd02edzw.ok ismn01babj.ok ismc01rjtd.ok iusn01babj.ok iusc10rjtd.ok iusc60rjtd.ok ismd10rums.ok ismb01mxba.ok isml01rjtd.ok
 
 ISMN01BABJ= A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 ISMC01RJTD= A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr
@@ -8,6 +8,7 @@ IUSC60RJTD= A_IUSC60RJTD050000_C_RJTD_20191105010145_42.bufr
 ISMB01MXBA= A_ISMB01MXBA061800_C_RJTD_20191106181332_94.bufr
 ISMD10RUMS= A_ISMD10RUMS031200CCA_C_RJTD_20191106050332_71.bufr
 ISML01RJTD= A_ISML01RJTD060000_C_RJTD_20191106001931_24.bufr
+ISMD02EDZW= A_ISMD02EDZW060000_C_RJTD_20191106000231_58.bufr
 
 iusn01babj.ok:
 	ruby ../bufrdump.rb -x $(IUSN01BABJ) | diff -u iusn01babj.x.txt -
@@ -41,6 +42,9 @@ ismd10rums.ok:
 
 isml01rjtd.ok:
 	ruby ../bufr2synop.rb $(ISML01RJTD) | diff -u isml01rjtd.t.txt -
+
+ismd02edzw.ok:
+	ruby ../bufr2synop.rb $(ISMD02EDZW) | diff -u ismd02edzw.t.txt -
 
 overwrite:
 	-ruby ../bufrdump.rb -x $(ISMN01BABJ) > ismn01babj.x.txt
