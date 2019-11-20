@@ -554,6 +554,16 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     out.puts JSON.generate(expand(bufrmsg[:descs].split(/[,\s]/)))
   end
 
+  def flatten_dump bufrmsg, out = $stdout
+    bufrmsg.decode_primary
+    ds = expand(bufrmsg[:descs].split(/[,\s]/)).flatten.reject{|d|
+      /^#/ === d
+    }.map{|d|
+      d.sub(/:.*/, '')
+    }
+    out.puts ds.join(',')
+  end
+
   def compile_dump bufrmsg, out = $stdout
     bufrmsg.decode_primary
     tabconfig bufrmsg
@@ -635,6 +645,7 @@ if $0 == __FILE__
   ARGV.each{|fnam|
     case fnam
     when '-x' then action = :expand_dump
+    when '-f' then action = :flatten_dump
     when '-c' then action = :compile_dump
     when '-d' then action = :decode_plain
     when '-j' then action = :decode_json
