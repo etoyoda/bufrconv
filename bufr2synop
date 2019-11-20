@@ -1589,6 +1589,7 @@ class Bufr2synop
       ix, ww = '3', nil
       ix = '6' if stntype.zero?
     end
+    # 雲底高度： 020013 の最大値は 20060 m
     h = case find(tree, '020013')
       when 0...50 then 0
       when 50...100 then 1
@@ -1599,15 +1600,16 @@ class Bufr2synop
       when 1000...1500 then 6
       when 1500...2000 then 7
       when 2000...2500 then 8
-      when 2500 ... 9999 then 9
+      when 2500 ... 99999 then 9
       else nil
       end
+    # 視程： 020001 の最大値は 81900 m
     vis = find(tree, '020001')
     _VV = case vis
       when 0..5000 then ((vis + 50) / 100).to_i
       when 5000..30_000 then ((vis + 50500) / 1000).to_i
       when 30_000..70_000 then ((vis - 30_000) / 5000).to_i + 80
-      when 70_000..999_000 then 89
+      when 70_000..99_000 then 89
       else nil
       end
 
