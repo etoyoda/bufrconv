@@ -1802,7 +1802,7 @@ if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
   # コマンドラインオプションは最初の引数だけ
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
-  pseudo_io = Bufr2synop.new(Output.new(outopts, db.path))
+  encoder = Bufr2synop.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
@@ -1811,8 +1811,8 @@ if $0 == __FILE__
       when 0..2, 7, 50, 51, 52
       else next
       end
-      db.decode(bufrmsg, :direct, pseudo_io)
+      db.decode(bufrmsg, :direct, encoder)
     }
   }
-  pseudo_io.close
+  encoder.close
 end
