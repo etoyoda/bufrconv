@@ -49,9 +49,11 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     idxnum = format('%05u', wigosid.split(/-/,4)[3].to_i % 100000) if idxnum.empty?
     raise "isocode=#{isocode} (#{line})" unless /^[A-Z]{3}$/ === isocode
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
-    db5[idxnum] = isocode
-    check_store(db4, idxnum[0,4], isocode)
-    check_store(db3, idxnum[0,3], isocode)
+    aa = isoaa[isocode]
+    raise "undefined AA for #{isocode} (#{line})" unless aa
+    db5[idxnum] = aa
+    check_store(db4, idxnum[0,4], aa)
+    check_store(db3, idxnum[0,3], aa)
   }
 }
 
