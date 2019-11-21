@@ -79,6 +79,7 @@ class Output
 
   def make_ahl md5
     # ヘッダの如何を問わず、既存に同一内容電文を出していたら nil を返す
+    # そうすると呼び出し元 flush は出力をやめて終了する
     for ahl in @hist.keys
       if ahl == md5 then
         t, m = @hist[ahl]
