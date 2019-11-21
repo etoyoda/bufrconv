@@ -3,6 +3,12 @@
 require 'time'
 require 'digest/md5'
 
+class Dummy
+  def to_str
+    raise "BUG"
+  end
+end
+
 class Output
 
   def initialize cfgstr = '', dbpath = '.'
@@ -40,9 +46,10 @@ class Output
     @table_idxaa = {}
     init_table_idxaa(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
-    @buf = []
-    @stnlist = []
-    @ahl = @cflag = nil
+    # 電文毎にクリアする変数
+    @buf = @stnlist = nil
+    @ahl = @tt = @yygggg = @cflag = nil
+    # 電文通番
     @n = 0
   end
 
@@ -157,6 +164,7 @@ class Output
   end
 
   def startmsg tt, yygggg, hdr
+    @tt, @yygggg = tt, yygggg
     ttaaii = [tt, make_aa(hdr), '99'].join
     @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
     @cflag = hdr[:cflag]
@@ -242,7 +250,7 @@ class Output
     @fp.write msg
     @fp.flush
   ensure
-    @stnlist = @buf = @cflag = nil
+    @stnlist = @buf = @tt = @yygggg = @cflag = nil
   end
 
   def close

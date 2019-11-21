@@ -226,6 +226,8 @@ class Bufr2temp
     iii = find(tree, '001002')
     stnid = [itoa2(_II), itoa3(iii)].join
     report.push stnid
+
+    set_ahl
     @out.station stnid
 
     # Section 2
@@ -263,7 +265,6 @@ class Bufr2temp
     report.push ['8', itoa2(_GG), itoa2(gg)].join
 
     report.last.sub!(/$/, '=')
-    set_ahl
     @out.print_fold(report)
   rescue EDOM => e
     $stderr.puts e.message + @hdr[:meta].inspect
