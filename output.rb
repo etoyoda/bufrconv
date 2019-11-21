@@ -37,6 +37,8 @@ class Output
     init_hist
     @table_c11 = {}
     init_table_c11(dbpath)
+    @table_idxaa = {}
+    init_table_idxaa(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     @buf = []
     @stnlist = []
@@ -133,6 +135,18 @@ class Output
       rescue ArgumentError => e
         $stderr.puts ['table_c11:', fp.lineno, ': ', e.message].join
       end
+      }
+    }
+  end
+
+  def init_table_idxaa dbpath
+    require 'time'
+    File.open(File.join(dbpath, 'table_station'), 'r') {|fp|
+      fp.each_line{|line|
+        next if /^\s*#/ === line
+        line.chomp!
+        idx, aa, dummy = line.split(/\t/)
+        @table_idxaa[idx] = aa
       }
     }
   end
