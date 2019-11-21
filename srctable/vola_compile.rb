@@ -50,6 +50,7 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     raise "isocode=#{isocode} (#{line})" unless /^[A-Z]{3}$/ === isocode
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
     aa = isoaa[isocode]
+    aa = 'RA' if aa == 'RS' and '2' == region
     raise "undefined AA for #{isocode} (#{line})" unless aa
     db5[idxnum] = aa
     check_store(db4, idxnum[0,4], aa)
