@@ -52,6 +52,7 @@ rm -f obsbf-${yy}-${mm}-${dd}.tar
 set +x
 exec 2>&3
 tar -czf - . > ../bufrval-${yy}-${mm}-${dd}.tar.gz
+tail -300 dumperr.txt
 cd ..
 test ! -d bufrval.ok || rm -rf bufrval.ok
 mv -f bufrval.tmp bufrval.ok
