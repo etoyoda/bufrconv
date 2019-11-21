@@ -22,6 +22,19 @@ unless File.exist?('vola_legacy_report.txt')
   system(cmd)
 end
 
+isoaa = {}
+File.open('iso3166-gtsaa.txt', 'r'){|fp|
+  fp.each_line{|line|
+    next if /^#/ === line
+    line.chomp!
+    row = line.split(/\t/)
+    if isoaa.include? row[1] then
+      raise "dup entry [#{row[1]}] ... #{isoaa[row[1]]} vs #{row[0]}"
+    end
+    isoaa[row[1]] = row[0]
+  }
+}
+
 File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
   fp.each_line{|line|
     next if /^RegionId/ === line
