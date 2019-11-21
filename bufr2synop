@@ -1149,7 +1149,7 @@ require 'digest/md5'
 
 class Output
 
-  # @buf 配列中で AHL の代わりに置くセンチネル。これを入れたまま join すると
+  # @buf 配列中で AHL の代わりに置くダミー。これを入れたまま join すると
   # 例外を生じる。
   class DummyAHL
     def to_str
@@ -1231,6 +1231,14 @@ class Output
   end
 
   def make_aa
+    unless @stnlist.empty?
+      aalist = @stnlist.map{|idx|
+	idx3 = idx.sub(/..$/, '..')
+	idx4 = idx.sub(/.$/, '.')
+	@table_idxaa[idx3] or @table_idxaa[idx4] or @table_idxaa[idx]
+      }.uniq
+      return aalist.first if aalist.size == 1
+    end
     @table_c11[@ctr] or 'XX'
   end
 
