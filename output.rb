@@ -92,7 +92,7 @@ class Output
 	idx3 = idx.sub(/..$/, '..')
 	idx4 = idx.sub(/.$/, '.')
 	@table_idxaa[idx3] or @table_idxaa[idx4] or @table_idxaa[idx]
-      }.uniq
+      }.compact.uniq
       return aalist.first if aalist.size == 1
     end
     @table_c11[@ctr] or 'XX'
