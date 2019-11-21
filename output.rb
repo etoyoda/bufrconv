@@ -179,7 +179,7 @@ class Output
     end
     @stnlist = []
     @n += 1
-    @ahl
+    nil
   end
 
   def station idx
