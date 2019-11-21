@@ -44,10 +44,13 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     isocode = row[3]
     wigosid = row[4]
     idxnum = row[5]
+    name = row[7]
+    next if idxnum.empty?
     # corrections
     isocode = 'ATA' if '7' === region
-    idxnum = format('%05u', wigosid.split(/-/,4)[3].to_i % 100000) if idxnum.empty?
     raise "isocode=#{isocode} (#{line})" unless /^[A-Z]{3}$/ === isocode
+    isocode = 'PT-20' if 'PRT' == isocode and /ACORES/ === name
+    isocode = 'PT-30' if 'PRT' == isocode and '1' == region
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
     aa = isoaa[isocode]
     aa = 'RA' if aa == 'RS' and '2' == region
