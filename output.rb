@@ -3,13 +3,15 @@
 require 'time'
 require 'digest/md5'
 
-class Dummy
-  def to_str
-    raise "BUG"
-  end
-end
-
 class Output
+
+  # @buf 配列中で AHL の代わりに置くセンチネル。これを入れたまま join すると
+  # 例外を生じる。
+  class DummyAHL
+    def to_str
+      raise "BUG"
+    end
+  end
 
   def initialize cfgstr = '', dbpath = '.'
     @now = Time.now.utc
@@ -47,7 +49,7 @@ class Output
     init_table_idxaa(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     # 電文毎にクリアする変数
-    @buf = @stnlist = nil
+    @buf = @stnlist = @ctr = nil
     @ahl = @tt = @yygggg = @cflag = nil
     # 電文通番
     @n = 0
@@ -84,7 +86,13 @@ class Output
     exit 16
   end
 
+  def make_aa
+    @table_c11[@ctr] or 'XX'
+  end
+
   def make_ahl md5
+    aa = make_aa()
+    @ahl = "#{@tt}#{aa}99 #{@cccc} #{@yygggg}"
     # ヘッダの如何を問わず、既存に同一内容電文を出していたら nil を返す
     # そうすると呼び出し元 flush は出力をやめて終了する
     for ahl in @hist.keys
@@ -159,14 +167,9 @@ class Output
     }
   end
 
-  def make_aa hdr
-    @table_c11[hdr[:ctr]] or 'XX'
-  end
-
   def startmsg tt, yygggg, hdr
     @tt, @yygggg = tt, yygggg
-    ttaaii = [tt, make_aa(hdr), '99'].join
-    @ahl = "#{ttaaii} #{@cccc} #{yygggg}"
+    @ctr = hdr[:ctr] || 255
     @cflag = hdr[:cflag]
     #
     # 新形式を追加する場合、 @buf は 3 要素、 @ahl は 2 つめになるようにする
@@ -178,11 +181,11 @@ class Output
       # すべての文字が printable なのでデバッグ用にも使っている。
       @n = 0 if @n > 999
       nnn = format('%03u', @n)
-      @buf = ["ZCZC #{nnn}     \r\r\n", @ahl, "\r\r\n"]
+      @buf = ["ZCZC #{nnn}     \r\r\n", DummyAHL.new, "\r\r\n"]
     when :BSO
       # BSO: NAPS→アデスで用いる国内バッチFTP形式。
       raise Errno::EDOM, "more than 999 messages" if @n > 999
-      @buf = ["\n", @ahl, "\n"]
+      @buf = ["\n", DummyAHL.new, "\n"]
     else raise Errno::ENOSYS, "fmt = #@fmt"
     end
     @stnlist = []
@@ -233,6 +236,7 @@ class Output
     # 先頭に CR CR LF を加えたものが GTS マニュアルでいう text になる。
     # BSO 形式ではそれが LF なので、混乱を避けるため計算から除外している。
     md5 = Digest::MD5.hexdigest(@buf[3..-1].join)
+    raise "BUG" unless DummyAHL === @buf[1]
     @buf[1] = make_ahl(md5)
     if @buf[1].nil? then
       return
@@ -250,7 +254,7 @@ class Output
     @fp.write msg
     @fp.flush
   ensure
-    @stnlist = @buf = @tt = @yygggg = @cflag = nil
+    @ctr = @stnlist = @buf = @tt = @yygggg = @cflag = nil
   end
 
   def close
