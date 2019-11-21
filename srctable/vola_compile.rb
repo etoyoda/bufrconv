@@ -45,24 +45,33 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     wigosid = row[4]
     idxnum = row[5]
     name = row[7]
+    lat = row[8]
     next if idxnum.empty?
     # corrections
     isocode = 'ATA' if '7' === region
     raise "isocode=#{isocode} (#{line})" unless /^[A-Z]{3}$/ === isocode
     isocode = 'PT-20' if 'PRT' == isocode and /ACORES/ === name
-    isocode = 'PT-30' if 'PRT' == isocode and '1' == region
-    isocode = 'ES-CN' if 'ESP' == isocode and '1' == region
-    if 'GBR' == isocode and '1' == region then
-      isocode = case name
-        when /ASCENSION/ then 'SH-AC'
-        when /ST\. HELENA/ then 'SH-HL'
-        when /DIEGO GARCIA/ then 'IOT'
-        end
+    if '1' == region then
+      isocode = 'PT-30' if 'PRT' == isocode
+      isocode = 'ES-CN' if 'ESP' == isocode
+      if 'GBR' == isocode then
+        isocode = case name
+          when /ASCENSION/ then 'SH-AC'
+          when /ST\. HELENA/ then 'SH-HL'
+          when /DIEGO GARCIA/ then 'IOT'
+          end
+      end
+      isocode = 'REU' if 'FRA' == isocode
     end
-    isocode = 'REU' if 'FRA' == isocode and '1' == region
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
     aa = isoaa[isocode]
     aa = 'RA' if aa == 'RS' and '2' == region
+    if '5' == region and 'US' == aa then
+      aa = if /^1.*N$/ === lat
+        then 'HW'
+        else 'PA'
+        end
+    end
     raise "undefined AA for #{isocode} (#{line})" unless aa
     db5[idxnum] = aa
     check_store(db4, idxnum[0,4], aa)
