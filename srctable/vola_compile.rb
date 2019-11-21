@@ -52,6 +52,14 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     isocode = 'PT-20' if 'PRT' == isocode and /ACORES/ === name
     isocode = 'PT-30' if 'PRT' == isocode and '1' == region
     isocode = 'ES-CN' if 'ESP' == isocode and '1' == region
+    if 'GBR' == isocode and '1' == region then
+      isocode = case name
+        when /ASCENSION/ then 'SH-AC'
+        when /ST\. HELENA/ then 'SH-HL'
+        when /DIEGO GARCIA/ then 'IOT'
+        end
+    end
+    isocode = 'REU' if 'FRA' == isocode and '1' == region
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
     aa = isoaa[isocode]
     aa = 'RA' if aa == 'RS' and '2' == region
