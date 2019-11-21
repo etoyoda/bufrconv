@@ -12,7 +12,7 @@ class Bufr2temp
   def initialize out
     @out = out
     @hdr = @reftime = nil
-    @ahl = nil
+    @ahl_is_set = nil
     @knot = nil
   end
 
@@ -26,17 +26,19 @@ class Bufr2temp
     when 34 then
       @knot = true
     end
-    @ahl = false
+    @ahl_is_set = false
   end
 
-  def print_ahl
-    return if @ahl
+  # 出力ハンドラにヘッダを設定する。既にしていたらやらない。
+  def set_ahl
+    return if @ahl_is_set
     tt = 'US' # Part A
     yygggg = @reftime.strftime('%d%H00')
-    @ahl = @out.startmsg(tt, yygggg, @hdr)
+    @out.startmsg(tt, yygggg, @hdr)
+    @ahl_is_set = true
   end
 
-  # returns the first element
+  # 記述子 fxy を含む最初の記述子-値ペアを返す
   def find tree, fxy
     for elem in tree
       if elem.first == fxy then
@@ -49,7 +51,8 @@ class Bufr2temp
     return nil
   end
 
-  # caution -- this does not go recursive
+  # 記述子 fxy を含む n 個目の記述子-値ペアを返す (n >= 1)
+  # ただし反復の中には入らない
   def find_nth tree, fxy, nth = 2
     for elem in tree
       if elem.first == fxy then
@@ -60,6 +63,7 @@ class Bufr2temp
     return nil
   end
 
+  # n個目の反復を探す (n >= 0)
   def branch tree, nth = 0
     tree.size.times{|i|
       elem = tree[i]
@@ -259,17 +263,17 @@ class Bufr2temp
     report.push ['8', itoa2(_GG), itoa2(gg)].join
 
     report.last.sub!(/$/, '=')
-    print_ahl
+    set_ahl
     @out.print_fold(report)
   rescue EDOM => e
     $stderr.puts e.message + @hdr[:meta].inspect
   end
 
   def endbufr
-    return unless @ahl
+    return unless @ahl_is_set
     @out.flush
     @hdr = @reftime = nil
-    @ahl = nil
+    @ahl_is_set = nil
   end
 
   def close
