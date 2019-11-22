@@ -87,6 +87,7 @@ class Output
   end
 
   def make_aa
+    # 地点リストがあればそれを使おうとする
     unless @stnlist.empty?
       aalist = @stnlist.map{|idx|
 	idx3 = idx.sub(/..$/, '..')
@@ -94,6 +95,9 @@ class Output
 	@table_idxaa[idx3] or @table_idxaa[idx4] or @table_idxaa[idx]
       }.compact.uniq
       return aalist.first if aalist.size == 1
+      # 地点からひとつに決められない時は発信センターによる
+      # 欠測遅延があるため地点は順不同となり、多数決や先着では安定しないため
+      $stderr.puts "undetermined #{aalist.inspect}" if $VERBOSE
     end
     @table_c11[@ctr] or 'XX'
   end
@@ -115,8 +119,6 @@ class Output
         return nil
       end
     end
-    # 南極ヘッダ修正
-    @ahl.sub!(/^(..)../, "\\1AA") if @stnlist.any?{|idx| /^89/ === idx}
     # BBB 付与
     if @hist['RRYMODE'] then
       # 履歴ファイルの読み込みに失敗した場合
