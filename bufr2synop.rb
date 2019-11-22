@@ -152,17 +152,22 @@ class Bufr2synop
   end
 
   def subset tree
-    print_ahl
     report = []
 
     # IIiii
     _II = find(tree, '001001')
     iii = find(tree, '001002')
+    # 地点番号が欠けていたら通報にならないので変換中止
+    if _II.nil? or iii.nil?
+      $stderr.puts "missing IIiii"
+      return
+    end
     stnid = [itoa2(_II), itoa3(iii)].join
     report.push stnid
+    print_ahl
     @out.station(stnid)
 
-    # 現地気圧と気温の両方が欠損しているときは全欠損。
+    # 現地気圧と気温の両方が欠損しているときは全欠損とみなす。
     # see https://github.com/etoyoda/bufrconv/issues/10
     if find(tree, '010004').nil? and find(tree, '012101').nil? then
       report.push "NIL"
