@@ -340,22 +340,53 @@ class BUFRMsg
     p @props[:ctr]
   end
 
+  # 各サブセットをデコードする前にデータ内容の日付を検査し、
+  # 要すればいくらかビットをずらしてでも適正値が読める位置に移動する
   def ymdhack opts
     decode_primary
+    # 日付記述子 004001/004002/004003 の位置が通知されなければ検査不能
     return unless opts[:ymd]
+    # 圧縮電文はデータ位置がわからないため検査不能
     return if @props[:compress]
+    # 日付検査1: 不正日付で落ちぬようTime型を構築せず22ビットで比較。
+    # ほとんどの観測データは、BUFR第1節の参照時刻の日 (brt1)
+    # またはその前日 (brt2) または欠損値 0x3F_FFFF となる。
     rt1 = @props[:reftime]
     brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
     rt2 = rt1 - 86400
     brt2 = rt2.year << 10 | rt2.month << 6 | rt2.day
     brtx = getnum(@ptr + opts[:ymd], 22)
-    if brtx == brt1 or brtx == brt2 or brtx == 0x3FFFFF
+    if brtx == brt1 or brtx == brt2 or brtx == 0x3F_FFFF
       return nil
     end
-    if (brtx >> 10) == rt1.year and (0b1111 & (brtx >> 6)) == rt1.mon and
-       (1 ... rt1.day) === (0b111111 & brtx) then
+    # 日付検査2: 参照日と同じ月内のデータが来た場合
+    if (brtx >> 10) == rt1.year and (0b1111 & (brtx >> 6)) == rt1.mon then
+      # 日付検査2a: 参照日より前のデータは許容する
+      if (1 ... rt1.day) === (0b111111 & brtx) then
+	return nil
+      end
+      # 日付検査2b: 参照日が月初の場合に限り、データの同月末日を許容する
+      #  これはエンコード誤りなので、参照日を破壊的訂正して翌月初とする
+      if rt1.day == 1 then
+        rt9 = Time.gm(rt1.year, rt1.mon, 0b111111 & brtx) + 86400
+	if rt9.day == 1 then
+	  @props[:reftime] = Time.gm(rt9.year, rt9.mon, 1,
+	    rt1.hour, rt1.min, rt1.sec)
+	  $stderr.puts "ymdhack: reftime corrected #{@props[:reftime]}"
+	  return nil
+	end
+      end
+    end
+    # 日付検査3: 参照日の翌日（月末なら年月は繰り上がる）を許容する
+    rt3 = rt1 + 86400
+    if (brtx >> 10) == rt3.year and (0b1111 & (brtx >> 6)) == rt3.mon and
+      (0b111111 & brtx) == rt3.day then
+      $stderr.puts "ymdhack: tomorrow okay"
       return nil
     end
+    #
+    # --- 日付検査失敗。ビットずれリカバリーモードに入る ---
+    #
     $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u\n",
       brtx >> 10, 0b1111 & (brtx >> 6), 0b111111 & brtx,
       rt1.strftime('%Y-%m-%d'), @ptr)
