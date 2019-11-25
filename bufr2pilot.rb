@@ -128,8 +128,16 @@ class Bufr2temp
         height = find(levset, '007009')
 	pres = rough_pressure(height)
       end
-      levdb[pres] = levset if 0 != (flags & 0x10000)
-      levdb[:MAXW] = levset if 0 != (flags & 0x04000)
+      # bit 2 of 18 - Standard level
+      if 0 != (flags & 0x10000) then
+	levdb[pres] = levset
+      end
+      # bit 4 of 18 - Maximum wind level
+      if 0 != (flags & 0x04000) then
+	levdb[:MAXW] = levset
+	# bit 14 of 18 - Top of wind sounding
+	levdb[:MAXWENDS] = true if 0 != (flags & 0x00010)
+      end
     }
     return levdb
   end
@@ -201,19 +209,23 @@ class Bufr2temp
     }
   end
 
-  def encode_maxw report, levset
+  def encode_maxw report, levset, maxwends
+    return nil unless levset
     ppp = find(levset, '007004')
     if ppp then
       ppp *= 10 if ppp < 100_00
       ppp = (ppp / 100) % 1000
-      report.push ['77', itoa3(ppp)].join
+      indic = maxwends ? '66' : '77'
+      report.push [indic, itoa3(ppp)].join
     else
       hhhh = find(levset, '007009')
       hhhh = ((hhhh + 5) / 10).to_i % 10000 if hhhh
-      report.push ['7',  itoa4(hhhh)].join
+      return false unless hhhh
+      indic = maxwends ? '6' : '7'
+      report.push [indic,  itoa4(hhhh)].join
     end
-
     report.push ddfff(levset)
+    true
   end
 
   def encode_a4 e002003
@@ -262,9 +274,7 @@ class Bufr2temp
       encode_grp(grp, levdb, report)
     }
 
-    if levdb[:MAXW] then
-      encode_maxw(report, levdb[:MAXW])
-    else
+    unless encode_maxw(report, levdb[:MAXW], levdb[:MAXWENDS])
       report.push '77999'
     end
 
