@@ -1473,7 +1473,7 @@ class Bufr2synop
     @hdr[:meta][:ahl] or default
   end
 
-  def print_ahl
+  def print_ahl mimj = 'AAXX'
     # data category 0: Surface data - land
     return if @hdr[:cat] != 0
     return if @ahl_hour
@@ -1489,7 +1489,7 @@ class Bufr2synop
     yygg = @reftime.strftime('%d%H')
     @out.startmsg(tt, yygg + '00', @hdr)
     # section 0
-    @out.print_fold(["AAXX", "#{yygg}#{@knot ? '4' : '1'}"])
+    @out.print_fold([mimj, "#{yygg}#{@knot ? '4' : '1'}"])
     @ahl_hour = @reftime.hour
   end
 
@@ -1604,23 +1604,75 @@ class Bufr2synop
     end
   end
 
+  def marsden lat, lon
+    lo = (-lon / 10).to_i
+    lo += 35 if lon < 0
+    hi = (lat / 10).to_i
+    case hi
+    when 8 then 901 + lo
+    when 7 then 253 + lo
+    when 6 then 217 + lo
+    when 5 then 181 + lo
+    when 4 then 145 + lo
+    when 3 then 109 + lo
+    when 2 then 73 + lo
+    when 1 then 37 + lo
+    when 0 then  if lat >= 0 then 1 + lo else 300 + lo end
+    when -1 then 336 + lo
+    when -2 then 372 + lo
+    when -3 then 408 + lo
+    when -4 then 444 + lo
+    when -5 then 480 + lo
+    when -6 then 516 + lo
+    when -7 then 552 + lo
+    when -8 then 588 + lo
+    end
+  end
+
   def subset tree
     report = []
 
     # IIiii
     _II = find(tree, '001001')
     iii = find(tree, '001002')
-    # 地点番号が欠けていたら通報にならないので変換中止
-    if _II.nil? or iii.nil?
-      $stderr.printf("missing IIiii ed%s c%s-%s %s\n",
-        itoa1(@hdr[:ed]), itoa3(@hdr[:cat]), itoa3(@hdr[:subcat]),
-        given_ahl.inspect)
+    # 地点番号があれば FM12 SYNOP
+    if _II and iii then
+      stnid = [itoa2(_II), itoa3(iii)].join
+      report.push(stnid)
+      print_ahl('AAXX')
+      @out.station(stnid)
+    # 高解像度位置があれば SYNOP MOBIL
+    elsif lat = find(tree, '005001') and lon = find(tree, '006001') then
+      stnid = find(tree, '001015').to_s.strip
+      stnid = 'MOBIL' if stnid.empty?
+      report.push stnid
+
+      # 99LaLaLa
+      la = (lat.abs * 10).floor
+      report.push ['99', itoa3(la)].join
+      # QcLoLoLoL0
+      qc = if lat >= 0 and lon >= 0 then 1
+        elsif lon >= 0 then 3
+        elsif lat < 0 then 5
+        else 7
+        end
+      lo = (lon.abs * 10).floor
+      report.push [itoa1(qc), itoa4(lo)].join
+      # MMMULaULo
+      mmm = marsden(lat, lon)
+      ula = (la / 10) % 10
+      ulo = (lo / 10) % 10
+      report.push [itoa3(mmm), itoa1(ula), itoa1(ulo)].join
+      # h0h0h0im
+      h0 = find(tree, '007030') || find(tree, '007031')
+      h0 = (h0 + 0.5).floor if h0
+      report.push [itoa4(h0), '1'].join
+
+      print_ahl('OOXX')
+    else
+      $stderr.puts ['IIiii and lat/lon missing ', given_ahl].join
       return
     end
-    stnid = [itoa2(_II), itoa3(iii)].join
-    report.push stnid
-    print_ahl
-    @out.station(stnid)
 
     # 現地気圧と気温の両方が欠損しているときは全欠損とみなす。
     # see https://github.com/etoyoda/bufrconv/issues/10
@@ -1879,7 +1931,7 @@ class Bufr2synop
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
   rescue NoMethodError => e
-    $stderr.puts [e.message, e.backtrace.first, @hdr[:meta].inspect].join(' ')
+    $stderr.puts [e.message, e.backtrace.first, given_ahl.inspect].join(' ')
   end
 
   def endbufr
