@@ -1562,10 +1562,25 @@ class Bufr2temp
     end
   end
 
+  PMAP = [[850, 1500], [700, 3000], [500, 5500], [400, 7000], [300, 9000],
+    [250, 10500], [200, 12000], [150, 13500], [100, 16000]]
+
+  def p_and_diff h
+    for pp, hh in PMAP
+      diff = (hh - h).abs
+      return [pp, diff] if diff < 500
+    end
+    return nil
+  end
+
   def levsort levbranch
     levdb = {}
+    #
+    # WMO標準テンプレート、008042フラグ、007004気圧または007009高度がある
+    #
     levbranch.each{|levset|
       flags = find(levset, '008042')
+      next if flags.nil?
       pres = find(levset, '007004')
       if pres then
 	pres = (pres / 100).to_i
@@ -1585,6 +1600,22 @@ class Bufr2temp
 	# bit 14 of 18 - Top of wind sounding
 	levdb[:MAXWENDS] = true if 0 != (flags & 0x00010)
       end
+    }
+    return levdb unless levdb.empty?
+    #
+    # 欧州型プロファイラ、007007高度が入る
+    #
+    levbranch.each{|levset|
+      hgt = find(levset, '007007')
+      dd = find(levset, '011001')
+      next if hgt.nil? or dd.nil?
+      pres, diff = p_and_diff(hgt)
+      next if pres.nil?
+      dpres = format('d%4u', pres)
+      xdiff = levdb[dpres] || 9999
+      next if diff > xdiff
+      levdb[pres] = levset
+      levdb[dpres] = diff
     }
     return levdb
   end
@@ -1629,6 +1660,7 @@ class Bufr2temp
   end
 
   def ddfff levset
+    return '/////' unless levset
     dd = find(levset, '011001')
     fff = find(levset, '011002')
     fff *= 1.9438 if fff and @knot
