@@ -147,7 +147,7 @@ class Output
 
   def init_table_c11 dbpath
     require 'time'
-    File.open(File.join(dbpath, 'table_c11'), 'r') {|fp|
+    File.open(File.join(dbpath, 'table_c11'), 'r:UTF-8') {|fp|
       fp.each_line{|line|
       begin
         next if /^\s*#/ === line
