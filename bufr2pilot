@@ -1662,6 +1662,21 @@ class Bufr2temp
     report.push ddfff(levset)
   end
 
+  def encode_a4 e002003
+    case e002003
+    when 0..3 then e002003
+    when 4 then 5 # VLF-Omega
+    when 5 then 6 # Loran-C
+    when 6 then 7 # Wind profiler (generic)
+    when 7 then 8 # Satellite navigation
+    when 8 then 7 # RASS
+    when 9 then 7 # Sodar
+    when 10 then 7 # Lidar
+    when 14 then 4 # Pressure element equiped but failed
+    else nil
+    end
+  end
+
   def subset tree
     report = []
 
@@ -1676,7 +1691,8 @@ class Bufr2temp
     yy = find(tree, '004003') || @reftime.day
     yy += 50 if @knot
     _GG1 = find(tree, '004004') || @reftime.hour
-    a4 = find(tree, '002003')
+    a4 = encode_a4(find(tree, '002003'))
+    a4 = 0 if a4.nil? and not levdb[:APPROX]
     report.push [itoa2(yy), itoa2(_GG1), itoa1(a4)].join
 
     # IIiii
