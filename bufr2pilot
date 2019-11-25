@@ -1479,7 +1479,7 @@ class Bufr2temp
   # 出力ハンドラにヘッダを設定する。既にしていたらやらない。
   def set_ahl
     return if @ahl_is_set
-    tt = 'US' # Part A
+    tt = 'UP' # Part A
     yygggg = @reftime.strftime('%d%H00')
     @out.startmsg(tt, yygggg, @hdr)
     @ahl_is_set = true
