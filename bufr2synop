@@ -1467,6 +1467,12 @@ class Bufr2synop
     @ahl_hour = @knot = false
   end
 
+  def given_ahl default = nil
+    return default unless @hdr
+    return default unless @hdr[:meta]
+    @hdr[:meta][:ahl] or default
+  end
+
   def print_ahl
     # data category 0: Surface data - land
     return if @hdr[:cat] != 0
@@ -1606,7 +1612,9 @@ class Bufr2synop
     iii = find(tree, '001002')
     # 地点番号が欠けていたら通報にならないので変換中止
     if _II.nil? or iii.nil?
-      $stderr.puts "missing IIiii"
+      $stderr.printf("missing IIiii ed%s c%s-%s %s\n",
+        itoa1(@hdr[:ed]), itoa3(@hdr[:cat]), itoa3(@hdr[:subcat]),
+        given_ahl.inspect)
       return
     end
     stnid = [itoa2(_II), itoa3(iii)].join
