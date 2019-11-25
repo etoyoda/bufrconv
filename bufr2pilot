@@ -1542,30 +1542,45 @@ class Bufr2temp
     case ival when 0..9999 then format('%04u', ival) else '////' end
   end
 
+  def rough_pressure h
+    case h
+    when 1350..1650 then 850
+    when 2790..3410 then 700
+    when 5220..6380 then 500
+    when 6840..8360 then 400
+    when 8550...10030 then 300
+    when 10030...11400 then 250
+    when 11400...13200 then 200
+    when 13200...15300 then 150
+    when 15300...17500 then 100
+    when 17500...19500 then 70
+    when 19500...22200 then 50
+    when 22200...25200 then 30
+    when 25200...28600 then 20
+    when 28600...33000 then 10
+    else nil
+    end
+  end
+
   def levsort levbranch
-    r = {}
+    levdb = {}
     levbranch.each{|levset|
       flags = find(levset, '008042')
       pres = find(levset, '007004')
-      pres = (pres / 100).to_i if pres
-      r[pres] = levset if 0 != (flags & 0x10000)
-      r[:SURF] = levset if 0 != (flags & 0x20000)
-      r[:MAXW] = levset if 0 != (flags & 0x04000)
-      if 0 != (flags & 0x08000) and pres and pres > 100 then
-        if r[:TRP1] and not r[:TRP2] then
-          r[:TRP2] = levset
-        else 
-          r[:TRP1] = levset
-        end
+      if pres then
+	pres = (pres / 100).to_i
+      else
+        height = find(levset, '007009')
+	pres = rough_pressure(height)
+	levdb[:APPROX] = true
       end
+      levdb[pres] = levset if 0 != (flags & 0x10000)
+      levdb[:MAXW] = levset if 0 != (flags & 0x04000)
     }
-    return r
+    return levdb
   end
 
   STDLEVS = [
-    [:SURF, '99', '/'],
-    [1000, '00', '0'],
-    [925, '92', '9'],
     [850, '85', '8'],
     [700, '70', '7'],
     [500, '50', '5'],
@@ -1578,70 +1593,35 @@ class Bufr2temp
   ]
 
   def scanlevs levdb
-    # levels to be included in the result
-    stdlevs = nil
-    id = '1'
-    # first levels missing in BUFR are omitted
-    for pres, pp, pid in STDLEVS
-      next if :SURF === pres
-      if levdb.include? pres
-        stdlevs = [] unless stdlevs
+    groups = []
+    i = 0
+    while STDLEVS[i]
+      pres, pp, pid = STDLEVS[i]
+      unless levdb.include?(pres) then
+        i += 1
+        next
       end
-      stdlevs.push([pres, pp]) if stdlevs
+      if lev2 = STDLEVS[i + 2] and levdb.include?(lev2.first) then
+        n = 3
+	pres = [pres, STDLEVS[i+1][0], lev2.first]
+      elsif lev1 = STDLEVS[i + 1] and levdb.include?(lev1.first) then
+        n = 2
+	pres = [pres, lev1.first]
+      else
+        n = 1
+	pres = [pres]
+      end
+      grp = {:pp => pp, :n => n, :pres => pres}
+      groups.push grp
+      i += 3
     end
-    raise EDOM, "no standard level reported" if stdlevs.nil?
-    stdlevs.unshift STDLEVS.first
-    return stdlevs, id
+    raise EDOM, "no standard level reported" if groups.empty?
+    return groups
   end
 
-  def encode_level report, pres, pp, levset
-
-    # 99PPP or PPhhh
-    case pres
-    when :SURF, :TRP1, :TRP2, :MAXW
-      ppp = levset ? find(levset, '007004') : nil
-      ppp *= 10 if ppp and ppp < 100_00
-      ppp = (ppp / 100) % 1000 if ppp
-      report.push [pp, itoa3(ppp)].join
-    else
-      hhh = levset ? find(levset, '010009') : nil
-      if hhh and hhh < 0 then
-        hhh = (hhh + 500.5).to_i
-      elsif hhh and pres > 500 then
-        hhh = hhh.to_i % 1000
-      elsif hhh then
-        hhh = ((hhh + 5) / 10).to_i % 1000
-      end
-      report.push [pp, itoa3(hhh)].join
-    end
-
-    # TTTaDD
-    unless '77' == pp
-      ttt = levset ? find(levset, '012101') : nil
-      td = levset ? find(levset, '012103') : nil
-      _DD = (ttt && td) ? ttt - td : nil
-      if ttt then
-        if ttt >= 273.15
-          ttt = ((ttt - 273.15) * 5).to_i * 2
-        else
-          ttt = ((273.20 - ttt) * 5).to_i * 2 + 1
-        end
-      end
-      if _DD then
-        if _DD < 5.0 then
-          _DD = (_DD * 10).to_i
-        elsif _DD < 5.5 then
-          _DD = 50
-        else
-          _DD = (_DD + 50.5).to_i
-        end
-      end
-      report.push [itoa3(ttt), itoa2(_DD)].join
-    end
-
-    # ddfff
-    dd = levset ? find(levset, '011001') : nil
-    fff = levset ? find(levset, '011002') : nil
+  def ddfff levset
+    dd = find(levset, '011001')
+    fff = find(levset, '011002')
     fff *= 1.9438 if fff and @knot
     dd = ((dd + 2.5) / 5).to_i * 5 if dd
     fff = (fff + 0.5).to_i if fff
@@ -1649,28 +1629,55 @@ class Bufr2temp
       fff += 500 if fff
     end
     dd /= 10 if dd
-    if dd == 31 and fff == 313 then
-      $stderr.puts "31314 for dd=31 and fff=313 to avoid unparseable"
-      fff = 314
+    if dd == 21 and fff == 212 then
+      $stderr.puts "21211 for dd=21 and fff=212 to avoid 21212"
+      fff = 211
     end
-    report.push [itoa2(dd), itoa3(fff)].join
+    [itoa2(dd), itoa3(fff)].join
+  end
+
+  def encode_grp grp, levdb, report
+    # 44nP1P1 .. pressure known
+    # 55nP1P1 .. approximated std levs by height
+    indic = levdb[:APPROX] ? '55' : '44'
+    report.push [indic, itoa1(grp[:n]), grp[:pp]].join
+    grp[:pres].each{|pres|
+      levset = levdb[pres]
+      report.push ddfff(levset)
+    }
+  end
+
+  def encode_maxw report, levset
+    ppp = find(levset, '007004')
+    if ppp then
+      ppp *= 10 if ppp < 100_00
+      ppp = (ppp / 100) % 1000
+      report.push ['77', itoa3(ppp)].join
+    else
+      hhhh = find(levset, '007009')
+      hhhh = ((hhhh + 5) / 10).to_i % 10000 if hhhh
+      report.push ['7',  itoa4(hhhh)].join
+    end
+
+    report.push ddfff(levset)
   end
 
   def subset tree
     report = []
 
     # MiMiMjMj
-    report.push "TTAA "
+    report.push "PPAA "
 
     levbranch = branch(tree, 0)
     levdb = levsort(levbranch)
-    stdlevs, id = scanlevs(levdb)
+    groups = scanlevs(levdb)
 
     # YYGGId
     yy = find(tree, '004003') || @reftime.day
     yy += 50 if @knot
     _GG1 = find(tree, '004004') || @reftime.hour
-    report.push [itoa2(yy), itoa2(_GG1), id].join
+    a4 = find(tree, '002003')
+    report.push [itoa2(yy), itoa2(_GG1), itoa1(a4)].join
 
     # IIiii
     _II = find(tree, '001001')
@@ -1681,39 +1688,15 @@ class Bufr2temp
     set_ahl
     @out.station stnid
 
-    # Section 2
-    stdlevs.each{|pres, pp|
-      levset = levdb[pres]
-      encode_level(report, pres, pp, levset)
+    groups.each{|grp|
+      encode_grp(grp, levdb, report)
     }
 
-    encode_level(report, :TRP1, '88', levdb[:TRP1]) if levdb[:TRP1]
-    encode_level(report, :TRP2, '88', levdb[:TRP2]) if levdb[:TRP2]
-    report.push '88999' unless levdb[:TRP1]
-
-    encode_level(report, :MAXW, '77', levdb[:MAXW]) if levdb[:MAXW]
-    report.push '77999' unless levdb[:MAXW]
-
-    # 4vbvbvava not implemented - considered deprecated not having real example
-
-    report.push '31313'
-
-    # srrarasasa
-    sr = find(tree, '002013')
-    sr -= 2 if (8..9) === sr
-    rara = find(tree, '002011')
-    rara = case rara
-      when 0..99 then rara
-      when 100..199 then rara - 100
-      else nil
-      end
-    sasa = find(tree, '002014')
-    report.push [itoa1(sr), itoa2(rara), itoa2(sasa)].join
-
-    # 8GGgg
-    _GG = find(tree, '004004')
-    gg = find(tree, '004005')
-    report.push ['8', itoa2(_GG), itoa2(gg)].join
+    if levdb[:MAXW] then
+      encode_maxw(report, levdb[:MAXW])
+    else
+      report.push '77999'
+    end
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
