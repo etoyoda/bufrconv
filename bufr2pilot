@@ -1573,8 +1573,9 @@ class Bufr2temp
     return nil
   end
 
-  def levsort levbranch
+  def levsort tree
     levdb = {}
+    levbranch = branch(tree, 0)
     #
     # WMO標準テンプレート、008042フラグ、007004気圧または007009高度がある
     #
@@ -1617,6 +1618,31 @@ class Bufr2temp
       levdb[pres] = levset
       levdb[dpres] = diff
     }
+    return levdb unless levdb.empty?
+    #
+    # 豪州型プロファイラ
+    #
+    stnlev = find(tree, '007001')
+    if stnlev then
+      # 日本型プロファイラも（やっつけだが）捨てない
+      subbranch = branch(levbranch.last, 0)
+      levbranch = subbranch if subbranch
+      #
+      levbranch.each{|levset|
+        h = find(levset, '007006')
+	next if h.nil?
+	next if find(levset, '011001').nil? and find(levset, '011003').nil?
+	hgt = stnlev + h
+	pres, diff = p_and_diff(hgt)
+	next if pres.nil?
+	dpres = format('d%4u', pres)
+	xdiff = levdb[dpres] || 9999
+	next if diff > xdiff
+	levdb[pres] = levset
+	levdb[dpres] = diff
+      }
+    end
+
     return levdb
   end
 
@@ -1663,6 +1689,14 @@ class Bufr2temp
     return '/////' unless levset
     dd = find(levset, '011001')
     fff = find(levset, '011002')
+    unless dd then
+      u = find(levset, '011003')
+      v = find(levset, '011004')
+      if u and v then
+	fff = Math.hypot(u, v)
+	dd = Math.atan2(u, v) / Math::PI * 180 + 180
+      end
+    end
     fff *= 1.9438 if fff and @knot
     dd = ((dd + 2.5) / 5).to_i * 5 if dd
     fff = (fff + 0.5).to_i if fff
@@ -1728,8 +1762,7 @@ class Bufr2temp
     # MiMiMjMj
     report.push "PPAA "
 
-    levbranch = branch(tree, 0)
-    levdb = levsort(levbranch)
+    levdb = levsort(tree)
     groups = scanlevs(levdb)
 
     # YYGGId
