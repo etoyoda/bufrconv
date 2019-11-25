@@ -122,10 +122,11 @@ class Bufr2temp
       pres = find(levset, '007004')
       if pres then
 	pres = (pres / 100).to_i
+	apres = format('p%02u', pres / 10)
+	levdb[apres] = true
       else
         height = find(levset, '007009')
 	pres = rough_pressure(height)
-	levdb[:APPROX] = true
       end
       levdb[pres] = levset if 0 != (flags & 0x10000)
       levdb[:MAXW] = levset if 0 != (flags & 0x04000)
@@ -192,7 +193,7 @@ class Bufr2temp
   def encode_grp grp, levdb, report
     # 44nP1P1 .. pressure known
     # 55nP1P1 .. approximated std levs by height
-    indic = levdb[:APPROX] ? '55' : '44'
+    indic = levdb['p' + grp[:pp]] ? '44' : '55'
     report.push [indic, itoa1(grp[:n]), grp[:pp]].join
     grp[:pres].each{|pres|
       levset = levdb[pres]
@@ -245,7 +246,7 @@ class Bufr2temp
     yy += 50 if @knot
     _GG1 = find(tree, '004004') || @reftime.hour
     a4 = encode_a4(find(tree, '002003'))
-    a4 = 0 if a4.nil? and not levdb[:APPROX]
+    a4 = 0 if a4.nil? and levdb['p85']
     report.push [itoa2(yy), itoa2(_GG1), itoa1(a4)].join
 
     # IIiii
