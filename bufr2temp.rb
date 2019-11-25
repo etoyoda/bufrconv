@@ -202,6 +202,10 @@ class Bufr2temp
       fff += 500 if fff
     end
     dd /= 10 if dd
+    if dd == 31 and fff == 313 then
+      $stderr.puts "31314 for dd=31 and fff=313 to avoid unparseable"
+      fff = 314
+    end
     report.push [itoa2(dd), itoa3(fff)].join
   end
 
