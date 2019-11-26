@@ -333,7 +333,7 @@ class Bufr2temp
     report.push stnid
 
     set_ahl
-    @out.station stnid
+    @out.tell_station stnid
 
     groups.each{|grp|
       encode_grp(grp, levdb, report)

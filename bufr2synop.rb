@@ -193,7 +193,7 @@ class Bufr2synop
       stnid = [itoa2(_II), itoa3(iii)].join
       report.push(stnid)
       print_ahl('AAXX')
-      @out.station(stnid)
+      @out.tell_station(stnid)
     # 高解像度位置があれば SYNOP MOBIL
     elsif lat = find(tree, '005001') and lon = find(tree, '006001') then
       stnid = find(tree, '001015').to_s.strip
@@ -224,7 +224,7 @@ class Bufr2synop
       print_ahl('OOXX')
     # 位置があれば SHIP
     elsif lat = find(tree, '005002') and lon = find(tree, '006002') then
-      print_ahl('BBXX')
+      @out.tell_latlon(lat, lon)
 
       stnid = find(tree, '001011').to_s.strip
       stnid = 'SHIP' if stnid.empty?
@@ -242,6 +242,7 @@ class Bufr2synop
       lo = (lon.abs * 10).floor
       report.push [itoa1(qc), itoa4(lo)].join
 
+      print_ahl('BBXX')
     else
       $stderr.puts ['IIiii and lat/lon missing ', given_ahl].join
       return

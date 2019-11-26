@@ -1224,10 +1224,15 @@ class Output
     init_table_idxaa(dbpath)
     @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
     # 電文毎にクリアする変数
-    @buf = @stnlist = @ctr = nil
-    @ahl = @tt = @yygggg = @cflag = nil
+    init_vars
     # 電文通番
     @n = 0
+  end
+
+  def init_vars
+    @buf = @stnlist = @ctr = nil
+    @ahl = @tt = @yygggg = @cflag = nil
+    @bbox = nil
   end
 
   def init_hist
@@ -1273,6 +1278,17 @@ class Output
       # 地点からひとつに決められない時は発信センターによる
       # 欠測遅延があるため地点は順不同となり、多数決や先着では安定しないため
       $stderr.puts "undetermined #{aalist.inspect}" if $VERBOSE
+    end
+    # 経緯度範囲があれば SHIP 扱い
+    unless @bbox.nil?
+      return 'VA' if bbox_inside(30, -60, -35,  70)
+      return 'VB' if bbox_inside(90,   5,  70, 180)
+      return 'VC' if bbox_inside( 5, -60,-120, -35)
+      return 'VD' if bbox_inside(90,   5,-180, -35)
+      return 'VE' if bbox_inside( 5, -60,  70, 240)
+      return 'VF' if bbox_inside(90,  30, -35,  70)
+      return 'VJ' if bbox_inside(-60,-90,-180, 180)
+      return 'VX'
     end
     @table_c11[@ctr] or 'XX'
   end
@@ -1378,8 +1394,32 @@ class Output
     nil
   end
 
-  def station idx
+  def tell_latlon lat, lon
+    unless @bbox
+      @bbox = {:n=>-90.0, :s=>90.0,
+        :w=>180.0, :e=>-180.0,
+	:W=>360.0, :E=>0.0}
+    end
+    @bbox[:n] = [@bbox[:n], lat].max
+    @bbox[:s] = [@bbox[:s], lat].min
+    @bbox[:w] = [@bbox[:w], lon].min
+    @bbox[:e] = [@bbox[:e], lon].max
+    elon = (lon < 0) ? (lon + 360) : lon
+    @bbox[:W] = [@bbox[:W], elon].min
+    @bbox[:E] = [@bbox[:E], elon].max
+    self
+  end
+
+  def bbox_inside n, s, w, e
+    return nil unless @bbox
+    return false if @bbox[:n] > n
+    return false if @bbox[:s] < s
+    (@bbox[:w] >= w && @bbox[:e] <= e) || (@bbox[:W] >= w && @bbox[:E] <= e)
+  end
+
+  def tell_station idx
     @stnlist.push idx
+    self
   end
 
   def puts line
@@ -1439,7 +1479,7 @@ class Output
     @fp.write msg
     @fp.flush
   ensure
-    @ctr = @stnlist = @buf = @tt = @yygggg = @cflag = nil
+    init_vars
   end
 
   def close
@@ -1780,7 +1820,7 @@ class Bufr2temp
     report.push stnid
 
     set_ahl
-    @out.station stnid
+    @out.tell_station stnid
 
     groups.each{|grp|
       encode_grp(grp, levdb, report)

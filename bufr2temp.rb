@@ -232,7 +232,7 @@ class Bufr2temp
     report.push stnid
 
     set_ahl
-    @out.station stnid
+    @out.tell_station stnid
 
     # Section 2
     stdlevs.each{|pres, pp|
