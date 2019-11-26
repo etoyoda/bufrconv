@@ -747,6 +747,10 @@ class BufrDecode
         $stderr.puts "ymdhack failed - delayed repl before ymd" if $DEBUG
         return nil
       end
+      unless desc[:width]
+	$stderr.puts "ymdhack stopped - #{desc.inspect} before ymd" if $DEBUG
+	return nil
+      end
       bits += desc[:width]
     }
     $stderr.puts "ymdhack failed - ymd not found" if $DEBUG
