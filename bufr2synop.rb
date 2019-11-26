@@ -31,8 +31,8 @@ class Bufr2synop
     return if @hdr[:cat] != 0
     return if @ahl_hour
     tt = case @reftime.hour
-      when 0, 12 then 'SM'
-      when 6, 18 then 'SI'
+      when 0, 6, 12, 18 then 'SM'
+      when 3, 9, 15, 21 then 'SI'
       else 'SN'
       end
     case @hdr[:ctr]
