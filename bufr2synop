@@ -1474,9 +1474,9 @@ class Bufr2synop
   end
 
   def print_ahl mimj = 'AAXX'
-    # data category 0: Surface data - land
-    return if @hdr[:cat] != 0
     return if @ahl_hour
+    # data category 0: Surface data - land
+    raise Errno::ENOSYS unless @hdr[:cat] == 0 or @hdr[:cat] == 1
     tt = case @reftime.hour
       when 0, 6, 12, 18 then 'SM'
       when 3, 9, 15, 21 then 'SI'
@@ -1669,6 +1669,26 @@ class Bufr2synop
       report.push [itoa4(h0), '1'].join
 
       print_ahl('OOXX')
+    # 位置があれば SHIP
+    elsif lat = find(tree, '005002') and lon = find(tree, '006002') then
+      print_ahl('BBXX')
+
+      stnid = find(tree, '001011').to_s.strip
+      stnid = 'SHIP' if stnid.empty?
+      report.push stnid
+
+      # 99LaLaLa
+      la = (lat.abs * 10).floor
+      report.push ['99', itoa3(la)].join
+      # QcLoLoLoL0
+      qc = if lat >= 0 and lon >= 0 then 1
+        elsif lon >= 0 then 3
+        elsif lat < 0 then 5
+        else 7
+        end
+      lo = (lon.abs * 10).floor
+      report.push [itoa1(qc), itoa4(lo)].join
+
     else
       $stderr.puts ['IIiii and lat/lon missing ', given_ahl].join
       return
@@ -1955,12 +1975,18 @@ if $0 == __FILE__
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
-      next unless bufrmsg[:cat] == 0
-      case bufrmsg[:subcat]
-      when 0..2, 7, 50, 51, 52
-      else next
+      type = nil
+      if bufrmsg[:cat] == 0 then
+        case bufrmsg[:subcat]
+        when 0..2, 50, 51, 52 then type = :SYNOP
+        when 7 then type = :SYNOP_MOBIL
+        end
+      elsif bufrmsg[:cat] == 1 then
+        case bufrmsg[:subcat]
+        when 0 then type = :SHIP
+        end
       end
-      db.decode(bufrmsg, :direct, encoder)
+      db.decode(bufrmsg, :direct, encoder) if type
     }
   }
   encoder.close
