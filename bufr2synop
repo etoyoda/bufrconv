@@ -1411,7 +1411,7 @@ class Output
       raise Errno::EDOM, "more than 999 messages" if @n > 999
       @buf = ["\n", DummyAHL.new, "\n"]
     when :ZIP
-      @buf = ["", DummyAHL.new, "\n"]
+      @buf = ["", DummyAHL.new, "\r\r\n"]
     end
     @stnlist = []
     @n += 1
