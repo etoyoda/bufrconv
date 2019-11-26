@@ -1216,6 +1216,13 @@ class Output
     if @fmt.nil? then
       @fmt = if @ofile then :BSO else :IA2 end
     end
+    if @ofile.nil? then
+      case @fmt
+      when :ZIP
+        @ofile = 'OUTPUT.zip'
+        $stderr.puts "output to #{@ofile}"
+      end
+    end
     if @histout and @histin.nil? then
       @histin = @histout
     end
@@ -1226,7 +1233,19 @@ class Output
     init_table_c11(dbpath)
     @table_idxaa = {}
     init_table_idxaa(dbpath)
-    @fp = @ofile ? File.open(@ofile, 'wb:BINARY') : $stdout
+    @rawfp = nil
+    if @ofile then
+      case @fmt
+      when :BSO, :IA2
+	@fp = File.open(@ofile, 'wb:BINARY')
+      when :ZIP
+        require 'zip'
+	@fp = Zip::OutputStream.open(@ofile)
+      else raise Errno::ENOSYS, "fmt = #@fmt"
+      end
+    else
+      @fp = $stdout
+    end
     # 電文毎にクリアする変数
     init_vars
     # 電文通番
@@ -1391,7 +1410,8 @@ class Output
       # BSO: NAPS→アデスで用いる国内バッチFTP形式。
       raise Errno::EDOM, "more than 999 messages" if @n > 999
       @buf = ["\n", DummyAHL.new, "\n"]
-    else raise Errno::ENOSYS, "fmt = #@fmt"
+    when :ZIP
+      @buf = ["", DummyAHL.new, "\n"]
     end
     @stnlist = []
     @n += 1
@@ -1474,20 +1494,27 @@ class Output
     when :IA2
       @buf.push "\n\n\n\n\n\n\n\nNNNN\r\r\n"
       msg = @buf.join
+      @fp.write msg
+      @fp.flush
     when :BSO
       @buf.unshift(makebch())
       @buf.push "\x03"
       msg = @buf.join
       @fp.write format('%08u00', msg.bytesize)
+      @fp.write msg
+      @fp.flush
+    when :ZIP
+      fnam = @buf[1].gsub(/\W/, '_') + '.txt'
+      @fp.put_next_entry(fnam)
+      @fp.write @buf.join
     end
-    @fp.write msg
-    @fp.flush
   ensure
     init_vars
   end
 
   def close
     save_hist
+    @fp.close
   end
 
 end
