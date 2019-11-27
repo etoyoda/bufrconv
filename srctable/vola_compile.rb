@@ -64,6 +64,9 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
       isocode = 'REU' if 'FRA' == isocode
       isocode = 'BVT' if 'NOR' == isocode
     end
+    if '2' == region then
+      isocode = 'RU-KHA' if 'RUS' == isocode
+    end
     if '3' == region then
       isocode = 'FLK' if 'GBR' == isocode
       isocode = 'GUF' if 'FRA' == isocode
@@ -78,7 +81,6 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     end
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
     aa = isoaa[isocode]
-    aa = 'RA' if aa == 'RS' and '2' == region
     if '5' == region and 'US' == aa then
       aa = if /^1.*N$/ === lat
         then 'HW'
