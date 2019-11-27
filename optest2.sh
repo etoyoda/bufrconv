@@ -14,10 +14,8 @@ notify(){
 }
 trap "notify" ERR
 
-bc=$(dirname $0)
-if [ X"$bc" = X"." ]; then
-  bc=$(/bin/pwd)
-fi
+cd $(dirname $0)
+bc=$(/bin/pwd)
 
 set `date --date=yesterday +'%Y %m %d %u'`
 yy=$1
@@ -38,7 +36,24 @@ tgz=/nwp/a0/${yy}-${mm}/obsbf-${yy}-${mm}-${dd}.tar.gz
 date >&2
 
 gzip -dc $tgz > obsbf-${yy}-${mm}-${dd}.tar
+
 if ruby ${bc}/bufrdump.rb -d obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2> dumperr.txt
+then
+  :
+else
+  tail -40 dumperr.txt
+  false
+fi
+
+if ruby ${bc}/bufr2synop.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2>> dumperr.txt
+then
+  :
+else
+  tail -40 dumperr.txt
+  false
+fi
+
+if ruby ${bc}/bufr2temp.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2>> dumperr.txt
 then
   :
 else
