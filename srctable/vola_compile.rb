@@ -83,12 +83,8 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     end
     raise "idxnum=#{idxnum} (#{line})" unless /^[0-9]{5}$/ === idxnum
     aa = isoaa[isocode]
-    if '5' == region and 'US' == aa then
-      aa = if /^1.*N$/ === lat
-        then 'HW'
-        else 'PA'
-        end
-    end
+    aa = 'PA' if '5' == region and /^(US|FM|MH|PP)$/ === aa
+    aa = 'PA' if 'AK' == aa and /E$/ === lon
     raise "undefined AA for #{isocode} (#{line})" unless aa
     db5[idxnum] = aa
     check_store(db4, idxnum[0,4], aa)
