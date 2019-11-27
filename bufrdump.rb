@@ -349,7 +349,15 @@ BUFRの反復はネストできなければいけないので（用例がある�
             num = num.first
             raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
           end
-          raise EDOM, "repl num missing" if num.nil?
+	  if num.nil? then
+	    if /^IS\wB\d\d MXBA / === @bufrmsg.ahl then
+	      x = @bufrmsg.readnum({:width=>4, :scale=>0, :refv=>0})
+	      $stderr.puts "mexhack: #{@bufrmsg.ahl} (#{x.inspect})"
+	      num = 0
+	    else
+	      raise EDOM, "repl num missing"
+	    end
+	  end
           if num.zero? then
             setloop(0, ndesc)
             tb.setloop

@@ -95,6 +95,10 @@ class BUFRMsg
     [@ptr, @ptrmax]
   end
 
+  def ptrseek ofs
+    @ptr += ofs
+  end
+
   def peeknum ptr, width
     ifirst = ptr / 8
     raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
