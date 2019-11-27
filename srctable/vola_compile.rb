@@ -46,6 +46,7 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     idxnum = row[5]
     name = row[7]
     lat = row[8]
+    lon = row[9]
     next if idxnum.empty?
     # corrections
     isocode = 'ATA' if '7' === region
@@ -75,6 +76,7 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
       isocode = 'ATG' if 'GBR' == isocode
       isocode = 'BLM' if 'FRA' == isocode
       isocode = 'BES' if 'NLD' == isocode
+      isocode = 'US-AK' if 'USA' == isocode and /^1[3-7]/ === lon
     end
     if '5' == region then
       isocode = 'WLF' if 'FRA' == isocode
