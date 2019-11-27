@@ -381,7 +381,7 @@ class BUFRMsg
     rt3 = rt1 + 86400
     if (brtx >> 10) == rt3.year and (0b1111 & (brtx >> 6)) == rt3.mon and
       (0b111111 & brtx) == rt3.day then
-      $stderr.puts "ymdhack: tomorrow okay"
+      $stderr.puts "ymdhack: tomorrow okay" if $DEBUG
       return nil
     end
     #
