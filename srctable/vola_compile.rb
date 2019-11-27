@@ -62,6 +62,7 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
           end
       end
       isocode = 'REU' if 'FRA' == isocode
+      isocode = 'BVT' if 'NOR' == isocode
     end
     if '3' == region then
       isocode = 'FLK' if 'GBR' == isocode
