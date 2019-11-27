@@ -20,7 +20,7 @@ class TreeBuilder
     case @mode
     when :direct
       @out.newbufr h
-    when :json
+    when :json, :pjson
       @out.puts JSON.generate(h)
     when :plain
       @out.puts h.inspect
@@ -31,7 +31,7 @@ class TreeBuilder
 
   def newsubset isubset, ptrcheck
     case @mode
-    when :json, :direct
+    when :json, :pjson, :direct
       @tosstack = []
       @tos = @root = []
     when :plain
@@ -42,7 +42,7 @@ class TreeBuilder
 
   def showval desc, val
     case @mode
-    when :json, :direct
+    when :json, :pjson, :direct
       raise "showval before newsubset" unless @tos
       @tos.push [desc[:fxy], val]
     when :plain
@@ -63,7 +63,7 @@ class TreeBuilder
 
   def setloop
     case @mode
-    when :json, :direct
+    when :json, :pjson, :direct
       @tos.push []
       @tosstack.push @tos
       @tos = @tos.last
@@ -78,7 +78,7 @@ class TreeBuilder
 
   def newcycle
     case @mode
-    when :json, :direct
+    when :json, :pjson, :direct
       @tos = @tosstack.pop
       @tos.pop if @tos.last.empty?
       @tos.push []
@@ -91,7 +91,7 @@ class TreeBuilder
 
   def endloop
     case @mode
-    when :json, :direct
+    when :json, :pjson, :direct
       @tos = @tosstack.pop
       @tos.pop if @tos.last.empty?
       @tos = @tosstack.pop
@@ -150,11 +150,11 @@ class TreeBuilder
       end
       @root = @tos = @tosstack = nil
     when :json
-      if @compress then
-        split(@root).each{|subset| @out.puts JSON.generate(subset) }
-      else
-        @out.puts JSON.generate(@root)
-      end
+      split(@root).each{|subset| @out.puts JSON.generate(subset) }
+      @root = @tos = @tosstack = nil
+      @out.flush
+    when :pjson
+      split(@root).each{|subset| @out.puts JSON.pretty_generate(subset) }
       @root = @tos = @tosstack = nil
       @out.flush
     when :plain
@@ -166,7 +166,7 @@ class TreeBuilder
     case @mode
     when :direct
       @out.endbufr
-    when :json
+    when :json, :pjson
       @out.puts "7777"
     when :plain
       @out.puts "7777"
@@ -447,9 +447,15 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       }
     }
     @v13p = false
+    # JSON.generate を JSON.pretty_generate に差し替えるため
+    @generate = :generate
   end
 
   attr_reader :path
+
+  def pretty!
+    @generate = :pretty_generate
+  end
 
   def tabconfig bufrmsg
     raise ENOSYS, "master version missing" unless bufrmsg[:masver]
@@ -555,7 +561,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 
   def expand_dump bufrmsg, out = $stdout
     bufrmsg.decode_primary
-    out.puts JSON.generate(expand(bufrmsg[:descs].split(/[,\s]/)))
+    out.puts JSON.send(@generate, expand(bufrmsg[:descs].split(/[,\s]/)))
   end
 
   def flatten_dump bufrmsg, out = $stdout
@@ -571,7 +577,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   def compile_dump bufrmsg, out = $stdout
     bufrmsg.decode_primary
     tabconfig bufrmsg
-    out.puts JSON.generate(compile(bufrmsg[:descs].split(/[,\s]/)))
+    out.puts JSON.send(@generate, compile(bufrmsg[:descs].split(/[,\s]/)))
   end
 
   # 圧縮を使わない場合のデコード。
@@ -634,17 +640,29 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   end
 
   def decode_json bufrmsg, out = $stdout
-    decode(bufrmsg, :json, out)
+    sym = (@generate == :pretty_generate) ? :pjson : :json
+    decode(bufrmsg, sym, out)
+  end
+
+  def decode_pjson bufrmsg, out = $stdout
+    decode(bufrmsg, :pjson, out)
   end
 
 end
 
 if $0 == __FILE__
   db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
-  case ARGV.first
-  when '-xstr' then ARGV.shift; puts JSON.generate(db.expand(ARGV)); exit
-  when '-cstr' then ARGV.shift; puts JSON.generate(db.compile(ARGV)); exit
-  end
+  loop {
+    case ARGV.first
+    when '-xstr' then ARGV.shift; puts JSON.generate(db.expand(ARGV)); exit
+    when '-cstr' then ARGV.shift; puts JSON.generate(db.compile(ARGV)); exit
+    when '-p', '--pretty' then
+      ARGV.shift
+      db.pretty!
+    else
+      break
+    end
+  }
   action = :decode_json
   ARGV.each{|fnam|
     case fnam
@@ -653,6 +671,7 @@ if $0 == __FILE__
     when '-c' then action = :compile_dump
     when '-d' then action = :decode_plain
     when '-j' then action = :decode_json
+    when '-pj' then action = :decode_pjson
     else
       BUFRScan.filescan(fnam){|bufrmsg|
         db.send(action, bufrmsg)
