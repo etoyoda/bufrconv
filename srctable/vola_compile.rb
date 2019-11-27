@@ -71,6 +71,7 @@ File.open('vola_legacy_report.txt', 'r:UTF-8'){|fp|
     if '4' == region then
       isocode = 'ATG' if 'GBR' == isocode
       isocode = 'BLM' if 'FRA' == isocode
+      isocode = 'BES' if 'NLD' == isocode
     end
     if '5' == region then
       isocode = 'WLF' if 'FRA' == isocode
