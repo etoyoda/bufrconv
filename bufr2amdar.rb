@@ -47,6 +47,16 @@ class Bufr2amdar
     return nil
   end
 
+  # 記述子 fxy を含む最初の記述子の *直前* の記述子-値ペアを返す
+  def find_prev tree, fxy
+    tree.size.times {|i|
+      if tree[i].first == fxy then
+        return tree[i-1][1]
+      end
+    }
+    return nil
+  end
+
   def itoa1 ival
     case ival when 0..9 then format('%01u', ival) else '/' end
   end
@@ -140,8 +150,21 @@ class Bufr2amdar
     fff = (fff * 1.9438445 + 0.5).floor if fff
     report.push [itoa3(ddd), '/', itoa3(fff)].join if ddd or fff
 
-    tb = find(tree, '011035')
-    report.push tb.inspect
+    tb = case find(tree, '011037')
+      when 0..1 then 0
+      when 2..9 then 1
+      when 10..20 then 2
+      when 21..27 then 3
+      else nil
+      end
+    report.push ['TB', itoa1(tb)].join
+
+    tqc = case find_prev(tree, '012101')
+      when 0 then 0
+      when 1 then 1
+      else nil
+      end
+    report.push ['S//', itoa1(tqc)].join if tqc
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
