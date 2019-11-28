@@ -14,7 +14,10 @@ class Bufr2temp
     @hdr = @reftime = nil
     @ahl_is_set = nil
     @knot = nil
+    @verbose = false
   end
+
+  attr_accessor :verbose
 
   def newbufr hdr
     @hdr = hdr
@@ -165,12 +168,13 @@ class Bufr2temp
       next if hgt.nil? or dd.nil?
       pres, diff = p_and_diff(hgt)
       next if pres.nil?
-      dpres = format('d%4u', pres)
+      dpres = format('d%03u', pres)
       xdiff = levdb[dpres] || 9999
       next if diff > xdiff
       levdb[pres] = levset
       levdb[dpres] = diff
     }
+    $stderr.puts levdb.inspect if @verbose and not levdb.empty?
     return levdb unless levdb.empty?
     #
     # 豪州型プロファイラ
@@ -188,7 +192,7 @@ class Bufr2temp
 	hgt = stnlev + h
 	pres, diff = p_and_diff(hgt)
 	next if pres.nil?
-	dpres = format('d%4u', pres)
+	dpres = format('d%03u', pres)
 	xdiff = levdb[dpres] || 9999
 	next if diff > xdiff
 	levdb[pres] = levset
@@ -197,6 +201,8 @@ class Bufr2temp
     end
 
     return levdb
+  ensure
+    $stderr.puts levdb.inspect if @verbose 
   end
 
   STDLEVS = [
@@ -368,6 +374,10 @@ if $0 == __FILE__
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
   encoder = Bufr2temp.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
+    case fnam
+    when '-v' then encoder.verbose = true; next
+    when '-q' then encoder.verbose = false; next
+    end
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
       next unless bufrmsg[:cat] == 2

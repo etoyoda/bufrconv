@@ -1555,7 +1555,10 @@ class Bufr2temp
     @hdr = @reftime = nil
     @ahl_is_set = nil
     @knot = nil
+    @verbose = false
   end
+
+  attr_accessor :verbose
 
   def newbufr hdr
     @hdr = hdr
@@ -1738,6 +1741,8 @@ class Bufr2temp
     end
 
     return levdb
+  ensure
+    $stderr.puts levdb.inspect if @verbose 
   end
 
   STDLEVS = [
@@ -1909,6 +1914,10 @@ if $0 == __FILE__
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
   encoder = Bufr2temp.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
+    case fnam
+    when '-v' then encoder.verbose = true; next
+    when '-q' then encoder.verbose = false; next
+    end
     BUFRScan.filescan(fnam){|bufrmsg|
       bufrmsg.decode_primary
       next unless bufrmsg[:cat] == 2
