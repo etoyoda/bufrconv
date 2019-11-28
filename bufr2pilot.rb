@@ -68,6 +68,7 @@ class Bufr2temp
 
   # n個目の反復を探す (n >= 0)
   def branch tree, nth = 0
+    return nil if tree.nil?
     tree.size.times{|i|
       elem = tree[i]
       case elem.first
