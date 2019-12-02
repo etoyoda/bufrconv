@@ -120,13 +120,21 @@ class Bufr2amdar
     report.push [yygg, itoa2(gg)].join
 
     # ShhIhIhI
-    pres = find(tree, '007010')
-    sh = (pres >= 0) ? 'F' : 'A'
-    hihihi = pres ? (pres + 50) / 100 : nil
-    report.push [sh, itoa3(hihihi)].join if hihihi
+    pheight = find(tree, '007010')
+    if pheight.nil? then
+      pheight = find(tree, '007002')
+    end
+    if pheight then
+      sh = (pheight >= 0) ? 'F' : 'A'
+      hihihi = (pheight + 50) / 100
+      report.push [sh, itoa3(hihihi)].join
+    end
 
     # SSTATATA
     t = find(tree, '012101')
+    if t.nil? then
+      t = find(tree, '012001')
+    end
     if t
       ss = (t >= 0) ? 'PS' : 'MS'
       t = (t.abs * 10 + 0.5).floor
