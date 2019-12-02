@@ -6,7 +6,7 @@ require 'output' ##del
 
 class Bufr2temp
 
-  class EDOM < Errno::EDOM
+  class ENOMSG < Errno::ENOMSG
   end
 
   def initialize out
@@ -241,7 +241,7 @@ class Bufr2temp
       groups.push grp
       i += 3
     end
-    raise EDOM, "no standard level reported" if groups.empty?
+    raise ENOMSG, "no standard level reported" if groups.empty?
     return groups
   end
 
@@ -352,7 +352,7 @@ class Bufr2temp
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
-  rescue EDOM => e
+  rescue ENOMSG => e
     $stderr.puts e.message + @hdr[:meta].inspect
   end
 

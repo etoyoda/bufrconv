@@ -6,7 +6,7 @@ require 'output' ##del
 
 class Bufr2temp
 
-  class EDOM < Errno::EDOM
+  class ENOMSG < Errno::ENOMSG
   end
 
   def initialize out
@@ -270,7 +270,7 @@ class Bufr2temp
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
-  rescue EDOM => e
+  rescue ENOMSG => e
     $stderr.puts e.message + @hdr[:meta].inspect
   end
 

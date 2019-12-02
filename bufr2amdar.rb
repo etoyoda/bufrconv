@@ -6,9 +6,6 @@ require 'output' ##del
 
 class Bufr2amdar
 
-  class EDOM < Errno::EDOM
-  end
-
   def initialize out
     @out = out
     @hdr = @reftime = nil
@@ -168,8 +165,6 @@ class Bufr2amdar
 
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
-  rescue EDOM => e
-    $stderr.puts e.message + @hdr[:meta].inspect
   end
 
   def endbufr
