@@ -5,7 +5,9 @@ export TZ
 
 cd `dirname $0`
 
-set `date +'%Y %m %d %H %M'`
+: ${FORCEDATE:=now}
+
+set `date --date=$FORCEDATE +'%Y %m %d %H %M'`
 yy=$1
 mm=$2
 dd=$3
@@ -47,13 +49,20 @@ time ruby bufr2synop -o'FMT=IA2,HIN=HIST.txt,HOUT=HNEW.txt,FILE=TAC.txt' \
 test ! -f HNEW.txt || mv -f HNEW.txt HIST.txt
 test ! -s TAC.txt || mv -f TAC.txt SYNOP-${dd}${hh}${nn}.txt
 
-
 time ruby bufr2temp -o'FMT=IA2,HIN=HIST.txt,HOUT=HNEW.txt,FILE=TAC.txt' \
   BUCKET:AHL='^IUS... BABJ'
 test ! -f HNEW.txt || mv -f HNEW.txt HIST.txt
 test ! -s TAC.txt || mv -f TAC.txt TEMP-${dd}${hh}${nn}.txt
 
+time ruby bufr2pilot -o'FMT=IA2,HIN=HIST.txt,HOUT=HNEW.txt,FILE=TAC.txt' \
+  BUCKET:AHL='^IU.... BABJ'
+test ! -f HNEW.txt || mv -f HNEW.txt HIST.txt
+test ! -s TAC.txt || mv -f TAC.txt PILOT-${dd}${hh}${nn}.txt
+
 rm -f BUCKET
+
+find . -ctime +5 -name '*-*.txt' | xargs rm -f
 set +x
 exec 2>&3
+grep ': ' ${LOGFILE} || true
 test -s ${LOGFILE} || rm -f ${LOGFILE}
