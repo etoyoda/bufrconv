@@ -1683,7 +1683,7 @@ class Bufr2temp
       end
       stdlevs.push([pres, pp]) if stdlevs
     end
-    raise EDOM, "no standard level reported" if stdlevs.nil?
+    raise ENOMSG, "no standard level reported" if stdlevs.nil?
     stdlevs.unshift STDLEVS.first
     return stdlevs, id
   end
