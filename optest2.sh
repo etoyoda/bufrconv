@@ -3,17 +3,6 @@ set -Ceuo pipefail
 export LANG=C
 export TZ=UTC
 
-notify(){
-  set +x
-  exec 2>&3
-  tail batchlog.txt
-  echo error exit
-  cd ..
-  test ! -d bufrval.bak || rm -rf bufrval.bak
-  mv -f bufrval.tmp bufrval.bak
-}
-trap "notify" ERR
-
 cd $(dirname $0)
 bc=$(/bin/pwd)
 
@@ -23,11 +12,24 @@ mm=$2
 dd=$3
 uu=$4
 
-cd /nwp/p3/${yy}-${mm}
+notify(){
+  set +x
+  exec 2>&3
+  tail batchlog.txt
+  echo error exit
+  cd ..
+  test ! -d bufrval.bak || rm -rf bufrval.bak
+  mv -f bufrval.tmp bufrval.bak
+}
+
+mondir=/nwp/p3/${yy}-${mm}
+test -d $mondir || mkdir $mondir
+cd $mondir
 mkdir bufrval.tmp
 cd bufrval.tmp
 
 exec 3>&2
+trap "notify" ERR
 exec 2> batchlog.txt
 set -x
 renice 18 $$
