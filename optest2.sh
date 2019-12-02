@@ -30,12 +30,14 @@ cd bufrval.tmp
 exec 3>&2
 exec 2> batchlog.txt
 set -x
+renice 18 $$
 
 tgz=/nwp/a0/${yy}-${mm}/obsbf-${yy}-${mm}-${dd}.tar.gz
 
 date >&2
 
 gzip -dc $tgz > obsbf-${yy}-${mm}-${dd}.tar
+date >&2
 
 if ruby ${bc}/bufrdump.rb -d obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2> dumperr.txt
 then
@@ -44,6 +46,7 @@ else
   tail -40 dumperr.txt
   false
 fi
+date >&2
 
 if ruby ${bc}/bufr2synop.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2>> dumperr.txt
 then
@@ -52,6 +55,7 @@ else
   tail -40 dumperr.txt
   false
 fi
+date >&2
 
 if ruby ${bc}/bufr2temp.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2>> dumperr.txt
 then
@@ -60,8 +64,8 @@ else
   tail -40 dumperr.txt
   false
 fi
-
 date >&2
+
 rm -f obsbf-${yy}-${mm}-${dd}.tar
 
 set +x
