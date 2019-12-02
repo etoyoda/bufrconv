@@ -222,8 +222,12 @@ class BUFRMsg
       @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+11])
       @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+13])
       @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+14])
+      yy = BUFRMsg::unpack2(@buf[@idsofs+15,2])
+      if yy < 100
+	yy += 2000
+      end
       reftime = [
-        BUFRMsg::unpack2(@buf[@idsofs+15,2]),
+        yy,
         BUFRMsg::unpack1(@buf[@idsofs+17]),
         BUFRMsg::unpack1(@buf[@idsofs+18]),
         BUFRMsg::unpack1(@buf[@idsofs+19]),
