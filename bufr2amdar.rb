@@ -125,6 +125,7 @@ class Bufr2amdar
       pheight = find(tree, '007002')
     end
     if pheight then
+      pheight *= 3.280839895
       sh = (pheight >= 0) ? 'F' : 'A'
       hihihi = (pheight + 50) / 100
       report.push [sh, itoa3(hihihi)].join
@@ -136,6 +137,7 @@ class Bufr2amdar
       t = find(tree, '012001')
     end
     if t
+      t -= 273.15
       ss = (t >= 0) ? 'PS' : 'MS'
       t = (t.abs * 10 + 0.5).floor
       report.push [ss, itoa3(t)].join
@@ -145,6 +147,7 @@ class Bufr2amdar
 
     td = find(tree, '012103')
     if td
+      td -= 273.15
       sd = (td >= 0) ? 'PS' : 'MS'
       td = (td.abs * 10 + 0.5).floor
       report.push [sd, itoa3(td)].join
