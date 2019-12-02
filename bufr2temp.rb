@@ -142,7 +142,7 @@ class Bufr2temp
       end
       stdlevs.push([pres, pp]) if stdlevs
     end
-    raise ENOMSG, "no standard level reported" if stdlevs.nil?
+    raise ENOMSG, "No std level" if stdlevs.nil?
     stdlevs.unshift STDLEVS.first
     return stdlevs, id
   end
@@ -271,7 +271,11 @@ class Bufr2temp
     report.last.sub!(/$/, '=')
     @out.print_fold(report)
   rescue ENOMSG => e
-    $stderr.puts e.message + @hdr[:meta].inspect
+    $stderr.puts [e.message.sub(/.* - /, ''), given_ahl()].join(' ')
+  end
+
+  def given_ahl
+    (@hdr[:meta] ? @hdr[:meta][:ahl] : nil) or '(ahl missing)'
   end
 
   def endbufr
