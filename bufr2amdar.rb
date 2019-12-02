@@ -89,7 +89,7 @@ class Bufr2amdar
       when 4 then 'LVW'
       when 5, 7..10 then 'ASC'
       when 6, 11..14 then 'DSC'
-      else nil
+      else '///'
       end
     report.push ip3
 
