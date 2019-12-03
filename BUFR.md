@@ -10,7 +10,7 @@ BUFR とは、WMO（世界気象機関）がGTS（全球気象通信網）での
 |節|長さ      |必須|説明|
 |--|----------|----|----|
 |0 |8         |必須|マジックナンバー "BUFR"、電文長、版番号|
-|1 |17以上(Ed3),25以上(Ed4)|必須|識別節 identification section|
+|1 |17以上(3版),22以上(4版)|必須|識別節 identification section|
 |2 |可変|*任意*|任意節 optional section （実用例は知られない）|
 |3 |可変|必須|資料記述節 data description section (データ構造記述)|
 |4 |可変|必須|資料節 data section (データ本体)|
