@@ -326,7 +326,7 @@ class BUFRMsg
   end
 
   def ahl
-    @props[:meta] ? @props[:meta][:ahl] : nil
+    @props[:meta][:ahl] || '(ahl-missing)'
   end
 
   def compressed?

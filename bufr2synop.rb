@@ -20,10 +20,8 @@ class Bufr2synop
     @ahl_hour = @knot = false
   end
 
-  def given_ahl default = nil
-    return default unless @hdr
-    return default unless @hdr[:meta]
-    @hdr[:meta][:ahl] or default
+  def given_ahl
+    @hdr.ahl
   end
 
   def print_ahl mimj = 'AAXX'

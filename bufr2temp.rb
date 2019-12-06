@@ -275,7 +275,7 @@ class Bufr2temp
   end
 
   def given_ahl
-    (@hdr[:meta] ? @hdr[:meta][:ahl] : nil) or '(ahl missing)'
+    @hdr.ahl
   end
 
   def endbufr
