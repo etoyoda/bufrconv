@@ -74,7 +74,7 @@ class Output
   end
 
   def init_vars
-    @buf = @stnlist = @ctr = nil
+    @buf = @stnlist = @ctr = @gahl = nil
     @ahl = @tt = @yygggg = @cflag = nil
     @bbox = nil
   end
@@ -145,12 +145,12 @@ class Output
     for ahl in @hist.keys
       if ahl == md5 then
         t, m = @hist[ahl]
-        $stderr.puts "dup #{m} on #{t}"
+        $stderr.puts "dup text=#{md5[0,7]} as #{m} on #{t}"
         return nil
       end
       t, m = @hist[ahl]
       if md5 == m then
-        $stderr.puts "dup #{ahl} on #{t}"
+        $stderr.puts "dup text=#{md5[0,7]} as #{ahl} on #{t}"
         return nil
       end
     end
@@ -174,7 +174,7 @@ class Output
         @ahl = @ahl.succ
       end
     end
-    $stderr.puts "ok #{@ahl} text=#{md5}"
+    $stderr.puts "ok #{@ahl} text=#{md5[0,7]} from #{@gahl}"
     @hist[@ahl] = [@now, md5]
     @hist[md5] = [@now, @ahl]
     @ahl
@@ -212,10 +212,11 @@ class Output
     }
   end
 
-  def startmsg tt, yygggg, hdr
+  def startmsg tt, yygggg, msg
     @tt, @yygggg = tt, yygggg
-    @ctr = hdr[:ctr] || 255
-    @cflag = hdr[:cflag]
+    @ctr = msg[:ctr] || 255
+    @cflag = msg[:cflag]
+    @gahl = msg.ahl
     #
     # 新形式を追加する場合、 @buf は 3 要素、 @ahl は 2 つめになるようにする
     # （flush で個数・位置決め打ちで処理しているから）
