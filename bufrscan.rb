@@ -311,6 +311,7 @@ class BUFRMsg
   end
 
   def [] key
+    decode_primary
     @props[key]
   end
 
