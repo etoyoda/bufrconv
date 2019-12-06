@@ -505,7 +505,7 @@ class BUFRScan
         @ofs = 0
         next
       elsif idx > @ofs
-        if /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\r\r\n/ === @buf[@ofs,idx-@ofs] then
+        if /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\s/ === @buf[@ofs,idx-@ofs] then
           @ahl = $1
         end
       end
