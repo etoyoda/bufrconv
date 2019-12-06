@@ -15,15 +15,15 @@ class TreeBuilder
     @level = 0
   end
 
-  def newbufr h
-    @compress = h[:compress] ? h[:nsubset] : false
+  def newbufr msg
+    @compress = msg[:compress] ? msg[:nsubset] : false
     case @mode
     when :direct
-      @out.newbufr h
+      @out.newbufr msg
     when :json, :pjson
-      @out.puts JSON.generate(h)
+      @out.puts JSON.generate(msg.to_h)
     when :plain
-      @out.puts h.inspect
+      @out.puts msg.inspect
     else
       raise "unsupported mode #@mode"
     end
@@ -590,7 +590,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     tb = TreeBuilder.new(outmode, out)
     tabconfig bufrmsg
     begin
-      tb.newbufr bufrmsg.to_h
+      tb.newbufr bufrmsg
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
       nsubset = bufrmsg[:nsubset]
       nsubset.times{|isubset|
@@ -616,7 +616,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     tb = TreeBuilder.new(outmode, out)
     tabconfig bufrmsg
     begin
-      tb.newbufr bufrmsg.to_h
+      tb.newbufr bufrmsg
       tape = compile(bufrmsg[:descs].split(/[,\s]/))
       begin
         tb.newsubset :all, bufrmsg.ptrcheck

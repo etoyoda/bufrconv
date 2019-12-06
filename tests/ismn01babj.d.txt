@@ -1,4 +1,4 @@
-{:msglen=>5088, :ed=>4, :meta=>{:ahl=>"ISMN01 BABJ 050000", :fnam=>"A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr", :ofs=>21}, :mastab=>0, :ctr=>38, :subctr=>0, :upd=>0, :cat=>0, :subcat=>2, :masver=>23, :locver=>0, :cflag=>false, :nsubset=>28, :obsp=>true, :compress=>false, :descs=>"307080", :reftime=>2019-11-05 00:00:00 UTC}
+{"msglen":5088,"ed":4,"meta":{"ahl":"ISMN01 BABJ 050000","fnam":"A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr","ofs":21},"mastab":0,"ctr":38,"subctr":0,"upd":0,"cat":0,"subcat":2,"masver":23,"locver":0,"cflag":false,"nsubset":28,"obsp":true,"compress":false,"descs":"307080","reftime":"2019-11-05 00:00:00 UTC"}
 === subset 0 [520, 40840] ===
 001001              50 #000 WMO BLOCK NUMBER
 001002             468 #001 WMO STATION NUMBER
