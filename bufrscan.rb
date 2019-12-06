@@ -99,9 +99,9 @@ class BUFRMsg
     @ptr += ofs
   end
 
-  def peeknum ptr, width
+  def getbits ptr, width
     ifirst = ptr / 8
-    raise ENOSPC, "peeknum #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
+    raise ENOSPC, "getbits #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - ((ptr + width) % 8)
@@ -111,7 +111,7 @@ class BUFRMsg
   end
 
   def getnum ptr, width
-    iwidth, ishift, imask, ival = peeknum(ptr, width)
+    iwidth, ishift, imask, ival = getbits(ptr, width)
     (imask & ival) >> ishift
   end
 
@@ -122,7 +122,7 @@ class BUFRMsg
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width} + 6"
     end
     # reference value R0
-    iwidth, ishift, imask, ival = peeknum(@ptr, width)
+    iwidth, ishift, imask, ival = getbits(@ptr, width)
     @ptr += width
     n = getnum(@ptr, 6)
     @ptr += 6
@@ -135,7 +135,7 @@ class BUFRMsg
     rval = [r0] * nsubset
     if n > 0 then
       nsubset.times{|i|
-        kwidth, kshift, kmask, kval = peeknum(@ptr, n)
+        kwidth, kshift, kmask, kval = getbits(@ptr, n)
         @ptr += n
         if kval & kmask == kmask and do_missing then
           rval[i] = nil
@@ -155,7 +155,7 @@ class BUFRMsg
     if @ptr + width > @ptrmax
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
     end
-    iwidth, ishift, imask, ival = peeknum(@ptr, width)
+    iwidth, ishift, imask, ival = getbits(@ptr, width)
     @ptr += width
     if ival & imask == imask and do_missing then
       return nil
