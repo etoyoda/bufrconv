@@ -77,7 +77,7 @@ _msglen_ 個オクテットを BUFR 報として解読する準備を始めま�
 必須ではありませんがファイル名 _fnam_ や GTS ヘッダ _ahl_ を与えると
 エラーメッセージがわかりやすくなります。
 
-このクラス内部には、[readnum](bufrscan.md#readnum) または [readstr](#readstr) でビット単位の読み出しを行う
+このクラス内部には、[readnum](#bufrmsgreadnum-desc) または [readstr](#bufrmsgreadstr-desc) でビット単位の読み出しを行う
 現在位置ポインタが保持され、その初期値は第４節のビット列の先頭にセットされます
 (後述 ptrcheck 参照)。
 
