@@ -528,7 +528,6 @@ if $0 == __FILE__
   encoder = Bufr2synop.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
-      bufrmsg.decode_primary
       type = nil
       if bufrmsg[:cat] == 0 then
         case bufrmsg[:subcat]

@@ -298,7 +298,6 @@ if $0 == __FILE__
   encoder = Bufr2temp.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
-      bufrmsg.decode_primary
       next unless bufrmsg[:cat] == 2
       case bufrmsg[:subcat]
       when 4..7

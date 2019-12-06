@@ -198,7 +198,6 @@ if $0 == __FILE__
   encoder = Bufr2amdar.new(Output.new(outopts, db.path))
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
-      bufrmsg.decode_primary
       next unless bufrmsg[:cat] == 4
       case bufrmsg[:subcat]
       when 0

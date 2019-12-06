@@ -384,7 +384,6 @@ if $0 == __FILE__
     when '-q' then encoder.verbose = false; next
     end
     BUFRScan.filescan(fnam){|bufrmsg|
-      bufrmsg.decode_primary
       next unless bufrmsg[:cat] == 2
       case bufrmsg[:subcat]
       when 1..3, 10

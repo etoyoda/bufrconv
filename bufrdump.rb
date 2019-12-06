@@ -568,12 +568,10 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   end
 
   def expand_dump bufrmsg, out = $stdout
-    bufrmsg.decode_primary
     out.puts JSON.send(@generate, expand(bufrmsg[:descs].split(/[,\s]/)))
   end
 
   def flatten_dump bufrmsg, out = $stdout
-    bufrmsg.decode_primary
     ds = expand(bufrmsg[:descs].split(/[,\s]/)).flatten.reject{|d|
       /^#3/ === d
     }.map{|d|
@@ -583,7 +581,6 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   end
 
   def compile_dump bufrmsg, out = $stdout
-    bufrmsg.decode_primary
     tabconfig bufrmsg
     out.puts JSON.send(@generate, compile(bufrmsg[:descs].split(/[,\s]/)))
   end

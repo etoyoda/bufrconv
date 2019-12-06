@@ -71,7 +71,6 @@ if $0 == __FILE__
   encoder = StatStn.new($stdout)
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
-      bufrmsg.decode_primary
       db.decode(bufrmsg, :direct, encoder)
     }
   }
