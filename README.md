@@ -1,6 +1,8 @@
 # bufrconv
 A quick-hack pure-ruby program to convert BUFR into usable formats (TAC or JSON).
-Supported templates: SYNOP and TEMP.
+
+WMO 通報式 [BUFR](BUFR.md) を解読し TAC や JSON などのより利用しやすい形式に
+変換する pure ruby プログラム。
 
 # ツール利用法
 
@@ -15,6 +17,8 @@ files から BUFR 報を見出し、概要（第１節など固定位置に書�
 > **ruby bufrscan.rb -d** _files ..._
 
 files から BUFR 報を見出し、記述子列を印字する。
+
+詳細は [bufrscan.md](bufrscan.md) 参照。
 
 ## BUFR表を参照するがすべてのBUFRに通用する処理
 
@@ -75,7 +79,6 @@ BUFR表はファイル `table_b_bufr`, `table_b_bufr.v13`, `table_d_bufr`
 # 制約
 
 * operator descriptors はほとんど実装されていない。
-* 圧縮には対応しない。
 
 # Acknowledgement
 
