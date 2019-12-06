@@ -76,6 +76,10 @@ _msglen_ 個オクテットを BUFR 報として解読する準備を始めま�
 必須ではありませんがファイル名 _fnam_ や GTS ヘッダ _ahl_ を与えると
 エラーメッセージがわかりやすくなります。
 
+このクラス内部には、readnum または readstr でビット単位の読み出しを行う
+現在位置ポインタが保持され、その初期値は第４節のビット列の先頭にセットされます
+(後述 ptrcheck 参照)。
+
 ### BUFRMsg#decode_primary
 
 固定位置に書かれた情報、つまり第１節各欄および
@@ -96,11 +100,11 @@ decode_primary の解読結果の１項目 _key_ を返します（なければ 
 
 ### BUFRMsg#compressed?
 
-圧縮形式の場合に真を返します。
+BUFR 第1節のフラグにより圧縮形式とされる場合に真を返します。
 
 ### BUFRMsg#readnum _desc_
 
-TBD
+
 
 ### BUFRMsg#readstr _desc_
 
