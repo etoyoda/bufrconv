@@ -11,6 +11,11 @@ BUFR の構造については [BUFR.md](BUFR.md) を参照してください。
 任意の形式のファイル _files_ を開いて BUFR 報をすべて抽出し、
 各 BUFR 報について第1節などの主要部情報 (TBD) を JSON 形式で印字します。
 
+```
+$ ruby bufrscan.rb tests/A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr
+{"msglen":8970,"ed":4,"meta":{"ahl":"ISMC01 RJTD 270000","fnam":"tests/A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr","ofs":21},"mastab":0,"ctr":34,"subctr":0,"upd":0,"cat":0,"subcat":2,"masver":13,"locver":0,"cflag":false,"nsubset":52,"obsp":true,"compress":false,"descs":"301090,302031,302035,302036,302047,008002,302048,302037,302043,302044,101002,302045,302046","reftime":"2019-10-27 00:00:00 UTC"}
+```
+
 ## ヘッダ選択オプション
 
 > ruby **bufrscan.rb** _file_**:AHL=**_regexp_ ...
