@@ -39,21 +39,35 @@ BUFR 報の終わりは `7777` だけの行で示されます。
 # ライブラリ
 
 基本的に、あらかじめ BufrDB オブジェクトに BUFR 表を読み込んでおいて、
-それに BUFRScan が構築する BUFRMsg を与えてデコードします
-(メソッド名はいくつか異なります)。
-たとえば次の例は JSON 形式で出力する `bufrdump -j` のように動作します。
+それに BUFRScan が構築する BUFRMsg を与えてデコードします。
+たとえば次の例はデコード結果（構造は後述）を
+JSON 形式で出力する `bufrdump -j` のように動作します。
 
 ```ruby
 require 'bufrscan'
 db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
 ARGV.each {|fnam|
   BUFRScan.filescan(fnam){|bufrmsg|
-    db.decode_json(bufrmsg)
+    db.decode(bufrmsg, :json, $stdout)
   }
 }
 ```
 
+デコード結果が XML でいうところの DOM にあたります。
+DOM 専用のクラスを作って内部の探索を容易にすることも考えられたのですが、
+安直に XPath を模倣した API を作るのが有益かどうか自明ではないし、
+またデコード結果を迅速にシリアライズして保存・読み出しできるようにしたいので、
+単なる配列としています。
+
 ## class BufrDB
+
+BUFR 表などをメモリに保持して置くためのクラスです。
+
+### BufrDB.new(_dir_ = '.')
+
+BUFR 表などを _dir_ から読み込みます。
+
+
 
 ## class BufrDecode
 
