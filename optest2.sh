@@ -32,7 +32,7 @@ exec 3>&2
 trap "notify" ERR
 exec 2> batchlog.txt
 set -x
-renice 18 $$
+renice 18 $$ >/dev/null
 
 tgz=/nwp/a0/${yy}-${mm}/obsbf-${yy}-${mm}-${dd}.tar.gz
 
