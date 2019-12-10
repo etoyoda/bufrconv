@@ -231,7 +231,7 @@ $ ruby bufrdump.rb -x tests/A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 ### BufrDB#dprint _bufrmsg_, _outmoode_, _out_ = $stdout
 
 BUFR 報 _bufrmsg_ の記述子列を解読し、_out_.puts で出力します
-（出力でなくても puts を受けるものであれば何でも _out_ に渡せます）。
+（出力でなくても puts/flush メソッドがあれば何でも _out_ に渡せます）。
 
 - _outmode_=:expand の場合、上記 expand の結果を JSON 形式で出力します。
   BufrDB#pretty! により pretty print に変更できます。
@@ -274,11 +274,11 @@ BUFRMsg メッセージを _bufrmsg_ に与え、解読の準備をします。
 |@tape|記述子列|
 |@bufrmsg|BUFR報|
 |@ymdhack|日付チェック情報 (ymdhack_ini の項参照)|
-|@pos|現在処理中の記述子番号|
-|@cstack|反復処理の状態（反復はネストするのでスタック）|
-|@addwidth|操作記述子 201yyy により臨時変更された記述子幅|
-|@addscale|操作記述子 202yyy により臨時変更された尺度|
-|@addfield|操作記述子 204yyy により付加されたフィールド幅|
+|@pos|現在処理中の記述子番号（@tape の添字）|
+|@cstack|反復処理の状態（反復はネストするのでスタック、初期は空配列）|
+|@addwidth|操作記述子 201yyy により臨時変更された記述子幅加算値（無指定時はnil）|
+|@addscale|操作記述子 202yyy により臨時変更された尺度加算値（無指定時はnil）|
+|@addfield|操作記述子 204yyy により付加されたフィールド幅（無指定時はnil）|
 
 ### BufrDecode.ymdhack_ini
 
@@ -287,6 +287,7 @@ BUFRMsg メッセージを _bufrmsg_ に与え、解読の準備をします。
 内部変数 @ymdhack に次のキーを持つハッシュがセットされます。
 
 |名前|役割|
+|----|----|
 |:ymd|サブセット先頭から年月日 (004001,004002,004003) までのビット数|
 |'001011'|サブセット先頭から地点名 001011 までのビット数|
 |'001015'|サブセット先頭からコールサイン 001015 までのビット数|
@@ -296,7 +297,81 @@ BUFRMsg メッセージを _bufrmsg_ に与え、解読の準備をします。
 
 この情報は、[BUFRScan#ymdhack](bufrscan.md) で使われます。
 
+### BufrDecode.read_tape _treebuilder_
+
+基本的に現在位置 @pos をひとつ進めて記述子を返すだけですが、
+反復があれば対象記述子を繰り返し読み込み、
+幅や尺度の臨時変更があれば :width や :scale を変更して返します。
+
+引数 _treebuilder_ には TreeBuilder を与えます。
+反復の新しいサイクルを始める時に _treebuilder_.newcycle が、
+反復が終わるときに _treebuildeer_.endloop が呼び出されます。
+
+### BufrDecode.run _treebuilder_
+
+引数 _treebuilder_ には TreeBuilder を与えます。
+現在位置の記述子を read_tape で読み込み、要素記述子であれば
+@bufrmsg からビット列を読み込んで数値または文字列あるいは nil を生成し、
+_treebuilder_.showval を通じて出力または後続処理のために蓄積します。
+反復を始める時に _treebuilder_.setloop が呼び出されます。
+
 ## class TreeBuilder
+
+逐次的に押し込まれる（記述子‐スカラー値）対を反復構造により
+木構造に蓄積し、印字または後続処理に回します。
+
+### TreeBuilder.new _mode_, _out_ = $stdout
+
+処理の種類を選択します。
+
+|_mode_|_out_へのメッセージ|動作|
+|------|-----|----|
+|:plain|puts/flush|蓄積せず即時に印字します。bufrdump.rb -d の動作です。|
+|:json|puts|木構造を構築しJSON化し出力します。bufrdump.rb -j の動作です。|
+|:pjson|puts/flush|:jsonと同様ですがJSONにインデントと改行が入ります。bufrdump.rb -p -j の動作です。|
+|:direct|newbufr/subset/endbufr|木構造を構築しRubyオブジェクトのまま _out_.subset を通じて後続処理に渡します。 bufr2synop などのアプリケーションのための機能です。|
+
+### TreeBuilder#newbufr _bufrmsg_
+
+新しい BUFR 報の処理を開始します。
+処理モード :json, :pjson, :plain であれば _bufrmsg_.to_h が印字されます。
+処理モード :direct であれば _out_.newbufr(_bufrmsg_) を呼び出し、
+bufr2synop などのアプリケーションはここでヘッダ文字列生成のための設定をします。
+
+### TreeBuilder#newsubset _isubset_, _ptrcheck_
+
+BUFR 報の中の新しいサブセットを開始します。
+引数 _isubset_, _ptrcheck_ は処理モード :plain のときの参考印字だけです。
+
+### TreeBuilder#showval _desc_, _val_
+
+木構造に記述子 _desc_ と値 _val_ の対を追加します。
+処理モード :plain の場合は追加せずに即 _out_.puts で印字してしまいます。
+圧縮電文の場合はサブセット数だけ値が並んだ配列が _val_ に渡されます。
+
+### TreeBuilder#setloop
+
+反復を表わす木構造の分岐を開始します。
+
+### TreeBuilder#newcycle
+
+反復を表わす木構造の分岐の中で次の枝に移動します。
+
+### TreeBuilder#endloop
+
+反復を表わす木構造の分岐を終了します。
+
+### TreeBuilder#endsubset
+
+BUFR 報の中のサブセットの構築を終えます。
+処理モード :plain の場合は既に印字するものはないので _out_.flush しかしませんが、その他の場合は木構造を JSON 化印字したり、
+_out_.subset で後続処理に回したりします。
+圧縮電文で :plain 以外の場合は木構造をサブセットに分解してから
+サブセットの数だけ処理が繰り返されます。
+
+### TreeBuilder#endbufr
+
+BUFR 報ごとの終了処理を行います。
 
 
 # デコード結果の構造
