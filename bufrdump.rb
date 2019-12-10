@@ -571,22 +571,21 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
     return result
   end
 
-  def expand_dump bufrmsg, out = $stdout
-    out.puts JSON.send(@generate, expand(bufrmsg[:descs].split(/[,\s]/)))
+  def flatten descs
+    expand(descs).flatten.reject{|d| /^#/ === d }.map{|d| d.sub(/:.*/, '') }
   end
 
-  def flatten_dump bufrmsg, out = $stdout
-    ds = expand(bufrmsg[:descs].split(/[,\s]/)).flatten.reject{|d|
-      /^#3/ === d
-    }.map{|d|
-      d.sub(/:.*/, '')
-    }
-    out.puts ds.join(',')
-  end
-
-  def compile_dump bufrmsg, out = $stdout
-    tabconfig bufrmsg
-    out.puts JSON.send(@generate, compile(bufrmsg[:descs].split(/[,\s]/)))
+  def dprint bufrmsg, outmode, out = $stdout
+    descs = bufrmsg[:descs].split(/[,\s]/)
+    case outmode
+    when :expand
+      out.puts JSON.send(@generate, expand(descs))
+    when :flatten
+      out.puts flatten(descs).join(',')
+    when :compile
+      out.puts JSON.send(@generate, compile(descs))
+    else raise ENOSYS, "unknown outmode #{phase}"
+    end
   end
 
   # 圧縮を使わない場合のデコード。
@@ -636,25 +635,13 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
   end
 
   def decode bufrmsg, outmode = :json, out = $stdout
+    outmode = :pjson if @generate == :pretty_generate and outmode == :json
     if bufrmsg.compressed? then
       decode2(bufrmsg, outmode, out)
     else
       decode1(bufrmsg, outmode, out)
     end
   rescue Errno::EPIPE
-  end
-
-  def decode_plain bufrmsg, out = $stdout
-    decode(bufrmsg, :plain, out)
-  end
-
-  def decode_json bufrmsg, out = $stdout
-    sym = (@generate == :pretty_generate) ? :pjson : :json
-    decode(bufrmsg, sym, out)
-  end
-
-  def decode_pjson bufrmsg, out = $stdout
-    decode(bufrmsg, :pjson, out)
   end
 
 end
@@ -665,25 +652,21 @@ if $0 == __FILE__
     case ARGV.first
     when '-xstr' then ARGV.shift; puts JSON.generate(db.expand(ARGV)); exit
     when '-cstr' then ARGV.shift; puts JSON.generate(db.compile(ARGV)); exit
-    when '-p', '--pretty' then
-      ARGV.shift
-      db.pretty!
-    else
-      break
+    when '-p', '--pretty' then ARGV.shift; db.pretty!;
+    else break
     end
   }
-  action = :decode_json
+  action, outmode = :decode, :json
   ARGV.each{|fnam|
     case fnam
-    when '-x' then action = :expand_dump
-    when '-f' then action = :flatten_dump
-    when '-c' then action = :compile_dump
-    when '-d' then action = :decode_plain
-    when '-j' then action = :decode_json
-    when '-pj' then action = :decode_pjson
+    when '-x' then action, outmode = :dprint, :expand
+    when '-f' then action, outmode = :dprint, :flatten
+    when '-c' then action, outmode = :dprint, :compile
+    when '-d' then action, outmode = :decode, :plain
+    when '-j' then action, outmode = :decode, :json
     else
       BUFRScan.filescan(fnam){|bufrmsg|
-        db.send(action, bufrmsg)
+        db.send(action, bufrmsg, outmode)
       }
     end
   }
