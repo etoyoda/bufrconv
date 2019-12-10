@@ -194,6 +194,7 @@ class BufrDecode
   end
 
   def ymdhack_ini
+    return nil if @bufrmsg.compressed?
     result = {}
     bits = 0
     (0 ... @tape.size).each{|i|
