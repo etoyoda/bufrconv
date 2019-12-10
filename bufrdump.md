@@ -157,8 +157,8 @@ $ ruby bufrdump.rb -x tests/A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 記述子の配列 _descs_ ("001002" のような String の配列) について
 反復の範囲を判定し、集約を展開し、
 要素記述子の幅・単位・尺度・名称を調べ、操作記述子を適用して解読計画を
-構成 (compile) した結果を
-ちょうど bufrdump.rb -c の出力と同じものです。
+構成 (compile) した結果を出力します。
+ちょうど bufrdump.rb -c で JSON 変換して出力しているのと同じものです。
 
 ```
 [
