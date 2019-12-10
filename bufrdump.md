@@ -27,7 +27,7 @@ _20191029025504_87.bufr
 ```
 
 ※読みにくいので折り返していますが JSON 部は電文あたり1行となります。
-**bufrdump.rb -p -x** で pretty print になります。
+**bufrdump.rb -p -x** で JSON が pretty print になります。
 
 > **ruby bufrdump.rb -c** _files ..._
 
@@ -35,6 +35,10 @@ _20191029025504_87.bufr
 要素記述子の幅・単位・尺度・名称を調べ、操作記述子を適用して解読計画を
 構成 (compile) した結果を
 JSON 形式で印字します。
+**bufrdump.rb -p -c** でJSON が pretty print になります。
+
+印字例は [BufrDB#compile](bufrdump.md#bufrdbcompile-descs) を見てください。
+
 
 > **ruby bufrdump.rb -d** _files ..._
 
