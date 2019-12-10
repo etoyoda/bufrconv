@@ -86,6 +86,14 @@ BUFR 表などをメモリに保持して置くためのクラスです。
 
 BufrDB インスタンスを作り、BUFR 表などを _dir_ から読み込みます。
 
+現状では次の表が読み込まれます。
+
+|ファイル名|形式|説明|
+|----------|----|----|
+|table_b_bufr|固定長テキスト|libecbufr で用いる形式の BUFR Table B最新版|
+|table_b_bufr.v13|固定長テキスト|table_b_bufr と同じ形式の BUFR Table B 第13版 (相違点のみで可)|
+|table_d_bufr|固定長テキスト|libecbufr で用いる形式の BUFR Table B最新版|
+
 **TODO**: `BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))` の形の
 呼び出し方が通例になったのでクラスメソッドを作りましょう。
 
