@@ -86,6 +86,13 @@ DOM 専用のクラスを作って内部の探索を容易にすることも考�
 
 BUFR 表などをメモリに保持して置くためのクラスです。
 
+### BufrDB.setup()
+
+BufrDB インスタンスを作り、BUFR 表などを読み込みます。
+表ファイルのあるディレクトリは
+環境変数 BUFRDUMPDIR があればそれを用い、
+さもなくば Ruby プログラム `$0` の置かれたディレクトリを用います。
+
 ### BufrDB.new(_dir_ = '.')
 
 BufrDB インスタンスを作り、BUFR 表などを _dir_ から読み込みます。
@@ -97,9 +104,6 @@ BufrDB インスタンスを作り、BUFR 表などを _dir_ から読み込み�
 |table_b_bufr|固定長テキスト|libecbufr で用いる形式の BUFR Table B最新版|
 |table_b_bufr.v13|固定長テキスト|table_b_bufr と同じ形式の BUFR Table B 第13版 (相違点のみで可)|
 |table_d_bufr|固定長テキスト|libecbufr で用いる形式の BUFR Table B最新版|
-
-**TODO**: `BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))` の形の
-呼び出し方が通例になったのでクラスメソッドを作りましょう。
 
 ### BufrDB#tabconfig _bufrmsg_
 

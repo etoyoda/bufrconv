@@ -403,6 +403,10 @@ class BufrDB
   class ENOSYS < BUFRMsg::ENOSYS
   end
 
+  def self.setup
+    BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+  end
+
 =begin
 BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libECBUFR 付属の表が扱いやすい形式なのでこれを用いる。
 =end
@@ -656,7 +660,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
 end
 
 if $0 == __FILE__
-  db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+  db = BufrDB.setup
   loop {
     case ARGV.first
     when '-xstr' then ARGV.shift; puts JSON.generate(db.expand(ARGV)); exit

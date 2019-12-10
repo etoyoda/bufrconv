@@ -67,7 +67,7 @@ class StatStn
 end
 
 if $0 == __FILE__
-  db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+  db = BufrDB.setup
   encoder = StatStn.new($stdout)
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|

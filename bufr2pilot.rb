@@ -374,7 +374,7 @@ class Bufr2temp
 end
 
 if $0 == __FILE__
-  db = BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+  db = BufrDB.setup
   # コマンドラインオプションは最初の引数だけ
   outopts = if /^-o/ =~ ARGV.first then ARGV.shift else '' end
   encoder = Bufr2temp.new(Output.new(outopts, db.path))
