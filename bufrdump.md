@@ -176,6 +176,8 @@ $ ruby bufrdump.rb -x tests/A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 反復の範囲を判定し、集約を展開し、
 要素記述子の幅・単位・尺度・名称を調べ、操作記述子を適用して解読計画を
 構成 (compile) した結果を出力します。
+
+解読計画は BufrDecode 仮想機械が読み込むプログラムであり、
 ちょうど bufrdump.rb -c で JSON 変換して出力しているのと同じものです。
 
 ```
@@ -226,6 +228,30 @@ $ ruby bufrdump.rb -x tests/A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 - 205yyy は単なる文字列の要素記述子に翻訳します。
 - 未対応の操作記述子を食らわせると BufrDB::ENOSYS を発生させます。
 
+### BufrDB#dprint _bufrmsg_, _outmoode_, _out_ = $stdout
+
+BUFR 報 _bufrmsg_ の記述子列を解読し、_out_.puts で出力します
+（出力でなくても puts を受けるものであれば何でも _out_ に渡せます）。
+
+- _outmode_=:expand の場合、上記 expand の結果を JSON 形式で出力します。
+  BufrDB#pretty! により pretty print に変更できます。
+- _outmode_=:flatten の場合、上記 flatten の結果をコンマ区切りで出力します。
+- _outmode_=:compile の場合、上記 compile の結果を JSON 形式で出力します。
+  BufrDB#pretty! により pretty print に変更できます。
+
+### BufrDB#decode _bufrmsg_, _outmoode_, _out_ = $stdout
+
+BUFR 報 _bufrmsg_ の記述子列を解読し、
+BufrDecode 仮想機械を駆動してデータビット列を解読し、
+TreeBuilder を駆動して DOM に相当するデータ構造を構築し、
+出力や後続処理への引き渡しをします。
+
+引数 _outmode_ と _out_ の使い方は TreeBuilder のほうを見てください。
+
+### BufrDB#pretty!
+
+JSON 出力するメソッドを JSON.generate から JSON.pretty_generate に変更します。
+
 ### BufrDB::ENOSYS < BUFRMsg::ENOSYS
 
 未対応機能を要求されたときに発生します。
@@ -234,7 +260,41 @@ BUFRMsg::ENOSYS を経由して Errno::ENOSYS を継承しているので、
 
 ## class BufrDecode
 
+BUFR 記述子列を処理する仮想機械。
 
+### BufrDecode.new _tape_, _bufrmsg_
+
+記述子列を BufrDB#compile で処理したもの（ハッシュの配列）を _tape_ に与え、
+BUFRMsg メッセージを _bufrmsg_ に与え、解読の準備をします。
+
+仮想機械が内部的に有する状態は次のようです。
+
+|名前|役割|
+|----|----|
+|@tape|記述子列|
+|@bufrmsg|BUFR報|
+|@ymdhack|日付チェック情報 (ymdhack_ini の項参照)|
+|@pos|現在処理中の記述子番号|
+|@cstack|反復処理の状態（反復はネストするのでスタック）|
+|@addwidth|操作記述子 201yyy により臨時変更された記述子幅|
+|@addscale|操作記述子 202yyy により臨時変更された尺度|
+|@addfield|操作記述子 204yyy により付加されたフィールド幅|
+
+### BufrDecode.ymdhack_ini
+
+記述子列から、発見的手法による日付チェックのための情報を探索します。
+年月日が発見できれば、
+内部変数 @ymdhack に次のキーを持つハッシュがセットされます。
+
+|名前|役割|
+|:ymd|サブセット先頭から年月日 (004001,004002,004003) までのビット数|
+|'001011'|サブセット先頭から地点名 001011 までのビット数|
+|'001015'|サブセット先頭からコールサイン 001015 までのビット数|
+
+遅延反復の後の要素は対象外です。
+または BUFR 報が圧縮されている場合は探索をしません。
+
+この情報は、[BUFRScan#ymdhack](bufrscan.md) で使われます。
 
 ## class TreeBuilder
 
