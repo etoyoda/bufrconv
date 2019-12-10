@@ -110,6 +110,16 @@ BUFRMsg クラスの値 _bufrmsg_ を用いて BufrDB の設定を行います�
 要素記述子 _fxy_ ("001002" のような String) を与えると
 諸元をハッシュで返します。
 
+```
+{:type=>"num", :fxy=>"001001", :desc=>"WMO BLOCK NUMBER", :units=>"NUMERIC",
+:scale=>0, :refv=>0, :width=>7, :pos=>0}
+```
+
+- :type の値が :num, :str, :code, :flags のいずれかとなります。
+- デフォルトでは BUFR 表 B マスター表最新バージョンが参照されますが、
+  tabconfig でマスター表バージョン 13 以下が指定された場合には
+  バージョン13で相違している記述子の意味が変わります。
+
 ### BufrDB#expand _descs_
 
 記述子の配列 _descs_ ("001002" のような String の配列)
@@ -200,8 +210,6 @@ $ ruby bufrdump.rb -x tests/A_ISMN01BABJ050000_C_RJTD_20191105001745_39.bufr
 - ハッシュには :type と :pos 項目があり、処理の種類と順番になります。
 - :type の値が :num, :str, :code, :flags の場合が要素記述子であり、
   BufrDB::table_b の結果のハッシュとなります。
-  具体的には 
-  :fxy, :desc, :units, :scale, :refv, :width を項目として持ちます。
 - 反復のはじめと終わりには :type=:repl と :type=:endloop が置かれます。
 - :type の値はほかに操作記述子に対応する :op01, :op02, :op04, :op06 が
   あります。
