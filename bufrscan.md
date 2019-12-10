@@ -13,8 +13,17 @@ BUFR の構造については [BUFR.md](BUFR.md) を参照してください。
 
 ```
 $ ruby bufrscan.rb tests/A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr
-{"msglen":8970,"ed":4,"meta":{"ahl":"ISMC01 RJTD 270000","fnam":"tests/A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr","ofs":21},"mastab":0,"ctr":34,"subctr":0,"upd":0,"cat":0,"subcat":2,"masver":13,"locver":0,"cflag":false,"nsubset":52,"obsp":true,"compress":false,"descs":"301090,302031,302035,302036,302047,008002,302048,302037,302043,302044,101002,302045,302046","reftime":"2019-10-27 00:00:00 UTC"}
+{"msglen":8970,"ed":4,
+ "meta":{"ahl":"ISMC01 RJTD 270000",
+ "fnam":"tests/A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr","ofs":21},
+ "mastab":0,"ctr":34,"subctr":0,"upd":0,"cat":0,
+ "subcat":2,"masver":13,"locver":0,"cflag":false,
+ "nsubset":52,"obsp":true,"compress":false,
+ "descs":"301090,302031,302035,302036,302047,008002,302048,302037,302043,302044,101002,302045,302046",
+ "reftime":"2019-10-27 00:00:00 UTC"}
 ```
+
+※読みにくいので折り返して表示していますが実際には JSON は一行です。
 
 ## ヘッダ選択オプション
 
@@ -42,6 +51,11 @@ RJTD （日本東京気象庁）が選ばれるものと思われます。保証
 
 各 BUFR 報について記述子列をコンマ区切りで印字します。
 集約を展開しないので、第3節に書かれている記述子列がそのまま得られます。
+
+```
+$ ruby bufrscan.rb -d tests/A_ISMC01RJTD270000_C_RJTD_20191027001931_55.bufr
+301090,302031,302035,302036,302047,008002,302048,302037,302043,302044,101002,302045,302046
+```
 
 > ruby **bufrscan.rb** -fctr _files ..._
 
