@@ -30,23 +30,50 @@ class StatStn
     @budb[@buid][idstr] = true
   end
 
-  # returns the first element
+  # クラス01の記述子をハッシュに集める。
   def id_collect tree
     iddb = Hash.new
     for elem in tree
-      if /^001/ === elem.first
-        iddb[elem.first] = elem[1]
+      case elem.first
+      when /^00[156]/
+        k, v = elem
+        iddb[k] = v if v
       end
     end
     iddb
   end
 
+  def idstring iddb
+    if iddb['001001'] and iddb['001002'] then
+      format('%02u%03u', iddb['001001'], iddb['001002'])
+    elsif iddb['001101'] and iddb['001102'] then
+      format('n%03u-%u', iddb['001101'], iddb['001102'])
+    elsif iddb['001007'] then
+      format('s%03u', iddb['001007'])
+    elsif /\w/ === iddb['001008'] then  # 001006 より優先
+      'a' + iddb['001008'].strip
+    elsif /\w/ === iddb['001006'] then
+      'f' + iddb['001006'].strip
+    elsif /\w/ === iddb['001011'] and not /\bSHIP\b/ === iddb['001011'] then
+      'v' + iddb['001011'].strip
+    elsif iddb['005001'] and iddb['006001'] then
+      format('m%5s%6s',
+        format('%+05d', (iddb['005001'] * 100 + 0.5).floor).tr('+-', 'NS'),
+        format('%+06d', (iddb['006001'] * 100 + 0.5).floor).tr('+-', 'EW'))
+    elsif iddb['005002'] and iddb['006002'] then
+      format('p%4s%5s',
+        format('%+04d', (iddb['005002'] * 10 + 0.5).floor).tr('+-', 'NS'),
+        format('%+05d', (iddb['006002'] * 10 + 0.5).floor).tr('+-', 'EW'))
+    else
+      iddb.to_a.join('-').tr(' ', '')
+    end
+  end
+
   def subset tree
     iddb = id_collect(tree)
-    if iddb['001001'] and iddb['001002'] then
-      idx = format('%02u%03u', iddb['001001'], iddb['001002'])
-      id_register(idx)
-    end
+    return if iddb.empty?
+    idx = idstring(iddb)
+    id_register(idx)
     @n += 1
     if (@n % 137).zero? then
       $stderr.printf "\r%05u", @n
