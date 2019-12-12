@@ -13,7 +13,7 @@ dd=$3
 uu=$4
 
 notify(){
-  set +x
+  set +e
   exec 2>&3
   tail batchlog.txt
   echo error exit
@@ -31,7 +31,6 @@ cd bufrval.tmp
 exec 3>&2
 trap "notify" ERR
 exec 2> batchlog.txt
-set -x
 renice 18 $$ >/dev/null
 
 tgz=/nwp/a0/${yy}-${mm}/obsbf-${yy}-${mm}-${dd}.tar.gz
@@ -41,7 +40,7 @@ date >&2
 gzip -dc $tgz > obsbf-${yy}-${mm}-${dd}.tar
 date >&2
 
-if ruby ${bc}/bufrdump.rb -d obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2> dumperr.txt
+if ruby ${bc}/statstn.rb obsbf-${yy}-${mm}-${dd}.tar > hdrstat.txt 2> dumperr.txt
 then
   grep ': ' dumperr.txt || :
 else
@@ -70,9 +69,9 @@ date >&2
 
 rm -f obsbf-${yy}-${mm}-${dd}.tar
 
-set +x
+set +e
 exec 2>&3
-tar -czf - . > ../bufrval-${yy}-${mm}-${dd}.tar.gz
+tar -czf - hdrstat.txt batchlog.txt > ../bufrval-${yy}-${mm}-${dd}.tar.gz
 cd ..
 test ! -d bufrval.ok || rm -rf bufrval.ok
 mv -f bufrval.tmp bufrval.ok
