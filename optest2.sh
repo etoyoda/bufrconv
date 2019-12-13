@@ -35,10 +35,8 @@ renice 18 $$ >/dev/null
 
 tgz=/nwp/a0/${yy}-${mm}/obsbf-${yy}-${mm}-${dd}.tar.gz
 
-date >&2
 
 gzip -dc $tgz > obsbf-${yy}-${mm}-${dd}.tar
-date >&2
 
 if ruby ${bc}/statstn.rb obsbf-${yy}-${mm}-${dd}.tar > hdrstat.txt 2> dumperr.txt
 then
@@ -48,7 +46,6 @@ else
   false
 fi
 grep ': ' dumperr.txt >&2 || :
-date >&2
 
 if ruby ${bc}/bufr2synop.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2> synoperr.txt
 then
@@ -58,7 +55,6 @@ else
   false
 fi
 grep ' - ' synoperr.txt >&2 || :
-date >&2
 
 if ruby ${bc}/bufr2temp.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2> temperr.txt
 then
@@ -68,7 +64,6 @@ else
   false
 fi
 grep ' - ' temperr.txt >&2 || :
-date >&2
 
 rm -f obsbf-${yy}-${mm}-${dd}.tar
 
@@ -78,6 +73,9 @@ trap -- '' ERR
 tar -czf - hdrstat.txt batchlog.txt > ../bufrval-${yy}-${mm}-${dd}.tar.gz
 if test -s batchlog.txt ; then
   head -300 batchlog.txt
+  if addr=`cat ${HOME}/.mailto-pub` ; then
+    head -300 batchlog.txt | mail --subject bufrval-${yy}-${mm}-${dd} $addr
+  fi
 else
   echo "bufrval-${yy}-${mm}-${dd}.tar.gz w/empty log"
 fi
