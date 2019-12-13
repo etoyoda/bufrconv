@@ -75,7 +75,7 @@ class StatStn
     idx = idstring(iddb)
     id_register(idx)
     @n += 1
-    if (@n % 137).zero? then
+    if (@n % 137).zero? and $stderr.tty? then
       $stderr.printf "\r%05u", @n
       $stderr.flush
     end
