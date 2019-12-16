@@ -11,7 +11,7 @@ class BufrSort
 
   def initialize spec
     @fnpat = 'bf%Y-%m-%d.db'
-    @limit = 48
+    @limit = 30
     for param in spec.split(/,/)
       case param
       when 'default' then :do_nothing
@@ -23,6 +23,7 @@ class BufrSort
     @hdr = nil
     @dbf = nil
     @files = {}
+    @now = Time.now.utc
     @n = 0
   end
 
@@ -34,6 +35,11 @@ class BufrSort
 
   def newbufr hdr
     @hdr = hdr
+    if (@now - hdr[:reftime]) > (@limit * 3600) then
+      $stderr.puts "skip reftime #{hdr[:reftime]}"
+      @dbf = nil
+      return
+    end
     opendb(hdr[:reftime])
   end
 
@@ -85,6 +91,7 @@ class BufrSort
   end
 
   def subset tree
+    # 日付があわないときは @dbf == nil とされている
     return if @dbf.nil?
     @n += 1
     if (@n % 173).zero? and $stderr.tty? then
@@ -98,6 +105,7 @@ class BufrSort
   end
 
   def endbufr
+    # 日付があわないときは @dbf == nil とされている
     @dbf.close if @dbf
     @dbf = nil
   end
