@@ -22,16 +22,19 @@ class BufrSort
     end
     @hdr = nil
     @dbf = nil
+    @files = {}
+    @n = 0
   end
 
   def opendb reftime
     dbfnam = reftime.utc.strftime(@fnpat)
-    GDBM.open(dbfnam, 0666, GDBM::WRCREAT)
+    @files[dbfnam] = true
+    @dbf = GDBM.open(dbfnam, 0666, GDBM::WRCREAT)
   end
 
   def newbufr hdr
     @hdr = hdr
-    @dbf = opendb(hdr[:reftime])
+    opendb(hdr[:reftime])
   end
 
   def id_register tree, idstr
@@ -82,6 +85,12 @@ class BufrSort
   end
 
   def subset tree
+    return if @dbf.nil?
+    @n += 1
+    if (@n % 173).zero? and $stderr.tty? then
+      $stderr.printf "\rsort %6u\r", @n
+      $stderr.flush
+    end
     iddb = id_collect(tree)
     return if iddb.empty?
     idx = idstring(iddb)
@@ -89,12 +98,13 @@ class BufrSort
   end
 
   def endbufr
-    @dbf.close
+    @dbf.close if @dbf
     @dbf = nil
   end
 
   def close
-    @dbf.close if @dbf
+    raise 'BUG' if @dbf
+    $stderr.puts("wrote: " + @files.keys.join(' '))
   end
 
 end
