@@ -30,7 +30,7 @@ class StatStn
     @budb[@buid][idstr] = true
   end
 
-  # クラス01の記述子をハッシュに集める。
+  # クラス01/06/06の記述子をハッシュに集める。反復内は対象外。
   def id_collect tree
     iddb = Hash.new
     for elem in tree
