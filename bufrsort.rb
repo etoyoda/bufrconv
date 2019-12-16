@@ -1,33 +1,45 @@
 #!/usr/bin/ruby
 
+require 'gdbm'
+require 'json'
+
 $LOAD_PATH.push File.dirname($0)  ##del
 require 'bufrdump'  ##del
 require 'output'  ##del
 
-class StatStn
+class BufrSort
 
-  def initialize out
-    @out = out
-    @hdr = @ahl = nil
-    @budb = Hash.new
-    @buid = nil
-    @n = 0
+  def initialize spec
+    @fnpat = 'bf%Y-%m-%d.db'
+    @limit = 48
+    for param in spec.split(/,/)
+      case param
+      when 'default' then :do_nothing
+      when /^FN:(\S+)/ then @fnpat = $1
+      when /^LM:(\d+)/ then @limit = $1.to_i
+      else
+      end
+    end
+    @hdr = nil
+    @dbf = nil
+  end
+
+  def opendb reftime
+    dbfnam = reftime.utc.strftime(@fnpat)
+    GDBM.open(dbfnam, 0666, GDBM::WRCREAT)
   end
 
   def newbufr hdr
     @hdr = hdr
-    @ahl = if hdr[:meta]
-      then hdr[:meta][:ahl]
-      else nil
-      end
-    ahl = @ahl ? @ahl.split(/ /)[0,2].join : 'ahlmissing'
-    ctr = hdr[:ctr] ? format('%03u', hdr[:ctr]) : "nil"
-    @buid = [ctr, ahl].join(',')
+    @dbf = opendb(hdr[:reftime])
   end
 
-  def id_register idstr
-    @budb[@buid] = Hash.new unless @budb.include?(@buid)
-    @budb[@buid][idstr] = true
+  def id_register tree, idstr
+    rec = @hdr.to_h.dup
+    rec.delete(:descs)
+    rec[:data] = tree
+    key = [@hdr[:reftime].utc.strftime('%Y-%m-%dT%HZ'), idstr].join('/')
+    @dbf[key] = JSON.generate(rec)
   end
 
   # クラス01/06/06の記述子をハッシュに集める。反復内は対象外。
@@ -73,29 +85,23 @@ class StatStn
     iddb = id_collect(tree)
     return if iddb.empty?
     idx = idstring(iddb)
-    id_register(idx)
-    @n += 1
-    if (@n % 137).zero? and $stderr.tty? then
-      $stderr.printf "\r%05u", @n
-      $stderr.flush
-    end
+    id_register(tree, idx)
   end
 
   def endbufr
+    @dbf.close
+    @dbf = nil
   end
 
   def close
-    @budb.keys.sort.each{|buid|
-      puts [buid,
-        @budb[buid].keys.sort.join(',')].join("\t")
-    }
+    @dbf.close if @dbf
   end
 
 end
 
 if $0 == __FILE__
   db = BufrDB.setup
-  encoder = StatStn.new($stdout)
+  encoder = BufrSort.new(ARGV.shift)
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       db.decode(bufrmsg, :direct, encoder)
