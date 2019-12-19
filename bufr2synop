@@ -33,12 +33,12 @@ class BUFRMsg
   class ENOSPC < Errno::ENOSPC
   end
 
-  def initialize buf, ofs, msglen, fnam = '-', ahl = nil
+  def initialize buf, ofs, msglen, pos, fnam = '-', ahl = nil
     @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
     @ed = @buf[ofs+7].unpack('C').first
     @props = {
       :msglen => @msglen, :ed => @ed,
-      :meta => { :ahl => @ahl, :fnam => @fnam, :ofs => @ofs }
+      :meta => { :ahl => @ahl, :fnam => @fnam, :pos => pos }
     }
     @ptr = nil
     @ymdhack = {}
@@ -492,6 +492,7 @@ class BUFRScan
     @io = io
     @buf = ""
     @ofs = 0
+    @pos = 0
     @fnam = fnam
     @ahl = nil
   end
@@ -502,6 +503,7 @@ class BUFRScan
       if idx.nil?
         @buf = @io.read(1024)
         return nil if @buf.nil?
+	@pos += @buf.size
         @ofs = 0
         next
       elsif idx > @ofs
@@ -513,17 +515,19 @@ class BUFRScan
       if @buf.bytesize - idx < 8 then
         buf2 = @io.read(1024)
         return nil if buf2.nil?
+	@pos += buf2.size
         @buf += buf2
       end
       msglen = BUFRMsg::unpack3(@buf[idx+4,3])
       if @buf.bytesize - idx < msglen then
         buf2 = @io.read(msglen - @buf.bytesize + idx)
         return nil if buf2.nil?
+	@pos += buf2.size
         @buf += buf2
       end
       endmark = @buf[idx + msglen - 4, 4]
       if endmark == '7777' then
-        msg = BUFRMsg.new(@buf, idx, msglen, @fnam, @ahl)
+        msg = BUFRMsg.new(@buf, idx, msglen, @pos, @fnam, @ahl)
         @ofs = idx + msglen
         return msg
       end
