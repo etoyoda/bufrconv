@@ -90,6 +90,20 @@ class BufrSort
       shdb['004004'],
       idx)
     r = Hash.new
+    r['La'] = (shdb['005001'] || shdb['005002'])
+    r['Lo'] = (shdb['006001'] || shdb['006002'])
+    r['V'] = shdb['020001']
+    r['N'] = shdb['020010']
+    r['d'] = shdb['011001']
+    r['f'] = shdb['011002']
+    r['T'] = shdb['012101']
+    r['Td'] = shdb['012103']
+    r['P0'] = shdb['010004']
+    r['P'] = shdb['010051']
+    r['p'] = shdb['010061']
+    r['w'] = shdb['020003']
+    r['s'] = shdb['013013']
+    puts [k, r.flatten].join(',')
     @dbf[k] = JSON.generate(r)
   end
 
