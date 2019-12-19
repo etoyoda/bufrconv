@@ -479,22 +479,32 @@ class BUFRScan
       fnam = $`
       ahlsel = Regexp.new($')
     end
+    skip = nil
+    if /:SKIP=(\d+)$/ === fnam then
+      fnam = $`
+      skip = $1.to_i
+    end
     File.open(fnam, 'r:BINARY'){|fp|
       fp.binmode
-      BUFRScan.new(fp, fnam).scan{|msg|
+      BUFRScan.new(fp, fnam, skip).scan{|msg|
         next if ahlsel and ahlsel !~ msg.ahl
         yield msg
       }
     }
   end
 
-  def initialize io, fnam = '-'
+  def initialize io, fnam = '-', skip = nil
     @io = io
     @buf = ""
     @ofs = 0
     @pos = 0
     @fnam = fnam
     @ahl = nil
+    if skip then
+      $stderr.puts "skip #{skip} bytes"
+      @io.read(skip)
+      @pos += skip
+    end
   end
 
   def readmsg
