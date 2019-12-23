@@ -604,6 +604,7 @@ class TreeBuilder
     case @mode
     when :json, :pjson, :direct
       raise "showval before newsubset" unless @tos
+      val = val.to_f if Rational === val
       @tos.push [desc[:fxy], val]
     when :plain
       sval = if val and :flags === desc[:type]
