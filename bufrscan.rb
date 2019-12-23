@@ -141,7 +141,7 @@ class BUFRMsg
           rval[i] = nil
         else
           rval[i] += ((kmask & kval) >> kshift)
-          rval[i] = rval[i].to_f * (10.0 ** -scale) unless scale.zero?
+          rval[i] = rval[i] * (10 ** -scale) unless scale.zero?
         end
       }
     end
@@ -161,7 +161,7 @@ class BUFRMsg
       return nil
     end
     rval = ((imask & ival) >> ishift) + refv
-    rval = rval.to_f * (10.0 ** -scale) unless scale.zero?
+    rval = rval * (10 ** -scale) unless scale.zero?
     rval
   end
 

@@ -68,3 +68,5 @@ overwrite:
 	-ruby ../bufrdump.rb -d $(IUSN01BABJ) > iusn01babj.d.txt
 	-ruby ../bufr2temp.rb $(IUSN01BABJ) > iusn01babj.t.txt
 	-ruby ../bufr2temp.rb $(IUSC60RJTD) > iusc60rjtd.t.txt
+	-ruby ../bufr2synop.rb $(ISMD02EDZW) > ismd02edzw.t.txt
+	-ruby ../bufrdump.rb -d $(ISMB01MXBA) > ismb01mxba.d.txt
