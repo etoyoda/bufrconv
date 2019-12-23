@@ -53,6 +53,8 @@ class TreeBuilder
           else
             format(fmt, val)
           end
+        elsif Rational === val
+          val.to_f.inspect
         else
           val.inspect
         end
