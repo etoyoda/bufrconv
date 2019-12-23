@@ -90,6 +90,7 @@ class BufrSort
       shdb['004004'],
       idx)
     r = Hash.new
+    r['@'] = idx
     r['La'] = (shdb['005001'] || shdb['005002'])
     r['Lo'] = (shdb['006001'] || shdb['006002'])
     r['V'] = shdb['020001']
