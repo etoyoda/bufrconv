@@ -103,7 +103,6 @@ class BufrSort
     r['p'] = shdb['010061']
     r['w'] = shdb['020003']
     r['s'] = shdb['013013']
-    puts [k, r.flatten].join(',')
     @dbf[k] = JSON.generate(r)
   end
 
