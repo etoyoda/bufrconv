@@ -509,7 +509,7 @@ class BUFRScan
     loop {
       idx = @buf.index('BUFR', @ofs)
       if idx.nil?
-        @buf = @io.read(1024)
+        @buf = @io.read(4096)
         return nil if @buf.nil?
 	@pos += @buf.size
         @ofs = 0
@@ -517,6 +517,8 @@ class BUFRScan
       elsif idx > @ofs
         if /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\s/ === @buf[@ofs,idx-@ofs] then
           @ahl = $1
+	else
+	 @ahl = nil
         end
       end
       # check BUFR ... 7777 structure
