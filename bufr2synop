@@ -507,20 +507,26 @@ class BUFRScan
     end
   end
 
+  AHLPAT = /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\s/
+
   def readmsg
+    prev = ''
     loop {
       idx = @buf.index('BUFR', @ofs)
       if idx.nil?
+        prev = @buf
         @buf = @io.read(4096)
         return nil if @buf.nil?
 	@pos += @buf.size
         @ofs = 0
         next
       elsif idx > @ofs
-        if /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\s/ === @buf[@ofs,idx-@ofs] then
+        if AHLPAT === @buf[@ofs,idx-@ofs] then
+          @ahl = $1
+	elsif AHLPAT === prev + @buf[0,1024] then
           @ahl = $1
 	else
-	 @ahl = nil
+	  @ahl = nil
         end
       end
       # check BUFR ... 7777 structure
