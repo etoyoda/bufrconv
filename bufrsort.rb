@@ -22,25 +22,27 @@ class BufrSort
     end
     @hdr = nil
     @dbf = nil
+    @dbfnam == nil
     @files = {}
     @now = Time.now.utc
     @n = 0
   end
 
   def opendb reftime
+    if (@now - reftime) > (@limit * 3600) then
+      $stderr.puts "skip #{hdr[:reftime]}"
+      return @dbf = nil
+    end
     dbfnam = reftime.utc.strftime(@fnpat)
+    return if dbfnam == @dbfnam
+    @dbf.close if @dbf
+    @dbfnam = dbfnam
     @files[dbfnam] = true
     @dbf = GDBM.open(dbfnam, 0666, GDBM::WRCREAT)
   end
 
   def newbufr hdr
     @hdr = hdr
-    if (@now - hdr[:reftime]) > (@limit * 3600) then
-      $stderr.puts "skip reftime #{hdr[:reftime]}"
-      @dbf = nil
-      return
-    end
-    opendb(hdr[:reftime])
   end
 
   # 反復の外にある記述子を集める
@@ -82,13 +84,23 @@ class BufrSort
     end
   end
 
+  def shdbtime shdb
+    y = shdb['004001']
+    y += 2000 if y < 100
+    t = Time.gm(y, shdb['004002'], shdb['004003'], shdb['004004'],
+      shdb['004005'] || 0,
+      shdb['004006'] || 0)
+    return t
+  rescue
+    return nil
+  end
+
   def surface shdb, idx
-    k = format('sfc/%04u-%02u-%02uT%02uZ/%s',
-      shdb['004001'],
-      shdb['004002'],
-      shdb['004003'],
-      shdb['004004'],
-      idx)
+    t = shdbtime(shdb)
+    return if t.nil?
+    return if opendb(t).nil?
+    k = t.strftime('sfc/%Y-%m-%dT%H:00Z/') + idx
+    $stderr.puts k
     r = Hash.new
     r['@'] = idx
     r['La'] = (shdb['005001'] || shdb['005002'])
@@ -108,11 +120,9 @@ class BufrSort
   end
 
   def subset tree
-    # 日付があわないときは @dbf == nil とされている
-    return if @dbf.nil?
     @n += 1
-    if (@n % 173).zero? and $stderr.tty? then
-      $stderr.printf "\rsort %6u\r", @n
+    if (@n % 137).zero? and $stderr.tty? then
+      $stderr.printf("subset %6u\r", @n)
       $stderr.flush
     end
     shdb = shallow_collect(tree)
@@ -125,13 +135,10 @@ class BufrSort
   end
 
   def endbufr
-    # 日付があわないときは @dbf == nil とされている
-    @dbf.close if @dbf
-    @dbf = nil
   end
 
   def close
-    raise 'BUG' if @dbf
+    @dbf.close if @dbf
     $stderr.puts("wrote: " + @files.keys.join(' '))
   end
 

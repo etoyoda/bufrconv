@@ -21,7 +21,7 @@ class App
   end
 
   def run
-    pat = @maptime.strftime('^sfc/%Y-%m-%dT%HZ/')
+    pat = @maptime.strftime('^sfc/%Y-%m-%dT%H:%MZ/')
     pattern = Regexp.new(pat)
       p pattern
     GDBM::open(@dbfile, GDBM::READER) {|db|
