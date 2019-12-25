@@ -1,6 +1,5 @@
 #!/usr/bin/ruby
 
-require 'gdbm'
 require 'json'
 
 $LOAD_PATH.push File.dirname($0)  ##del
@@ -10,35 +9,22 @@ require 'output'  ##del
 class BufrSort
 
   def initialize spec
-    @fnpat = 'bf%Y-%m-%d.db'
+    @fn = 'zsort.txt'
+    @now = Time.now.utc
     @limit = 30
     for param in spec.split(/,/)
       case param
-      when 'default' then :do_nothing
-      when /^FN:(\S+)/ then @fnpat = $1
-      when /^LM:(\d+)/ then @limit = $1.to_i
-      else
+      when /^(default|-)/i then :do_nothing
+      when /^unlim$/i then @limit = Float::INFINITY
+      when /^FN:(\S+)/i then @fnpat = $1
+      when /^LM:(\d+)/i then @limit = $1.to_i
+      when /^LM:(\d+)D/i then @limit = $1.to_i * 24
+      else raise "unknown param #{param}"
       end
     end
     @hdr = nil
-    @dbf = nil
-    @dbfnam == nil
-    @files = {}
-    @now = Time.now.utc
-    @n = 0
-  end
-
-  def opendb reftime
-    if (@now - reftime) > (@limit * 3600) then
-      $stderr.puts "skip #{hdr[:reftime]}"
-      return @dbf = nil
-    end
-    dbfnam = reftime.utc.strftime(@fnpat)
-    return if dbfnam == @dbfnam
-    @dbf.close if @dbf
-    @dbfnam = dbfnam
-    @files[dbfnam] = true
-    @dbf = GDBM.open(dbfnam, 0666, GDBM::WRCREAT)
+    @ofp = File.open(@fn, 'a:UTF-8')
+    @nsubset = @nstore = 0
   end
 
   def newbufr hdr
@@ -52,6 +38,7 @@ class BufrSort
       case elem.first
       when String
         k, v = elem
+	v = v.to_f if Rational === v
         shdb[k] = v if v
       end
     end
@@ -98,9 +85,7 @@ class BufrSort
   def surface shdb, idx
     t = shdbtime(shdb)
     return if t.nil?
-    return if opendb(t).nil?
-    k = t.strftime('sfc/%Y-%m-%dT%H:00Z/') + idx
-    $stderr.puts k
+    k = t.strftime('%Y-%m-%dT%H:00Z/sfc/') + idx
     r = Hash.new
     r['@'] = idx
     r['La'] = (shdb['005001'] || shdb['005002'])
@@ -116,13 +101,14 @@ class BufrSort
     r['p'] = shdb['010061']
     r['w'] = shdb['020003']
     r['s'] = shdb['013013']
-    @dbf[k] = JSON.generate(r)
+    @nstore += 1
+    @ofp.puts [k, JSON.generate(r)].join(' ')
   end
 
   def subset tree
-    @n += 1
-    if (@n % 137).zero? and $stderr.tty? then
-      $stderr.printf("subset %6u\r", @n)
+    @nsubset += 1
+    if (@nsubset % 137).zero? and $stderr.tty? then
+      $stderr.printf("subset %6u\r", @nsubset)
       $stderr.flush
     end
     shdb = shallow_collect(tree)
@@ -138,8 +124,8 @@ class BufrSort
   end
 
   def close
-    @dbf.close if @dbf
-    $stderr.puts("wrote: " + @files.keys.join(' '))
+    @ofp.close 
+    $stderr.printf("subset %6u store %6u\n", @nsubset, @nstore)
   end
 
 end
