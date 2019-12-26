@@ -12,6 +12,10 @@ class BufrSort
     @fn = 'zsort.txt'
     @now = Time.now.utc
     @limit = 30
+    if spec.nil?
+      $stderr.puts "usage: ruby #{$0} default,FN:#{@fn},LM:30 files ..."
+      exit 16
+    end
     for param in spec.split(/,/)
       case param
       when /^(default|-)/i then :do_nothing
