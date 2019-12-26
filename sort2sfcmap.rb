@@ -5,7 +5,7 @@ require 'time'
 class App
 
   def help
-    $stderr.puts "usage: #$0 [-opts] zsort.txt maptime outfile.(json|html)"
+    $stderr.puts "usage: #$0 [-opts] maptime outfile.(json|html) [zsort.txt ...]"
     exit 16
   end
 
@@ -15,8 +15,10 @@ class App
       argv.shift
       @flags[$1] = ($2 || true)
     end
-    @sortfile, maptime, @outfile = argv
+    maptime = argv.shift
     help if maptime.nil?
+    @outfile = argv.shift
+    @files = argv
     @maptime = Time.parse(maptime).utc
     @level = 'sfc'
     @merge = {}
@@ -119,11 +121,12 @@ HTML
   end
 
   def iopen
-    case @sortfile
-    when nil, '-' then
+    if @files.empty? then
       yield $stdin
     else
-      File.open(@sortfile, 'r:UTF-8') {|fp| yield fp }
+      @files.each{|fnam|
+	File.open(fnam, 'r:UTF-8') {|fp| yield fp }
+      }
     end
   end
 
