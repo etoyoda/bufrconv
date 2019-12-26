@@ -5,11 +5,16 @@ require 'time'
 class App
 
   def help
-    $stderr.puts "usage: #$0 zsort.txt maptime outfile.(json|html)"
+    $stderr.puts "usage: #$0 [-opts] zsort.txt maptime outfile.(json|html)"
     exit 16
   end
 
   def initialize argv
+    @flags = {}
+    while /^-(\w+)(?:[:=](.*))?/ === argv.first
+      argv.shift
+      @flags[$1] = ($2 || true)
+    end
     @sortfile, maptime, @outfile = argv
     help if maptime.nil?
     @maptime = Time.parse(maptime).utc
@@ -21,6 +26,8 @@ class App
   end
 
   def htmlhead
+    windbase = (@flags['WD'] ||
+      'https://raw.githubusercontent.com/etoyoda/wxsymbols/master/img/')
     <<HTML
 <html>
 <head>
@@ -63,10 +70,18 @@ function init() {
 	if (ff == 0) { dd = 0; }
       }
       var bn = 'd' + dd + 'f' + ff + '.png';
-      var url = 'https://toyoda-eizi.net/wxsymbols/' + bn;
-      var ic = L.icon({iconUrl: url, iconSize: [64, 64], iconAnchor: [32, 32]});
-      var opt = {icon: ic, title: bn};
-      L.marker([obs.La, obs.Lo], opt).bindPopup(obs['@']).addTo(overlays);
+      var url = '#{windbase}' + bn;
+      var nbn = 'nnil.png';
+      if (!(obs.N === null)) {
+        var n = Math.floor((obs.N + 6) / 12.5);
+	nbn = 'n' + n + '.png';
+      }
+      var surl = '#{windbase}' + nbn;
+      var ic = L.icon({iconUrl: surl, iconSize: [16, 16], iconAnchor: [8, 8],
+        shadowUrl: url, shadowSize: [64, 64], shadowAnchor: [32, 32]});
+      var opt = {icon: ic, title: obs['@']};
+      var pop = JSON.stringify(obs);
+      L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(overlays);
     }
   }
   var mymap = L.map('mapid', {
