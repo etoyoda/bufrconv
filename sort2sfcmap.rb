@@ -143,7 +143,6 @@ HTML
     pat = @maptime.utc.strftime('^%Y-%m-%dT%H:%MZ/') + @level
     pattern = Regexp.new(pat)
     n = 0
-    p pattern
     iopen() {|fp|
       fp.each_line{|line|
 	n += 1
