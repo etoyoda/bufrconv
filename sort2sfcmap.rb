@@ -151,7 +151,7 @@ HTML
 	@merge[k] = v
       }
     }
-    puts "#{n} lines"
+    $stderr.puts "#{n} lines" if $VERBOSE
     oopen() {|ofp|
       ofp.write htmlhead if /\.html?$/ === @outfile
       outjson(ofp)
@@ -161,4 +161,5 @@ HTML
 
 end
 
+$VERBOSE = true if $stderr.tty?
 App.new(ARGV).run

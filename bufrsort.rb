@@ -29,6 +29,11 @@ class BufrSort
     @hdr = nil
     @ofp = File.open(@fn, 'a:UTF-8')
     @nsubset = @nstore = 0
+    @verbose = nil
+  end
+
+  def verbose!
+    @verbose = true
   end
 
   def newbufr hdr
@@ -129,7 +134,7 @@ class BufrSort
 
   def close
     @ofp.close 
-    $stderr.printf("subset %6u store %6u\n", @nsubset, @nstore)
+    $stderr.printf("subset %6u store %6u\n", @nsubset, @nstore) if @verbose
   end
 
 end
@@ -137,6 +142,7 @@ end
 if $0 == __FILE__
   db = BufrDB.setup
   encoder = BufrSort.new(ARGV.shift)
+  encoder.verbose! if $stderr.tty?
   ARGV.each{|fnam|
     BUFRScan.filescan(fnam){|bufrmsg|
       db.decode(bufrmsg, :direct, encoder)
