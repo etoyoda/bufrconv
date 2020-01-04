@@ -1,0 +1,1364 @@
+#!/usr/bin/ruby
+# 1 "bufrscan.rb"
+#!/usr/bin/ruby
+
+=begin
+BUFRテーブルの読み込みなしでできる程度の解読。
+
+単独で起動した場合
+  ruby bufrscan.rb files ...
+  ruby bufrscan.rb -d files ...
+=end
+
+class BUFRMsg
+
+  def self.unpack1(str)
+    str.unpack('C').first
+  end
+
+  def self.unpack2(str)
+    str.unpack('n').first
+  end
+
+  def self.unpack3(str)
+    ("\0" + str).unpack('N').first
+  end
+
+  class EBADF < Errno::EBADF
+  end
+
+  class ENOSYS < Errno::ENOSYS
+  end
+
+  class ENOSPC < Errno::ENOSPC
+  end
+
+  def initialize buf, ofs, msglen, pos, fnam = '-', ahl = nil
+    @buf, @ofs, @msglen, @fnam, @ahl = buf, ofs, msglen, fnam, ahl
+    @ed = @buf[ofs+7].unpack('C').first
+    @props = {
+      :msglen => @msglen, :ed => @ed,
+      :meta => { :ahl => @ahl, :fnam => @fnam, :pos => pos }
+    }
+    @ptr = nil
+    @ymdhack = {}
+    build_sections
+  end
+
+  def build_sections
+    #
+    # building section structure with size validation
+    #
+    esofs = @ofs + @msglen - 4
+    @idsofs = @ofs + 8
+    @idslen = BUFRMsg::unpack3(@buf[@idsofs, 3])
+    opsflag = case @ed
+      when 4
+        BUFRMsg::unpack1(@buf[@idsofs + 9]) >> 7
+      when 3, 2
+        BUFRMsg::unpack1(@buf[@idsofs + 7]) >> 7
+      else
+        raise ENOSYS, "unsupported BUFR edition #{@ed}"
+      end
+    if opsflag != 0 then
+      @opsofs = @idsofs + @idslen
+      raise EBADF, "OPS #{@opsofs} beyond msg end #{esofs}" if @opsofs >= esofs
+      @opslen = BUFRMsg::unpack3(@buf[@opsofs,3])
+      @ddsofs = @opsofs + @opslen
+    else
+      @opsofs = nil
+      @opslen = 0
+      @ddsofs = @idsofs + @idslen
+    end
+    raise EBADF, "DDS #{@ddsofs} beyond msg end #{esofs}" if @ddsofs >= esofs
+    @ddslen = BUFRMsg::unpack3(@buf[@ddsofs,3])
+    @dsofs = @ddsofs + @ddslen
+    raise EBADF, "DS #{@dsofs} beyond msg end #{esofs}" if @dsofs >= esofs
+    @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
+    esofs2 = @dsofs + @dslen
+    raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}" if esofs2 != esofs
+    @ptr = (@dsofs + 4) * 8
+    @ptrmax = @ptr + (@dslen - 4) * 8
+  end
+
+  def dump ofs = nil
+    ofs = @dsofs unless ofs
+    8.times {
+      printf "%5u:", ofs
+      8.times {
+        printf " %08b", @buf[ofs].unpack('C').first
+        ofs += 1
+      }
+      printf "\n"
+    }
+  end
+
+  def ptrcheck
+    [@ptr, @ptrmax]
+  end
+
+  def ptrseek ofs
+    @ptr += ofs
+  end
+
+  def getbits ptr, width
+    ifirst = ptr / 8
+    raise ENOSPC, "getbits #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
+    ilast = (ptr + width) / 8
+    iwidth = ilast - ifirst + 1
+    ishift = 8 - ((ptr + width) % 8)
+    imask = ((1 << width) - 1) << ishift
+    ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
+    [iwidth, ishift, imask, ival]
+  end
+
+  def getnum ptr, width
+    iwidth, ishift, imask, ival = getbits(ptr, width)
+    (imask & ival) >> ishift
+  end
+
+  def readnum2 desc
+    width, scale, refv = desc[:width], desc[:scale], desc[:refv]
+    do_missing = !(/^(031|204)/ === desc[:fxy])
+    if @ptr + width + 6 > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width} + 6"
+    end
+    # reference value R0
+    iwidth, ishift, imask, ival = getbits(@ptr, width)
+    @ptr += width
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if ival & imask == imask and do_missing then
+      raise "difference #{n} bits cannot follow missing value R0" if n != 0
+      return [nil] * nsubset
+    end
+    r0 = ((imask & ival) >> ishift) + refv
+    # data array
+    rval = [r0] * nsubset
+    if n > 0 then
+      nsubset.times{|i|
+        kwidth, kshift, kmask, kval = getbits(@ptr, n)
+        @ptr += n
+        if kval & kmask == kmask and do_missing then
+          rval[i] = nil
+        else
+          rval[i] += ((kmask & kval) >> kshift)
+          rval[i] = rval[i] * (10 ** -scale) unless scale.zero?
+        end
+      }
+    end
+    return rval
+  end
+
+  def readnum desc
+    return readnum2(desc) if compressed?
+    width, scale, refv = desc[:width], desc[:scale], desc[:refv]
+    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
+    if @ptr + width > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
+    end
+    iwidth, ishift, imask, ival = getbits(@ptr, width)
+    @ptr += width
+    if ival & imask == imask and do_missing then
+      return nil
+    end
+    rval = ((imask & ival) >> ishift) + refv
+    rval = rval * (10 ** -scale) unless scale.zero?
+    rval
+  end
+
+  def readstr1 width
+    len = width / 8
+    if @ptr + width > @ptrmax
+      raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
+    end
+    ifirst = @ptr / 8
+    ilast = (@ptr + width - 1) / 8
+    iwidth = ilast - ifirst + 1
+    rval = if (@ptr % 8).zero? then
+      @buf[ifirst,iwidth]
+    else
+      lshift = @ptr % 8
+      rshift = 8 - (@ptr % 8)
+      a = @buf[ifirst,iwidth].unpack('C*')
+      (0 ... len).map{|i|
+        (0xFF & (a[i] << lshift)) | (a[i+1] >> rshift)
+      }.pack('C*')
+    end
+    @ptr += width
+    return nil if /^\xFF+$/n === rval
+    # 通報式のいう CCITT IA5 とは ASCII だが、実際にはメキシコが
+    # U+00D1 LATIN CAPITAL LETTER N WITH TILDE を入れてくるので救済。
+    # 救済しすぎるのも考え物なので Windows-1252 にはしない
+    rval.force_encoding(Encoding::ISO_8859_1)
+  end
+
+  def readstr desc
+    return readstr1(desc[:width]) unless compressed?
+    s0 = readstr1(desc[:width])
+    n = getnum(@ptr, 6)
+    @ptr += 6
+    if n.zero? then
+      return [s0] * nsubset
+    end
+    # カナダのSYNOPでは圧縮された文字列の参照値が通報式に定めるヌルでなく欠損値になっているので救済
+    case s0
+    when nil, /^\x00+$/ then
+      rval = (0 ... nsubset).map{ readstr1(n * 8) }
+      return rval
+    else
+      raise EBADF, "readstr: R0=#{s0.inspect} not nul"
+    end
+  end
+
+  def decode_primary
+    return if @props[:mastab]
+    reftime = nil
+    case @ed
+    when 4 then
+      @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
+      @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4,2])
+      @props[:subctr] = BUFRMsg::unpack2(@buf[@idsofs+6,2])
+      @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+8])
+      @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+10])
+      @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+11])
+      @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+13])
+      @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+14])
+      yy = BUFRMsg::unpack2(@buf[@idsofs+15,2])
+      if yy < 100
+	yy += 2000
+      end
+      reftime = [
+        yy,
+        BUFRMsg::unpack1(@buf[@idsofs+17]),
+        BUFRMsg::unpack1(@buf[@idsofs+18]),
+        BUFRMsg::unpack1(@buf[@idsofs+19]),
+        BUFRMsg::unpack1(@buf[@idsofs+20]),
+        BUFRMsg::unpack1(@buf[@idsofs+21])
+      ]
+    when 3 then
+      @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
+      @props[:ctr] = BUFRMsg::unpack1(@buf[@idsofs+5])
+      @props[:subctr] = BUFRMsg::unpack1(@buf[@idsofs+4])
+      @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+6])
+      @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+8])
+      @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
+      @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+10])
+      @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+11])
+      reftime = [
+        BUFRMsg::unpack1(@buf[@idsofs+12]) + 2000,
+        BUFRMsg::unpack1(@buf[@idsofs+13]),
+        BUFRMsg::unpack1(@buf[@idsofs+14]),
+        BUFRMsg::unpack1(@buf[@idsofs+15]),
+        BUFRMsg::unpack1(@buf[@idsofs+16]),
+        0
+      ]
+    when 2 then
+      @props[:mastab] = BUFRMsg::unpack1(@buf[@idsofs+3])
+      # code table 0 01 031
+      @props[:ctr] = BUFRMsg::unpack2(@buf[@idsofs+4])
+      @props[:upd] = BUFRMsg::unpack1(@buf[@idsofs+6])
+      @props[:cat] = BUFRMsg::unpack1(@buf[@idsofs+8])
+      @props[:subcat] = BUFRMsg::unpack1(@buf[@idsofs+9])
+      @props[:masver] = BUFRMsg::unpack1(@buf[@idsofs+10])
+      @props[:locver] = BUFRMsg::unpack1(@buf[@idsofs+11])
+      reftime = [
+        BUFRMsg::unpack1(@buf[@idsofs+12]) + 2000,
+        BUFRMsg::unpack1(@buf[@idsofs+13]),
+        BUFRMsg::unpack1(@buf[@idsofs+14]),
+        BUFRMsg::unpack1(@buf[@idsofs+15]),
+        BUFRMsg::unpack1(@buf[@idsofs+16]),
+        0
+      ]
+    else # 現時点では build_sections で不明版数は排除される
+      raise "BUG"
+    end
+
+    # 訂正報であるフラグ
+    @props[:cflag] = if @props[:upd] > 0 then
+        # Update Sequence Number が正ならば意識してやっていると信用する
+        true
+      elsif @props[:meta][:ahl]
+        # 電文ヘッダ AHL が認識できるならばそれが訂正報であるかどうか
+        if / CC.\b/ =~ @props[:meta][:ahl] then
+          true
+        else
+          false
+        end
+      else
+        # USN がゼロでも訂正のことはあるが、ヘッダがないならやむを得ず
+        nil
+      end
+
+    @props[:nsubset] = BUFRMsg::unpack2(@buf[@ddsofs+4,2])
+    ddsflags = BUFRMsg::unpack1(@buf[@ddsofs+6])
+    @props[:obsp] = !(ddsflags & 0x80).zero?
+    @props[:compress] = !(ddsflags & 0x40).zero?
+    @props[:descs] = @buf[@ddsofs+7, @ddslen-7].unpack('n*').map{|d|
+      f = d >> 14
+      x = (d >> 8) & 0x3F
+      y = d & 0xFF
+      format('%01u%02u%03u', f, x, y)
+    }.join(',')
+
+    if [2000, 0, 0, 0, 0, 0] === reftime then
+      reftime = Time.at(0).utc.to_a
+    end
+    begin
+      @props[:reftime] = Time.gm(*reftime)
+    rescue ArgumentError
+      ep = @props[:descs].empty?
+      raise EBADF, "Bad reftime #{reftime.inspect} ed=#{@ed} empty=#{ep}"
+    end
+  end
+
+  def [] key
+    decode_primary
+    @props[key]
+  end
+
+  def descs
+    decode_primary
+    @props[:descs]
+  end
+
+  def to_h
+    decode_primary
+    @props.dup
+  end
+
+  def ahl
+    @props[:meta][:ahl] || '(ahl-missing)'
+  end
+
+  def compressed?
+    decode_primary
+    @props[:compress]
+  end
+
+  def nsubset
+    decode_primary
+    @props[:nsubset]
+  end
+
+  def inspect
+    require 'json'
+    JSON.generate(to_h)
+  end
+
+  def show_ctr
+    decode_primary
+    p @props[:ctr]
+  end
+
+  # 各サブセットをデコードする前にデータ内容の日付を検査し、
+  # 要すればいくらかビットをずらしてでも適正値が読める位置に移動する
+  def ymdhack opts
+    decode_primary
+    # 日付記述子 004001/004002/004003 の位置が通知されなければ検査不能
+    return unless opts[:ymd]
+    # 圧縮電文はデータ位置がわからないため検査不能
+    return if @props[:compress]
+    # 日付検査1: 不正日付で落ちぬようTime型を構築せず22ビットで比較。
+    # ほとんどの観測データは、BUFR第1節の参照時刻の日 (brt1)
+    # またはその前日 (brt2) または欠損値 0x3F_FFFF となる。
+    rt1 = @props[:reftime]
+    brt1 = rt1.year << 10 | rt1.month << 6 | rt1.day
+    rt2 = rt1 - 86400
+    brt2 = rt2.year << 10 | rt2.month << 6 | rt2.day
+    brtx = getnum(@ptr + opts[:ymd], 22)
+    if brtx == brt1 or brtx == brt2 or brtx == 0x3F_FFFF
+      return nil
+    end
+    # 日付検査2: 参照日と同じ月内のデータが来た場合
+    if (brtx >> 10) == rt1.year and (0b1111 & (brtx >> 6)) == rt1.mon then
+      # 日付検査2a: 参照日より前のデータは許容する
+      if (1 ... rt1.day) === (0b111111 & brtx) then
+	return nil
+      end
+      # 日付検査2b: 参照日が月初の場合に限り、データの同月末日を許容する
+      #  これはエンコード誤りなので、参照日を破壊的訂正して翌月初とする
+      if rt1.day == 1 then
+        rt9 = Time.gm(rt1.year, rt1.mon, 0b111111 & brtx) + 86400
+	if rt9.day == 1 then
+	  @props[:reftime] = Time.gm(rt9.year, rt9.mon, 1,
+	    rt1.hour, rt1.min, rt1.sec)
+	  $stderr.puts "ymdhack: reftime corrected #{@props[:reftime]}"
+	  return nil
+	end
+      end
+    end
+    # 日付検査3: 参照日の翌日（月末なら年月は繰り上がる）を許容する
+    rt3 = rt1 + 86400
+    if (brtx >> 10) == rt3.year and (0b1111 & (brtx >> 6)) == rt3.mon and
+      (0b111111 & brtx) == rt3.day then
+      $stderr.puts "ymdhack: tomorrow okay" if $DEBUG
+      return nil
+    end
+    #
+    # --- 日付検査失敗。ビットずれリカバリーモードに入る ---
+    #
+    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u\n",
+      brtx >> 10, 0b1111 & (brtx >> 6), 0b111111 & brtx,
+      rt1.strftime('%Y-%m-%d'), @ptr)
+    (-80 .. 10).each{|ofs|
+      next if ofs.zero?
+      xptr = @ptr + ofs
+      brtx = getnum(xptr + opts[:ymd], 22)
+      case brtx
+      when brt1, brt2
+        $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr (shift #{xptr - @ptr})"
+        @ptr = xptr
+        return true
+      end
+    }
+    if opts['001011'] then
+      yptr = @ptr
+      4.times{
+        idx = @buf.index("\0\0\0\0", yptr / 8)
+        if idx then
+          $stderr.puts "ymdhack: 4NUL found at #{idx * 8} #{@ptr}"
+          yptr = idx * 8 - opts['001011']
+          (0).downto(-32){|ofs|
+            xptr = yptr + ofs
+            brtx = getnum(xptr + opts[:ymd], 22)
+            case brtx
+            when brt1, brt2
+              $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr (shift #{xptr - @ptr}) ofs #{ofs}"
+              @ptr = xptr
+              return true
+            end
+          }
+        end
+        yptr += opts['001011'] + 80
+      }
+    end
+    if opts['001015'] then
+      yptr = @ptr
+      8.times{
+        idx = [
+          @buf.index("\x20\x20\x20\x20", yptr / 8),
+          @buf.index("\x40\x40\x40\x40", yptr / 8),
+          @buf.index("\x01\x01\x01\x01", yptr / 8),
+          @buf.index("\x02\x02\x02\x02", yptr / 8),
+          @buf.index("\x04\x04\x04\x04", yptr / 8),
+          @buf.index("\x08\x08\x08\x08", yptr / 8),
+          @buf.index("\x10\x10\x10\x10", yptr / 8)
+          ].compact.min
+        if idx then
+          $stderr.puts "ymdhack: 4SPC found at #{idx * 8} #{@ptr}"
+          yptr = idx * 8 - opts['001015']
+          (0).downto(-132){|ofs|
+            xptr = yptr + ofs
+            brtx = getnum(xptr + opts[:ymd], 22)
+            case brtx
+            when brt1, brt2
+              $stderr.puts "ymdhack: ptr #{xptr} <- #@ptr (shift #{xptr - @ptr}) ofs #{ofs}"
+              @ptr = xptr
+              return true
+            end
+          }
+        end
+        yptr += opts['001015'] + 80
+      }
+    end
+    raise ENOSPC, "ymdhack - bit pat not found"
+  end
+
+end
+
+=begin
+任意の形式のファイル（ストリームでもまだいける）からBUFR電文を抽出する
+=end
+
+class BUFRScan
+
+  def self.filescan fnam
+    ahlsel = nil
+    if /:AHL=/ === fnam then
+      fnam = $`
+      ahlsel = Regexp.new($')
+    end
+    skip = nil
+    if /:SKIP=(\d+)$/ === fnam then
+      fnam = $`
+      skip = $1.to_i
+    end
+    File.open(fnam, 'r:BINARY'){|fp|
+      fp.binmode
+      BUFRScan.new(fp, fnam, skip).scan{|msg|
+        next if ahlsel and ahlsel !~ msg.ahl
+        yield msg
+      }
+    }
+  end
+
+  def initialize io, fnam = '-', skip = nil
+    @io = io
+    @buf = ""
+    @ofs = 0
+    @pos = 0
+    @fnam = fnam
+    @ahl = nil
+    if skip then
+      $stderr.puts "skip #{skip} bytes"
+      @io.read(skip)
+      @pos += skip
+    end
+  end
+
+  AHLPAT = /([A-Z]{4}(\d\d)? [A-Z]{4} \d{6}( [A-Z]{3})?)\s/
+
+  def readmsg
+    prev = ''
+    loop {
+      idx = @buf.index('BUFR', @ofs)
+      if idx.nil?
+        prev = @buf
+        @buf = @io.read(4096)
+        return nil if @buf.nil?
+	@pos += @buf.size
+        @ofs = 0
+        next
+      elsif idx > @ofs
+        if AHLPAT === @buf[@ofs,idx-@ofs] then
+          @ahl = $1
+	elsif AHLPAT === prev + @buf[0,1024] then
+          @ahl = $1
+	else
+	  @ahl = nil
+        end
+      end
+      # check BUFR ... 7777 structure
+      if @buf.bytesize - idx < 8 then
+        buf2 = @io.read(1024)
+        return nil if buf2.nil?
+	@pos += buf2.size
+        @buf += buf2
+      end
+      msglen = BUFRMsg::unpack3(@buf[idx+4,3])
+      if @buf.bytesize - idx < msglen then
+        buf2 = @io.read(msglen - @buf.bytesize + idx)
+        return nil if buf2.nil?
+	@pos += buf2.size
+        @buf += buf2
+      end
+      endmark = @buf[idx + msglen - 4, 4]
+      if endmark == '7777' then
+        msg = BUFRMsg.new(@buf, idx, msglen, @pos, @fnam, @ahl)
+        @ofs = idx + msglen
+        return msg
+      end
+      @ofs += 4
+    }
+  end
+
+  def scan
+    loop {
+      begin
+        msg = readmsg
+        return if msg.nil?
+        yield msg
+      rescue BUFRMsg::ENOSYS, BUFRMsg::EBADF => e
+        STDERR.puts e.message + [@ahl].inspect
+      end
+    }
+  end
+
+end
+
+# 1 "bufrdump.rb"
+#!/usr/bin/ruby
+
+require 'json'
+
+class TreeBuilder
+
+  def initialize mode, out = $stdout
+    @mode, @out = mode, out
+    @compress = nil
+    # internals for :json
+    @root = @tos = @tosstack = nil
+    # internals for :plain
+    @level = 0
+  end
+
+  def newbufr msg
+    @compress = msg[:compress] ? msg[:nsubset] : false
+    case @mode
+    when :direct
+      @out.newbufr msg
+    when :json, :pjson
+      @out.puts JSON.generate(msg.to_h)
+    when :plain
+      @out.puts msg.inspect
+    else
+      raise "unsupported mode #@mode"
+    end
+  end
+
+  def newsubset isubset, ptrcheck
+    case @mode
+    when :json, :pjson, :direct
+      @tosstack = []
+      @tos = @root = []
+    when :plain
+      @out.puts "=== subset #{isubset} #{ptrcheck.inspect} ==="
+      @level = 0
+    end
+  end
+
+  def showval desc, val
+    case @mode
+    when :json, :pjson, :direct
+      raise "showval before newsubset" unless @tos
+      val = val.to_f if Rational === val
+      @tos.push [desc[:fxy], val]
+    when :plain
+      sval = if val and :flags === desc[:type]
+          fmt = format('0x%%0%uX', (desc[:width]+3)/4)
+          if Array === val then
+            '[' + val.map{|v| v ? format(fmt, v) : 'nil'}.join(', ') + ']'
+          else
+            format(fmt, val)
+          end
+        elsif Rational === val
+          val.to_f.inspect
+        else
+          val.inspect
+        end
+      @out.printf "%6s %15s #%03u %s\n", desc[:fxy], sval, desc[:pos], desc[:desc]
+      @out.flush if $VERBOSE
+    end
+  end
+
+  def setloop
+    case @mode
+    when :json, :pjson, :direct
+      @tos.push []
+      @tosstack.push @tos
+      @tos = @tos.last
+      @tos.push []
+      @tosstack.push @tos
+      @tos = @tos.last
+    when :plain
+      @level += 1
+      @out.puts "___ begin #@level"
+    end
+  end
+
+  def newcycle
+    case @mode
+    when :json, :pjson, :direct
+      @tos = @tosstack.pop
+      @tos.pop if @tos.last.empty?
+      @tos.push []
+      @tosstack.push @tos
+      @tos = @tos.last
+    when :plain
+      @out.puts "--- next #@level"
+    end
+  end
+
+  def endloop
+    case @mode
+    when :json, :pjson, :direct
+      @tos = @tosstack.pop
+      @tos.pop if @tos.last.empty?
+      @tos = @tosstack.pop
+    when :plain
+      @out.puts "^^^ end #@level"
+      @level -= 1
+    end
+  end
+
+  def split_r subsets, croot
+    croot.size.times {|j|
+      kv = croot[j]
+      if not Array === kv then
+        raise "something wrong #{kv.inspect}"
+      elsif Array === kv[0] or kv.empty? then
+        zip = []
+        @compress.times{|i|
+          repl = []
+          zip.push repl
+          subsets[i].push repl
+        }
+        kv.each{|branch|
+          bzip = []
+          @compress.times{|i|
+            bseq = []
+            bzip.push bseq
+            zip[i].push bseq
+          }
+          split_r(bzip, branch)
+        }
+      elsif /^1\d{5}/ === kv[0] then
+        subsets.each{|ss| ss.push kv}
+      elsif /^\d{6}/ === kv[0] then
+        @compress.times{|i| subsets[i].push [kv[0], kv[1][i]] }
+      else 
+        raise "something wrong #{j} #{kv.inspect}"
+      end
+    }
+  end
+
+  def split croot
+    return [croot] unless @compress
+    subsets = []
+    @compress.times{ subsets.push [] }
+    split_r(subsets, croot)
+    subsets
+  end
+
+  def endsubset
+    case @mode
+    when :direct
+      if @compress then
+        split(@root).each{|subset| @out.subset subset }
+      else
+        @out.subset @root
+      end
+      @root = @tos = @tosstack = nil
+    when :json
+      split(@root).each{|subset| @out.puts JSON.generate(subset) }
+      @root = @tos = @tosstack = nil
+      @out.flush
+    when :pjson
+      split(@root).each{|subset| @out.puts JSON.pretty_generate(subset) }
+      @root = @tos = @tosstack = nil
+      @out.flush
+    when :plain
+      @out.flush
+    end
+  end
+
+  def endbufr
+    case @mode
+    when :direct
+      @out.endbufr
+    when :json, :pjson
+      @out.puts "7777"
+    when :plain
+      @out.puts "7777"
+    end
+  end
+
+end
+
+class BufrDecode
+
+  class ENOSYS < BUFRMsg::ENOSYS
+  end
+
+  class EDOM < Errno::EDOM
+  end
+
+  def initialize tape, bufrmsg
+    @tape, @bufrmsg = tape, bufrmsg
+    @pos = nil
+    # replication counter: nesting implemented using stack push/pop
+    @cstack = []
+    # operators
+    @addwidth = @addscale = @addfield = nil
+    @ymdhack = ymdhack_ini
+  end
+
+  def ymdhack_ini
+    return nil if @bufrmsg.compressed?
+    result = {}
+    bits = 0
+    (0 ... @tape.size).each{|i|
+      desc = @tape[i]
+      case desc[:fxy]
+      when '004001' then
+        if @tape[i+1][:fxy] == '004002' and @tape[i+2][:fxy] == '004003' then
+          result[:ymd] = bits
+          return result
+        end
+      when /^00101[15]$/ then
+        result[desc[:fxy]] = bits
+      when /^1..000/ then
+        $stderr.puts "ymdhack failed - delayed repl before ymd" if $DEBUG
+        return nil
+      end
+      unless desc[:width]
+	$stderr.puts "ymdhack stopped - #{desc.inspect} before ymd" if $DEBUG
+	return nil
+      end
+      bits += desc[:width]
+    }
+    $stderr.puts "ymdhack failed - ymd not found" if $DEBUG
+    return nil
+  end
+
+  def rewind_tape
+    @addwidth = @addscale = @addfield = nil
+    @pos = -1
+  end
+
+  def forward_tape n
+    @pos += n
+  end
+
+=begin
+記述子列がチューリングマシンのテープであるかのように読み出す。
+反復記述子がループ命令に相当する。
+BUFRの反復はネストできなければいけないので（用例があるか知らないが）、カウンタ設定時に現在値はスタック構造で退避される。反復に入っていないときはダミーの記述子数カウンタが初期値-1 で入っており、１減算によってゼロになることはない。
+=end
+
+  def loopdebug title
+    $stderr.printf("%-7s pos=%3u %s\n",
+      title, @pos, @cstack.inspect)
+  end
+
+  def read_tape_simple
+    @pos += 1
+    @tape[@pos]
+  end
+
+  def read_tape tb
+    @pos += 1
+    loopdebug 'read_tape1' if $VERBOSE
+    if @tape[@pos].nil? then
+      loopdebug "ret-nil-a" if $VERBOSE
+      return nil
+    end
+
+    while :endloop == @tape[@pos][:type]
+      # quick hack workaround
+      if @cstack.empty? then
+        $stderr.puts "skip :endloop pos=#{@pos} #{@bufrmsg.ahl}"
+        break
+      end
+      @cstack.last[:count] -= 1
+      if @cstack.last[:count] > 0 then
+        # 反復対象記述子列の最初に戻る。
+        # そこに :endloop はないので while を抜ける
+        @pos = @cstack.last[:next]
+        tb.newcycle
+        loopdebug 'nextloop' if $VERBOSE
+      else
+        # 当該レベルのループを終了し :endloop の次に行く。
+        # そこに :endloop があれば while が繰り返される。
+        @cstack.pop
+        @pos += 1
+        tb.endloop
+        loopdebug 'endloop' if $VERBOSE
+        if @tape[@pos].nil? then
+          loopdebug "ret-nil-b" if $VERBOSE
+          return nil
+        end
+      end
+    end
+    #
+    # operators
+    #
+    ent = @tape[@pos]
+    if @addwidth and :num === ent[:type] then
+      ent = ent.dup
+      ent[:width] += @addwidth
+    end
+    if @addscale and :num === ent[:type] then
+      ent = ent.dup
+      ent[:scale] += @addscale
+    end
+    ent
+  end
+
+  def setloop niter, ndesc
+    loopdebug 'setloop1' if $VERBOSE
+    @cstack.push({:next => @pos + 1, :niter => niter, :count => niter})
+    if niter.zero? then
+      n = ndesc
+      while n > 0
+        d = read_tape_simple
+        n -= 1 unless d[:type] == :repl
+      end
+    end
+    loopdebug 'setloop2' if $VERBOSE
+  end
+
+=begin
+記述子列がチューリングマシンのテープであるかのように走査して処理する。
+要素記述子を読むたびに、BUFR報 bufrmsg から実データを読み出す。
+=end
+
+  def run tb
+    rewind_tape
+    @bufrmsg.ymdhack(@ymdhack) if @ymdhack
+    while desc = read_tape(tb)
+      case desc[:type]
+      when :str
+        if @addfield then
+          @addfield[:pos] = desc[:pos]
+          num = @bufrmsg.readnum(@addfield)
+          tb.showval @addfield, num
+        end
+        str = @bufrmsg.readstr(desc)
+        tb.showval desc, str
+      when :num, :code, :flags
+        if @addfield and not /^031021/ === desc[:fxy] then
+          @addfield[:pos] = desc[:pos]
+          num = @bufrmsg.readnum(@addfield)
+          tb.showval @addfield, num
+        end
+        num = @bufrmsg.readnum(desc)
+        tb.showval desc, num
+      when :repl
+        r = desc.dup
+        tb.showval r, :REPLICATION
+        ndesc = r[:ndesc]
+        if r[:niter].zero? then
+          d = read_tape_simple
+          unless d and /^031/ === d[:fxy]
+            raise "class 31 must follow delayed replication #{r.inspect}"
+          end
+          num = @bufrmsg.readnum(d)
+          tb.showval d, num
+          if @bufrmsg.compressed? then
+            a = num
+            num = num.first
+            raise EDOM, "repl num inconsistent" unless a.all?{|n| n == num }
+          end
+	  if num.nil? then
+	    if /^IS\wB\d\d MXBA / === @bufrmsg.ahl then
+	      x = @bufrmsg.readnum({:width=>4, :scale=>0, :refv=>0})
+	      $stderr.puts "mexhack: #{@bufrmsg.ahl} (#{x.inspect})"
+	      num = 0
+	    else
+	      raise EDOM, "repl num missing"
+	    end
+	  end
+          if num.zero? then
+            setloop(0, ndesc)
+            tb.setloop
+          else
+            setloop(num, ndesc)
+            tb.setloop
+          end
+        else
+          setloop(r[:niter], ndesc)
+          tb.setloop
+        end
+      when :op01
+        if desc[:yyy].zero? then
+          @addwidth = nil
+        else
+          @addwidth = desc[:yyy] - 128
+        end
+      when :op02
+        if desc[:yyy].zero? then
+          @addscale = nil
+        else
+          @addscale = desc[:yyy] - 128
+        end
+      when :op04
+        if desc[:yyy].zero? then
+          @addfield = nil
+        else
+          raise ENOSYS, "nested 204YYY" if @addfield
+          @addfield = { :type => :code,
+            :width => desc[:yyy], :scale => 0, :refv => 0,
+            :units => 'CODE TABLE', :desc => 'ASSOCIATED FIELD',
+            :pos => -1, :fxy => desc[:fxy]
+          }
+        end
+      end
+    end
+  end
+
+end
+
+class BufrDB
+
+  class ENOSYS < BUFRMsg::ENOSYS
+  end
+
+  def self.setup
+    BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+  end
+
+=begin
+BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libECBUFR 付属の表が扱いやすい形式なのでこれを用いる。
+=end
+
+  def table_b_parse line
+    return nil if /^\s*\*/ === line
+    fxy = line[0, 6]
+    units = line[52, 10].strip
+    type = case units
+      when 'CCITT IA5' then :str
+      when 'CODE TABLE' then :code
+      when 'FLAG TABLE' then :flags
+      else :num
+      end
+    kvp = {:type => type, :fxy => fxy}
+    kvp[:desc] = line[8, 43].strip
+    kvp[:units] = units
+    kvp[:scale] = line[62, 4].to_i
+    kvp[:refv] = line[66, 11].to_i
+    kvp[:width] = line[77, 6].to_i
+    return kvp
+  end
+
+  def initialize dir = '.'
+    @path = dir
+    table_b = File.join(@path, 'table_b_bufr')
+    table_d = File.join(@path, 'table_d_bufr')
+    @table_b = {}
+    @table_b_v13 = {}
+    @table_d = {}
+    File.open(table_b, 'r:Windows-1252'){|bfp|
+      bfp.each_line {|line|
+        kvp = table_b_parse(line)
+        @table_b[kvp[:fxy]] = kvp if kvp
+      }
+    }
+    File.open(table_b + '.v13', 'r:Windows-1252'){|fp|
+      fp.each_line {|line|
+        kvp = table_b_parse(line)
+        @table_b_v13[kvp[:fxy]] = kvp if kvp
+      }
+    }
+    File.open(table_d, 'r:Windows-1252'){|bfp|
+      bfp.each_line {|line|
+        line.chomp!
+        next if /^\s*\*/ === line
+        list = line.split(/\s/)
+        fxy = list.shift
+        @table_d[fxy] = list
+      }
+    }
+    @v13p = false
+    # JSON.generate を JSON.pretty_generate に差し替えるため
+    @generate = :generate
+  end
+
+  attr_reader :path
+
+  def pretty!
+    @generate = :pretty_generate
+  end
+
+  def tabconfig bufrmsg
+    raise ENOSYS, "master version missing" unless bufrmsg[:masver]
+    @v13p = (bufrmsg[:masver] <= 13)
+    $stderr.puts "BufrDB.@v13p = #@v13p" if $DEBUG
+  end
+
+  def table_b fxy
+    return nil unless @table_b.include?(fxy)
+    return @table_b_v13[fxy].dup if @v13p and @table_b_v13.include?(fxy)
+    @table_b[fxy].dup
+  end
+
+=begin
+記述子文字列の配列を受け取り、集約記述子を再帰的に展開し、反復記述子の修飾範囲を解析する。
+出力は集約と反復が配列中配列の木構造で表現されている。
+読みやすいように、集約の先頭には元の集約記述子が "#" を前置して置かれているので、 flatten してから # で始まるものを除去すれば、実際にインタプリタが駆動できるような記述子列が得られる。しかし flatten すると木構造での反復範囲の表現がわからなくなってしまうので、反復記述子は付け替えてある。
+=end
+
+  def expand descs
+    result = []
+    a = descs.dup
+    while fxy = a.shift
+      case fxy
+      when /^[02]/ then
+        result.push fxy
+      when /^1(\d\d)(\d\d\d)/ then
+        x = $1.to_i
+        y = $2.to_i
+        x += 1 if y.zero?
+        rep = expand(a.shift(x))
+        newx = rep.flatten.reject{|s|/^#/ === s}.size
+        newx -= 1 if y.zero?
+        rep.push "#END #{newx}"
+        rep.unshift format('1%02u%03u:%s', newx, y, fxy)
+        result.push rep
+      when /^3/ then
+        raise ENOSYS, "unresolved element #{fxy}" unless @table_d.include?(fxy)
+        rep = expand(@table_d[fxy])
+        rep.unshift "##{fxy}"
+        result.push rep
+      end
+    end
+    result
+  end
+
+  def compile descs
+    result = []
+    xd = expand(descs).flatten.reject{|s| /^#3/ === s}
+    xd.size.times{|i|
+      fxy = xd[i]
+      case fxy
+      when Hash then
+        result.push fxy
+      when /^0/ then
+        desc = table_b(fxy)
+        if desc
+          result.push desc
+        elsif result.last[:type] == :op06
+          desc = {
+            :type=>:num, :fxy=>fxy, :width=>result.last[:set_width],
+            :scale =>0, :refv=>0, :desc=>"LOCAL ELEMENT #{fxy}",
+            :units =>"NUMERIC"
+          }
+          result.push desc
+        else
+          raise ENOSYS, "unresolved element #{fxy}" unless desc
+        end
+      when /^1(\d\d)(\d\d\d):/ then
+        x, y, z = $1.to_i, $2.to_i, $'
+        desc = { :type => :repl, :fxy => z, :ndesc => x, :niter => y }
+        result.push desc
+      when /^#END (\d+)/ then
+        desc = { :type => :endloop, :ndesc => $1.to_i }
+        result.push desc
+      when /^201(\d\d\d)/ then
+        result.push({ :type => :op01, :fxy => fxy, :yyy => $1.to_i })
+      when /^202(\d\d\d)/ then
+        result.push({ :type => :op02, :fxy => fxy, :yyy => $1.to_i })
+      when /^204(\d\d\d)/ then
+        result.push({ :type => :op04, :fxy => fxy, :yyy => $1.to_i })
+      when /^205(\d\d\d)/ then
+        result.push({ :type => :str, :fxy => fxy, :width=>$1.to_i * 8,
+          :scale=>0, :refv=>0, :desc=>"OPERATOR #{fxy}", :units=>'CCITT IA5' })
+      when /^206(\d\d\d)/ then
+        y = $1.to_i
+        desc = { :type => :op06, :fxy => fxy, :set_width => y }
+        result.push desc
+      when /^2/ then
+        raise ENOSYS, "unsupported operator #{fxy}"
+      when /^3/ then
+        raise ENOSYS, "unresolved sequence #{fxy}"
+      else
+        raise ENOSYS, "unknown fxy=#{fxy}"
+      end
+    }
+    # デバッグ用位置サイン
+    (0 ... result.size).each{|i|
+      result[i][:pos] = i
+    }
+    return result
+  end
+
+  def flatten descs
+    expand(descs).flatten.reject{|d| /^#/ === d }.map{|d| d.sub(/:.*/, '') }
+  end
+
+  def dprint bufrmsg, outmode, out = $stdout
+    descs = bufrmsg[:descs].split(/[,\s]/)
+    case outmode
+    when :expand
+      out.puts JSON.send(@generate, expand(descs))
+    when :flatten
+      out.puts flatten(descs).join(',')
+    when :compile
+      out.puts JSON.send(@generate, compile(descs))
+    else raise ENOSYS, "unknown outmode #{phase}"
+    end
+  end
+
+  # 圧縮を使わない場合のデコード。
+  def decode1 bufrmsg, outmode = :json, out = $stdout
+    tb = TreeBuilder.new(outmode, out)
+    tabconfig bufrmsg
+    begin
+      tb.newbufr bufrmsg
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      nsubset = bufrmsg[:nsubset]
+      nsubset.times{|isubset|
+        begin
+          tb.newsubset isubset, bufrmsg.ptrcheck
+          BufrDecode.new(tape, bufrmsg).run(tb)
+        rescue Errno::EDOM => e
+          $stderr.puts e.message + bufrmsg[:meta].inspect
+        ensure
+          tb.endsubset
+        end
+      }
+    rescue Errno::ENOSPC => e
+      $stderr.puts e.message + bufrmsg[:meta].inspect
+    ensure
+      tb.endbufr
+    end
+  end
+
+  # 圧縮時のデコード。
+  def decode2 bufrmsg, outmode = :json, out = $stdout
+    nsubset = bufrmsg[:nsubset]
+    tb = TreeBuilder.new(outmode, out)
+    tabconfig bufrmsg
+    begin
+      tb.newbufr bufrmsg
+      tape = compile(bufrmsg[:descs].split(/[,\s]/))
+      begin
+        tb.newsubset :all, bufrmsg.ptrcheck
+        BufrDecode.new(tape, bufrmsg).run(tb)
+      ensure
+        tb.endsubset
+      end
+    rescue Errno::ENOSPC, Errno::EBADF => e
+      $stderr.puts e.message + bufrmsg[:meta].inspect
+    ensure
+      tb.endbufr
+    end
+  end
+
+  def decode bufrmsg, outmode = :json, out = $stdout
+    outmode = :pjson if @generate == :pretty_generate and outmode == :json
+    if bufrmsg.compressed? then
+      decode2(bufrmsg, outmode, out)
+    else
+      decode1(bufrmsg, outmode, out)
+    end
+  rescue Errno::EPIPE
+  end
+
+end
+
+# 1 "bufrsort.rb"
+#!/usr/bin/ruby
+
+require 'json'
+
+
+class BufrSort
+
+  def initialize spec
+    @fn = 'zsort.txt'
+    @now = Time.now.utc
+    @limit = 30
+    if spec.nil?
+      $stderr.puts "usage: ruby #{$0} default,FN:#{@fn},LM:30 files ..."
+      exit 16
+    end
+    for param in spec.split(/,/)
+      case param
+      when /^(default|-)/i then :do_nothing
+      when /^unlim$/i then @limit = Float::INFINITY
+      when /^FN:(\S+)/i then @fnpat = $1
+      when /^LM:(\d+)/i then @limit = $1.to_i
+      when /^LM:(\d+)D/i then @limit = $1.to_i * 24
+      else raise "unknown param #{param}"
+      end
+    end
+    @hdr = nil
+    @ofp = File.open(@fn, 'a:UTF-8')
+    @nsubset = @nstore = 0
+  end
+
+  def newbufr hdr
+    @hdr = hdr
+  end
+
+  # 反復の外にある記述子を集める
+  def shallow_collect tree
+    shdb = Hash.new
+    for elem in tree
+      case elem.first
+      when String
+        k, v = elem
+	v = v.to_f if Rational === v
+        shdb[k] = v if v
+      end
+    end
+    shdb
+  end
+
+  def idstring shdb
+    if shdb['001001'] and shdb['001002'] then
+      format('%02u%03u', shdb['001001'], shdb['001002'])
+    elsif shdb['001101'] and shdb['001102'] then
+      format('n%03u-%u', shdb['001101'], shdb['001102'])
+    elsif shdb['001007'] then
+      format('s%03u', shdb['001007'])
+    elsif /\w/ === shdb['001008'] then  # 001006 より優先
+      'a' + shdb['001008'].strip
+    elsif /\w/ === shdb['001006'] then
+      'f' + shdb['001006'].strip
+    elsif /\w/ === shdb['001011'] and not /\bSHIP\b/ === shdb['001011'] then
+      'v' + shdb['001011'].strip
+    elsif shdb['005001'] and shdb['006001'] then
+      format('m%5s%6s',
+        format('%+05d', (shdb['005001'] * 100 + 0.5).floor).tr('+-', 'NS'),
+        format('%+06d', (shdb['006001'] * 100 + 0.5).floor).tr('+-', 'EW'))
+    elsif shdb['005002'] and shdb['006002'] then
+      format('p%4s%5s',
+        format('%+04d', (shdb['005002'] * 10 + 0.5).floor).tr('+-', 'NS'),
+        format('%+05d', (shdb['006002'] * 10 + 0.5).floor).tr('+-', 'EW'))
+    else
+      shdb.to_a.join('-').tr(' ', '')
+    end
+  end
+
+  def shdbtime shdb
+    y = shdb['004001']
+    y += 2000 if y < 100
+    t = Time.gm(y, shdb['004002'], shdb['004003'], shdb['004004'],
+      shdb['004005'] || 0,
+      shdb['004006'] || 0)
+    return t
+  rescue
+    return nil
+  end
+
+  def surface shdb, idx
+    t = shdbtime(shdb)
+    return if t.nil?
+    k = t.strftime('%Y-%m-%dT%H:00Z/sfc/') + idx
+    r = Hash.new
+    r['@'] = idx
+    r['La'] = (shdb['005001'] || shdb['005002'])
+    r['Lo'] = (shdb['006001'] || shdb['006002'])
+    r['V'] = shdb['020001']
+    r['N'] = shdb['020010']
+    r['d'] = shdb['011001']
+    r['f'] = shdb['011002']
+    r['T'] = shdb['012101']
+    r['Td'] = shdb['012103']
+    r['P0'] = shdb['010004']
+    r['P'] = shdb['010051']
+    r['p'] = shdb['010061']
+    r['w'] = shdb['020003']
+    r['s'] = shdb['013013']
+    @nstore += 1
+    @ofp.puts [k, JSON.generate(r)].join(' ')
+  end
+
+  def subset tree
+    @nsubset += 1
+    if (@nsubset % 137).zero? and $stderr.tty? then
+      $stderr.printf("subset %6u\r", @nsubset)
+      $stderr.flush
+    end
+    shdb = shallow_collect(tree)
+    return if shdb.empty?
+    idx = idstring(shdb)
+    case @hdr[:cat]
+    when 0
+      surface(shdb, idx)
+    end
+  end
+
+  def endbufr
+  end
+
+  def close
+    @ofp.close 
+    $stderr.printf("subset %6u store %6u\n", @nsubset, @nstore)
+  end
+
+end
+
+if $0 == __FILE__
+  db = BufrDB.setup
+  encoder = BufrSort.new(ARGV.shift)
+  ARGV.each{|fnam|
+    BUFRScan.filescan(fnam){|bufrmsg|
+      db.decode(bufrmsg, :direct, encoder)
+    }
+  }
+  encoder.close
+end
