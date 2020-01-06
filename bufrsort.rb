@@ -136,7 +136,8 @@ class BufrSort
     levbranch = branch(tree, 0)
     return if levbranch.nil?
     levbranch.each{|slice|
-      shallow_collect(slice)
+      h = shallow_collect(slice)
+      p h
     }
 
   end
