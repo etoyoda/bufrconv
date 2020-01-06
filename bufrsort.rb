@@ -114,6 +114,33 @@ class BufrSort
     @ofp.puts [k, JSON.generate(r)].join(' ')
   end
 
+  # n個目の反復を探す (n >= 0)
+  def branch tree, nth = 0
+    tree.size.times{|i|
+      elem = tree[i]
+      case elem.first
+      when /^1/
+        if nth <= 0 then
+          i += 1 if /^031/ === tree[i+1].first
+          return tree[i + 1]
+        end
+        nth -= 1
+      end
+    }
+    return nil
+  end
+
+  def upper tree, idx, shdb
+    t = shdbtime(shdb)
+    return if t.nil?
+    levbranch = branch(tree, 0)
+    return if levbranch.nil?
+    levbranch.each{|slice|
+      shallow_collect(slice)
+    }
+
+  end
+
   def subset tree
     @nsubset += 1
     if (@nsubset % 137).zero? and $stderr.tty? then
@@ -124,8 +151,10 @@ class BufrSort
     return if shdb.empty?
     idx = idstring(shdb)
     case @hdr[:cat]
-    when 0
+    when 0 then
       surface(shdb, idx)
+    when 2 then
+      upper(tree, idx, shdb)
     end
   end
 
