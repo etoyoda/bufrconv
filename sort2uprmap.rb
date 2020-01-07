@@ -5,7 +5,7 @@ require 'time'
 class App
 
   def help
-    $stderr.puts "usage: #$0 [-opts] maptime outfile.(json|html) [zsort.txt ...]"
+    $stderr.puts "usage: #$0 [-opts] maptime level outfile.(json|html) [zsort.txt ...]"
     exit 16
   end
 
@@ -16,11 +16,11 @@ class App
       @flags[$1] = ($2 || true)
     end
     maptime = argv.shift
-    help if maptime.nil?
+    @level = argv.shift
+    help if @level.nil?
     @outfile = argv.shift
     @files = argv
     @maptime = Time.parse(maptime).utc
-    @level = 'sfc'
     @merge = {}
   rescue => e
     $stderr.puts "#{e.class}: #{e.message}"
@@ -73,14 +73,7 @@ function init() {
       }
       var bn = 'd' + dd + 'f' + ff + '.png';
       var url = '#{windbase}' + bn;
-      var nbn = 'nnil.png';
-      if (!(obs.N === null)) {
-        var n = Math.floor((obs.N + 6) / 12.5);
-	nbn = 'n' + n + '.png';
-      }
-      var surl = '#{windbase}' + nbn;
-      var ic = L.icon({iconUrl: surl, iconSize: [16, 16], iconAnchor: [8, 8],
-        shadowUrl: url, shadowSize: [64, 64], shadowAnchor: [32, 32]});
+      var ic = L.icon({iconUrl: url, iconSize: [64, 64], iconAnchor: [32, 32]});
       var opt = {icon: ic, title: obs['@']};
       var pop = JSON.stringify(obs);
       L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(overlays);

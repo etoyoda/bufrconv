@@ -130,16 +130,69 @@ class BufrSort
     return nil
   end
 
+  def stdpres pres
+    stdp = case pres
+      when 900_00..950_00 then
+        925_00
+      when 0...75_00 then
+        ((pres + 5_00) / 10_00).floor * 10_00
+      else
+        ((pres + 25_00) / 50_00).floor * 50_00
+      end
+    case stdp
+    when 1050_00, 950_00, 900_00, 800_00, 750_00, 650_00, 600_00,
+    550_00, 450_00, 350_00, 80_00, 60_00, 40_00, 0 then
+      return nil
+    else
+      stdp
+    end
+  end
+
+  def upperlevel levcollect
+    h = Hash.new
+    if pres = levcollect['007004'] then
+      stdp = stdpres(pres)
+      return nil if stdp.nil?
+      h[:pst] = stdp
+      h[:dp] = (pres - stdp).abs
+      # ほんとは測高公式で補正すべきなんだが、とりあえず
+      h[:z] = levcollect['010009'] if h[:dp] < 30
+    else
+      return nil
+    end
+    h[:T] = levcollect['012101']
+    h[:Td] = levcollect['012103']
+    h[:d] = levcollect['011001']
+    h[:f] = levcollect['011002']
+    h
+  end
+
   def upper tree, idx, shdb
     t = shdbtime(shdb)
+    # 5400 = 1.5 hours;  10800 = 3 hours
+    t = Time.at(((t.to_i + 5400) / 10800).floor * 10800).utc
     return if t.nil?
     levbranch = branch(tree, 0)
     return if levbranch.nil?
+    stdlevs = {}
     levbranch.each{|slice|
-      h = shallow_collect(slice)
-      p h
+      h = upperlevel(shallow_collect(slice))
+      next if h.nil?
+      stdp = h[:pst]
+      h.delete(:pst)
+      if stdlevs[stdp].nil? or stdlevs[stdp][:dp] > h[:dp] then
+        stdlevs[stdp] = h
+      end
     }
-
+    stdlevs.each{|stdp, r|
+      r.delete(:dp)
+      r['La'] = (shdb['005001'] || shdb['005002'])
+      r['Lo'] = (shdb['006001'] || shdb['006002'])
+      lev = format('p%u', stdp / 100)
+      k = [t.strftime('%Y-%m-%dT%H:00Z'), lev, idx].join('/') 
+      @nstore += 1
+      @ofp.puts [k, JSON.generate(r)].join(' ')
+    }
   end
 
   def subset tree
