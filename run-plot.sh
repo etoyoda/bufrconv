@@ -7,6 +7,7 @@ TZ=UTC; export TZ
 : ${nwp:=${HOME}/nwp-test}
 : ${base:=${nwp}/p2}
 : ${refhour:=$(date +'%Y-%m-%dT%HZ')}
+: ${wdbase:='https://raw.githubusercontent.com/etoyoda/wxsymbols/master/img/'}
 
 cd $base
 if test -f stop ; then
@@ -24,14 +25,38 @@ hh=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%H"))' $basetime)
 
 ln -Tfs $nwp/p0/incomplete/obsbf-2*.tar z.curr.tar
 
-ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL='^IS[MI]'
-ruby $nwp/bin/sort2sfcmap.rb $basetime sfcplot$bt.html zsort.txt
+ahl='^I(SM|SI)'
+case $hh in
+00|12)
+  ahl='^I(SM|SI|US|UK)'
+;;
+esac
+
+ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl"
+ruby $nwp/bin/sort2sfcmap.rb -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
+case $hh in
+00|12)
+  for pres in 925 850 700 500 300 200 100 50
+  do
+    ruby $nwp/bin/sort2uprmap.rb -WD:$wdbase $basetime p${pres} \
+      p${pres}plot${bt}.html zsort.txt
+  done
+;;
+esac
+
 
 rm -rf z*
 cd $base
-test ! -d ${refhour}-plot.bak || rm -rf ${refhour}-plot.bak
-test ! -d ${refhour}-plot || mv -f ${refhour}-plot ${refhour}-plot.bak
+test ! -d ${refhour}-plot || rm -rf ${refhour}-plot
 mv $jobwk ${refhour}-plot
 test -d $base/curr || mkdir $base/curr
-ln -Tf ${base}/${refhour}-plot/sfcplot$bt.html ${base}/curr/sfcplot${hh}.html
+ln -Tf ${base}/${refhour}-plot/sfcplot${bt}.html ${base}/curr/sfcplot${hh}.html
+for pres in 925 850 700 500 300 200 100 50
+do
+  if test -f ${base}/${refhour}-plot/p${pres}plot${bt}.html
+  then
+    ln -Tf ${base}/${refhour}-plot/p${pres}plot${bt}.html \
+      ${base}/curr/p${pres}plot${hh}.html
+  fi
+done
 exit 0
