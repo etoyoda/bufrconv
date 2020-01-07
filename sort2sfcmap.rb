@@ -65,9 +65,10 @@ function init() {
         var dd = Math.floor((obs.d + 5) / 10);
 	if (dd == 0) { dd = 36; }
 	var ff = Math.floor((obs.f + 1.25) / 2.5) * 5;
-	if (ff > 105) {
+	if (ff > 100) {
 	  ff = Math.floor((obs.f + 2.5) / 5) * 10;
 	  if (ff > 155) { ff = 200; }
+	  if (ff > 135) { ff = 150; }
 	}
 	if (ff == 0) { dd = 0; }
       }
