@@ -133,7 +133,7 @@ HTML
   end
 
   def run
-    pat = @maptime.utc.strftime('^%Y-%m-%dT%H:%MZ/') + @level
+    pat = [@maptime.utc.strftime('^%Y-%m-%dT%H:%MZ'), @level, ''].join('/')
     pattern = Regexp.new(pat)
     n = 0
     iopen() {|fp|
