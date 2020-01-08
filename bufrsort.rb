@@ -168,6 +168,8 @@ class BufrSort
     h[:Td] = levcollect['012103']
     h[:d] = levcollect['011001']
     h[:f] = levcollect['011002']
+    h[:dLa] = levcollect['005015']
+    h[:dLo] = levcollect['006015']
     h
   end
 
@@ -189,8 +191,12 @@ class BufrSort
       end
     }
     stdlevs.each{|stdp, r|
-      r['La'] = (shdb['005001'] || shdb['005002'])
-      r['Lo'] = (shdb['006001'] || shdb['006002'])
+      next unless r[:La] = (shdb['005001'] || shdb['005002'])
+      r[:La] += r[:dLa] if r[:dLa]
+      r.delete(:dLa)
+      next unless r[:Lo] = (shdb['006001'] || shdb['006002'])
+      r[:Lo] += r[:dLo] if r[:dLo]
+      r.delete(:dLo)
       lev = format('p%u', stdp / 100)
       k = [t.strftime('%Y-%m-%dT%H:00Z'), lev, idx].join('/') 
       @nstore += 1
