@@ -1383,7 +1383,6 @@ class BufrSort
     pres = barometric(z, tref)
     stdp = stdpres(pres, flags)
     return nil if stdp.nil?
-    p [stdp, pres, (pres - stdp)]
     [stdp, (pres - stdp).abs]
   end
 
