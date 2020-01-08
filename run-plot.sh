@@ -28,7 +28,7 @@ ln -Tfs $nwp/p0/incomplete/obsbf-2*.tar z.curr.tar
 ahl='^I(SM|SI)'
 case $hh in
 00|12)
-  ahl='^I(SM|SI|US|UK)'
+  ahl='^I(SM|SI|UA|UJ|US|UK)'
 ;;
 esac
 

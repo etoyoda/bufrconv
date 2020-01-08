@@ -169,7 +169,7 @@ class BufrSort
     [stdp, (pres - stdp).abs]
   end
 
-  def upperlevel levcollect, lat
+  def upperlevel levcollect, lat = 35.55
     h = Hash.new
     if pres = levcollect['007004'] then
       stdp = stdpres(pres, levcollect['008042'])
@@ -178,7 +178,7 @@ class BufrSort
       h[:bad] = (pres - stdp).abs
       # ほんとは測高公式で補正すべきなんだが、とりあえず
       h[:z] = levcollect['010009'] if h[:bad] < 30
-    elsif z = levcollect['007009'] then
+    elsif z = (levcollect['007009'] || levcollect['007010'] || levcollect['007002']) then
       h[:pst], h[:bad] = stdpres_z(z, levcollect['008042'], lat)
       return nil if h[:pst].nil?
       h[:h] = z
@@ -196,23 +196,31 @@ class BufrSort
 
   def upper tree, idx, shdb
     t = shdbtime(shdb)
+    return if t.nil?
     # 5400 = 1.5 hours;  10800 = 3 hours
     t = Time.at(((t.to_i + 5400) / 10800).floor * 10800).utc
-    return if t.nil?
-    levbranch = branch(tree, 0)
-    return if levbranch.nil?
     stdlevs = {}
     lat = (shdb['005001'] || shdb['005002'])
     return if lat.nil?
-    levbranch.each{|slice|
-      h = upperlevel(shallow_collect(slice), lat)
-      next if h.nil?
+    if shdb['011001'] then
+      h = upperlevel(shdb)
+      return if h.nil?
       stdp = h[:pst]
       h.delete(:pst)
-      if stdlevs[stdp].nil? or stdlevs[stdp][:bad] > h[:bad] then
-        stdlevs[stdp] = h
-      end
-    }
+      stdlevs[stdp] = h
+    else
+      levbranch = branch(tree, 0)
+      return if levbranch.nil?
+      levbranch.each{|slice|
+	h = upperlevel(shallow_collect(slice), lat)
+	next if h.nil?
+	stdp = h[:pst]
+	h.delete(:pst)
+	if stdlevs[stdp].nil? or stdlevs[stdp][:bad] > h[:bad] then
+	  stdlevs[stdp] = h
+	end
+      }
+    end
     stdlevs.each{|stdp, r|
       r[:La] = lat
       r[:La] += r[:dLa] if r[:dLa]
@@ -239,7 +247,7 @@ class BufrSort
     case @hdr[:cat]
     when 0 then
       surface(shdb, idx)
-    when 2 then
+    when 2, 4 then
       upper(tree, idx, shdb)
     end
   end
