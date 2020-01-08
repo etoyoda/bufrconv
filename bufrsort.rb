@@ -130,7 +130,11 @@ class BufrSort
     return nil
   end
 
-  def stdpres pres
+  def stdpres pres, flags
+    # 鉛直レベル意義フラグが存在して指定面ではない場合は門前払いする。
+    if flags then
+      return nil if (flags & 0x10000).zero?
+    end
     stdp = case pres
       when 900_00..950_00 then
         925_00
@@ -151,12 +155,12 @@ class BufrSort
   def upperlevel levcollect
     h = Hash.new
     if pres = levcollect['007004'] then
-      stdp = stdpres(pres)
+      stdp = stdpres(pres, levcollect['008042'])
       return nil if stdp.nil?
       h[:pst] = stdp
-      h[:dp] = (pres - stdp).abs
+      h[:bad] = (pres - stdp).abs
       # ほんとは測高公式で補正すべきなんだが、とりあえず
-      h[:z] = levcollect['010009'] if h[:dp] < 30
+      h[:z] = levcollect['010009'] if h[:bad] < 30
     else
       return nil
     end
@@ -180,12 +184,11 @@ class BufrSort
       next if h.nil?
       stdp = h[:pst]
       h.delete(:pst)
-      if stdlevs[stdp].nil? or stdlevs[stdp][:dp] > h[:dp] then
+      if stdlevs[stdp].nil? or stdlevs[stdp][:bad] > h[:bad] then
         stdlevs[stdp] = h
       end
     }
     stdlevs.each{|stdp, r|
-      r.delete(:dp)
       r['La'] = (shdb['005001'] || shdb['005002'])
       r['Lo'] = (shdb['006001'] || shdb['006002'])
       lev = format('p%u', stdp / 100)
