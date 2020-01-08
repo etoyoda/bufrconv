@@ -1265,7 +1265,7 @@ class BufrSort
       case elem.first
       when String
         k, v = elem
-	v = v.to_f if Rational === v
+        v = v.to_f if Rational === v
         shdb[k] = v if v
       end
     end
@@ -1398,7 +1398,6 @@ class BufrSort
     elsif z = (levcollect['007009'] || levcollect['007010'] || levcollect['007002']) then
       h[:pst], h[:bad] = stdpres_z(z, levcollect['008042'], lat)
       return nil if h[:pst].nil?
-      h[:h] = z
     else
       return nil
     end
@@ -1429,13 +1428,13 @@ class BufrSort
       levbranch = branch(tree, 0)
       return if levbranch.nil?
       levbranch.each{|slice|
-	h = upperlevel(shallow_collect(slice), lat)
-	next if h.nil?
-	stdp = h[:pst]
-	h.delete(:pst)
-	if stdlevs[stdp].nil? or stdlevs[stdp][:bad] > h[:bad] then
-	  stdlevs[stdp] = h
-	end
+        h = upperlevel(shallow_collect(slice), lat)
+        next if h.nil?
+        stdp = h[:pst]
+        h.delete(:pst)
+        if stdlevs[stdp].nil? or stdlevs[stdp][:bad] > h[:bad] then
+          stdlevs[stdp] = h
+        end
       }
     end
     stdlevs.each{|stdp, r|
@@ -1445,6 +1444,8 @@ class BufrSort
       next unless r[:Lo] = (shdb['006001'] || shdb['006002'])
       r[:Lo] += r[:dLo] if r[:dLo]
       r.delete(:dLo)
+      r.delete(:bad)
+      r["@"] = idx
       lev = format('p%u', stdp / 100)
       k = [t.strftime('%Y-%m-%dT%H:00Z'), lev, idx].join('/') 
       @nstore += 1
