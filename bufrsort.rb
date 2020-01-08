@@ -130,6 +130,7 @@ class BufrSort
     return nil
   end
 
+  # pres に最も近い指定面気圧を返す
   def stdpres pres, flags
     # 鉛直レベル意義フラグが存在して指定面ではない場合は門前払いする。
     if flags then
@@ -152,7 +153,23 @@ class BufrSort
     end
   end
 
-  def upperlevel levcollect
+  LB = -6.5e-3
+  GMU_RL = 9.80665 * 28.9644e-3 / 8.31432 / LB
+
+  def barometric z, tref
+    101325 * (tref / (tref + LB * z)) ** GMU_RL
+  end
+
+  def stdpres_z z, flags, lat
+    tref = [[323.7 - lat.abs, 300].min, 273].max
+    pres = barometric(z, tref)
+    stdp = stdpres(pres, flags)
+    return nil if stdp.nil?
+    p [stdp, pres, (pres - stdp)]
+    [stdp, (pres - stdp).abs]
+  end
+
+  def upperlevel levcollect, lat
     h = Hash.new
     if pres = levcollect['007004'] then
       stdp = stdpres(pres, levcollect['008042'])
@@ -161,15 +178,19 @@ class BufrSort
       h[:bad] = (pres - stdp).abs
       # ほんとは測高公式で補正すべきなんだが、とりあえず
       h[:z] = levcollect['010009'] if h[:bad] < 30
+    elsif z = levcollect['007009'] then
+      h[:pst], h[:bad] = stdpres_z(z, levcollect['008042'], lat)
+      return nil if h[:pst].nil?
+      h[:h] = z
     else
       return nil
     end
-    h[:T] = levcollect['012101']
-    h[:Td] = levcollect['012103']
+    h[:T] = levcollect['012101'] if levcollect.include?('012101')
+    h[:Td] = levcollect['012103'] if levcollect.include?('012103')
     h[:d] = levcollect['011001']
     h[:f] = levcollect['011002']
-    h[:dLa] = levcollect['005015']
-    h[:dLo] = levcollect['006015']
+    h[:dLa] = levcollect['005015'] if levcollect.include?('005015')
+    h[:dLo] = levcollect['006015'] if levcollect.include?('006015')
     h
   end
 
@@ -181,8 +202,10 @@ class BufrSort
     levbranch = branch(tree, 0)
     return if levbranch.nil?
     stdlevs = {}
+    lat = (shdb['005001'] || shdb['005002'])
+    return if lat.nil?
     levbranch.each{|slice|
-      h = upperlevel(shallow_collect(slice))
+      h = upperlevel(shallow_collect(slice), lat)
       next if h.nil?
       stdp = h[:pst]
       h.delete(:pst)
@@ -191,7 +214,7 @@ class BufrSort
       end
     }
     stdlevs.each{|stdp, r|
-      next unless r[:La] = (shdb['005001'] || shdb['005002'])
+      r[:La] = lat
       r[:La] += r[:dLa] if r[:dLa]
       r.delete(:dLa)
       next unless r[:Lo] = (shdb['006001'] || shdb['006002'])
