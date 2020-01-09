@@ -182,6 +182,10 @@ class BufrSort
     elsif z = (levcollect['007009'] || levcollect['007010'] || levcollect['007002']) then
       h[:pst], h[:bad] = stdpres_z(z, levcollect['008042'], lat)
       return nil if h[:pst].nil?
+    elsif z = levcollect['007006'] then
+      z += levcollect['007001'].to_f
+      h[:pst], h[:bad] = stdpres_z(z, nil, lat)
+      return nil if h[:pst].nil?
     else
       return nil
     end
