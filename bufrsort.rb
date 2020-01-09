@@ -179,7 +179,8 @@ class BufrSort
       h[:bad] = (pres - stdp).abs
       # ほんとは測高公式で補正すべきなんだが、とりあえず
       h[:z] = levcollect['010009'] if h[:bad] < 30
-    elsif z = (levcollect['007009'] || levcollect['007010'] || levcollect['007002']) then
+    elsif z = (levcollect['007009'] || levcollect['007010'] ||
+    levcollect['007002'] || levcollect['007007']) then
       h[:pst], h[:bad] = stdpres_z(z, levcollect['008042'], lat)
       return nil if h[:pst].nil?
     elsif z = levcollect['007006'] then
@@ -200,9 +201,15 @@ class BufrSort
 
   def upper tree, idx, shdb
     t = shdbtime(shdb)
+    # hack for Japan wind profiler
+    if t.nil? and shdb['001001'] == 47 then
+      tbranch = branch(tree, 0)
+      return if tbranch.nil?
+      t = shdbtime(shallow_collect(tree = tbranch.last))
+    end
     return if t.nil?
-    # 5400 = 1.5 hours;  10800 = 3 hours
-    t = Time.at(((t.to_i + 5400) / 10800).floor * 10800).utc
+    t = Time.at((t.to_i / 3600).floor * 3600).utc
+    t += 3600 if t.hour % 3 == 2
     stdlevs = {}
     lat = (shdb['005001'] || shdb['005002'])
     return if lat.nil?
