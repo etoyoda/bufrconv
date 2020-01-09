@@ -28,7 +28,7 @@ ln -Tfs $nwp/p0/incomplete/obsbf-2*.tar z.curr.tar
 ahl='^I(SM|SI)'
 case $hh in
 00|12)
-  ahl='^I(SM|SI|UA|UJ|US|UK)'
+  ahl='^I(SM|SI|UP|UJ|US|UK)'
 ;;
 esac
 
@@ -47,15 +47,15 @@ esac
 
 rm -rf z*
 cd $base
-test ! -d ${refhour}-plot || rm -rf ${refhour}-plot
-mv $jobwk ${refhour}-plot
+test ! -d ${bt}-plot || rm -rf ${bt}-plot
+mv $jobwk ${bt}-plot
 test -d $base/curr || mkdir $base/curr
-ln -Tf ${base}/${refhour}-plot/sfcplot${bt}.html ${base}/curr/sfcplot${hh}.html
+ln -Tf ${base}/${bt}-plot/sfcplot${bt}.html ${base}/curr/sfcplot${hh}.html
 for pres in 925 850 700 500 300 200 100 50
 do
-  if test -f ${base}/${refhour}-plot/p${pres}plot${bt}.html
+  if test -f ${base}/${bt}-plot/p${pres}plot${bt}.html
   then
-    ln -Tf ${base}/${refhour}-plot/p${pres}plot${bt}.html \
+    ln -Tf ${base}/${bt}-plot/p${pres}plot${bt}.html \
       ${base}/curr/p${pres}plot${hh}.html
   fi
 done
