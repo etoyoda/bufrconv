@@ -11,6 +11,7 @@ class BufrSort
   def initialize spec
     @fn = 'zsort.txt'
     @now = Time.now.utc
+    @amdar = false
     @limit = 30
     if spec.nil?
       $stderr.puts "usage: ruby #{$0} default,FN:#{@fn},LM:30 files ..."
@@ -23,6 +24,7 @@ class BufrSort
       when /^FN:(\S+)/i then @fnpat = $1
       when /^LM:(\d+)/i then @limit = $1.to_i
       when /^LM:(\d+)D/i then @limit = $1.to_i * 24
+      when /^AMDAR$/i then @amdar = true
       else raise "unknown param #{param}"
       end
     end
@@ -247,8 +249,10 @@ class BufrSort
     case @hdr[:cat]
     when 0 then
       surface(shdb, idx)
-    when 2, 4 then
+    when 2 then
       upper(tree, idx, shdb)
+    when 4 then
+      upper(tree, idx, shdb) if @amdar
     end
   end
 
