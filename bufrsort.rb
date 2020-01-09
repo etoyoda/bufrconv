@@ -192,8 +192,17 @@ class BufrSort
     end
     h[:T] = levcollect['012101'] if levcollect.include?('012101')
     h[:Td] = levcollect['012103'] if levcollect.include?('012103')
-    h[:d] = levcollect['011001']
-    h[:f] = levcollect['011002']
+    if d = levcollect['011001'] and f = levcollect['011002'] then
+      h[:d] = d
+      h[:f] = f
+    elsif u = levcollect['011003'] and v = levcollect['011004'] then
+      f = Math::hypot(u, v)
+      d = Math::atan2(u, v) / Math::PI * 180 + 180
+      h[:d] = Rational(((d * 100 + 5) / 10).floor, 10).to_f
+      h[:f] = Rational(((f * 100 + 5) / 10).floor, 10).to_f
+    else
+      return nil
+    end
     h[:dLa] = levcollect['005015'] if levcollect.include?('005015')
     h[:dLo] = levcollect['006015'] if levcollect.include?('006015')
     h
