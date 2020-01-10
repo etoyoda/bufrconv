@@ -59,23 +59,25 @@ function init() {
   for (i in data) {
     obs = data[i]
     if (obs.La && obs.Lo) { 
-      var dd = 0;
-      var ff = 0;
-      if (obs.d && obs.f) {
-        var dd = Math.floor((obs.d + 5) / 10);
+      var dd = 'nil';
+      var ff = 'nil';
+      if (obs.d !== null) {
+        dd = Math.floor((obs.d + 5) / 10);
 	if (dd == 0) { dd = 36; }
-	var ff = Math.floor((obs.f + 1.25) / 2.5) * 5;
+      }
+      if (obs.f !== null) {
+	ff = Math.floor((obs.f + 1.25) / 2.5) * 5;
 	if (ff > 100) {
 	  ff = Math.floor((obs.f + 2.5) / 5) * 10;
-	  if (ff > 155) { ff = 200; }
-	  if (ff > 135) { ff = 150; }
+	  if (ff > 150) { ff = 200; }
 	}
+	if ((ff == 0) && (obs.f > 0)) { ff = 5; }
 	if (ff == 0) { dd = 0; }
       }
       var bn = 'd' + dd + 'f' + ff + '.png';
       var url = '#{windbase}' + bn;
       var nbn = 'nnil.png';
-      if (!(obs.N === null)) {
+      if (obs.N !== null) {
         var n = Math.floor((obs.N + 6) / 12.5);
 	nbn = 'n' + n + '.png';
       }
