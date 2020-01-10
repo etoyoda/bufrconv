@@ -25,10 +25,10 @@ hh=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%H"))' $basetime)
 
 ln -Tfs $nwp/p0/incomplete/obsbf-2*.tar z.curr.tar
 
-ahl='^I(SM|SI)'
+ahl='^I(SM|SI|SN|SS)'
 case $hh in
 00|12)
-  ahl='^I(SM|SI|UP|UJ|US|UK)'
+  ahl='^I(SM|SI|SN|SS|UP|UJ|US|UK)'
 ;;
 esac
 
