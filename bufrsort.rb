@@ -67,8 +67,12 @@ class BufrSort
       'a' + shdb['001008'].strip
     elsif /\w/ === shdb['001006'] then
       'f' + shdb['001006'].strip
-    elsif /\w/ === shdb['001011'] and not /\bSHIP\b/ === shdb['001011'] then
-      'v' + shdb['001011'].strip
+    elsif /\w/ === shdb['001011'] then
+      if /\bSHIP\b/ === shdb['001011'] then
+        format('vSHIP%+03d%+04d', shdb['005002'].to_i, shdb['006002'].to_i)
+      else
+	'v' + shdb['001011'].strip
+      end
     elsif shdb['005001'] and shdb['006001'] then
       format('m%5s%6s',
         format('%+05d', (shdb['005001'] * 100 + 0.5).floor).tr('+-', 'NS'),
@@ -101,6 +105,8 @@ class BufrSort
     r['@'] = idx
     r['La'] = (shdb['005001'] || shdb['005002'])
     r['Lo'] = (shdb['006001'] || shdb['006002'])
+    return unless r['La']
+    return unless r['Lo']
     r['V'] = shdb['020001']
     r['N'] = shdb['020010']
     r['d'] = shdb['011001']
