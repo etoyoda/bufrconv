@@ -112,6 +112,7 @@ class BufrSort
     r['p'] = shdb['010061']
     r['w'] = shdb['020003']
     r['s'] = shdb['013013']
+    r[:ahl] = @hdr.ahl
     @nstore += 1
     @ofp.puts [k, JSON.generate(r)].join(' ')
   end
@@ -250,6 +251,7 @@ class BufrSort
       r.delete(:dLo)
       r.delete(:bad)
       r["@"] = idx
+      r[:ahl] = @hdr.ahl
       lev = format('p%u', stdp / 100)
       k = [t.strftime('%Y-%m-%dT%H:00Z'), lev, idx].join('/') 
       @nstore += 1
