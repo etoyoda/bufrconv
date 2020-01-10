@@ -267,7 +267,7 @@ class BufrSort
     return if shdb.empty?
     idx = idstring(shdb)
     case @hdr[:cat]
-    when 0 then
+    when 0, 1 then
       surface(shdb, idx)
     when 2 then
       upper(tree, idx, shdb)
