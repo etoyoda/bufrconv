@@ -19,7 +19,8 @@ jobwk=${base}/wk.${refhour}-plot.$$
 mkdir $jobwk
 cd $jobwk
 
-basetime=$(ruby -rtime -e 'puts(Time.at((Time.parse(ARGV.first.sub(/Z/,":00:00Z")).to_i / (6 * 3600)) * 6 * 3600).utc.strftime("%Y-%m-%dT%H:%M:%SZ"))' $refhour)
+: 10800 == 3600 x 3
+basetime=$(ruby -rtime -e 'puts(Time.at(((Time.parse(ARGV.first.sub(/Z/,":00:00Z")).to_i - 3600) / 10800) * 10800).utc.strftime("%Y-%m-%dT%H:%M:%SZ"))' $refhour)
 bt=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y-%m-%dT%HZ"))' $basetime)
 hh=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%H"))' $basetime)
 
