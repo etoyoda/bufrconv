@@ -38,6 +38,15 @@ class App
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
   integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
   crossorigin=""/>
+<style type="text/css">
+.stn { width: 64px; height: 64px; }
+.wb { width: 64px; height: 64px; position: absolute; top: 0; left: 0; }
+.cl { width: 16px; height: 16px; position: absolute; top: 24px; left: 24px; }
+.nw { font-size: 10px; line-height: 10px; text-shadow: 1px 1px 0 #FFF; 
+  position: absolute; top: 20px; left: 10px; min-width: 15px; text-aligh: right; }
+.sw { font-size: 10px; line-height: 10px; text-shadow: 1px 1px 0 #FFF; 
+  position: absolute; bottom: 20px; left: 10px; min-width: 15px; text-aligh: right; }
+</style>
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
    crossorigin=""></script>
@@ -55,6 +64,8 @@ function init() {
     "淡色地図": tile1,
     "標高": tile2
   };
+  var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
+    maximumFractionDigits: 1 });
   var overlays = L.layerGroup([]);
   for (i in data) {
     obs = data[i]
@@ -82,8 +93,22 @@ function init() {
 	nbn = 'n' + n + '.png';
       }
       var surl = '#{windbase}' + nbn;
-      var ic = L.icon({iconUrl: surl, iconSize: [16, 16], iconAnchor: [8, 8],
-        shadowUrl: url, shadowSize: [64, 64], shadowAnchor: [32, 32]});
+      var ts = (typeof obs.T === 'number') ? Math.round(obs.T - 273.15) : '';
+      var wx = ''
+      if (typeof obs.w === 'number') {
+        switch (obs.w) {
+        case 0: case 1: case 2: case 3:
+        case 100: case 101: case 102: case 103: case 508: case 509:
+          break;
+        default:
+          wx = ('w' + obs.w);
+        }
+      }
+      var ht = '<div class="stn"><img class="wb" src="' + url +
+        '" /><img class="cl" src="' + surl +
+        '" /><div class="nw">' + ts + '</div><div class="sw">' +
+        wx + '</div></div>';
+      var ic = L.divIcon({html: ht, className: 'stn', iconSize: [64, 64], iconAnchor: [32, 32]});
       var opt = {icon: ic, title: obs['@']};
       var pop = JSON.stringify(obs);
       L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(overlays);
