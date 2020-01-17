@@ -43,9 +43,9 @@ class App
 .wb { width: 64px; height: 64px; position: absolute; top: 0; left: 0; }
 .cl { width: 16px; height: 16px; position: absolute; top: 24px; left: 24px; }
 .nw { font-size: 10px; line-height: 10px; text-shadow: 1px 1px 0 #FFF; 
-  position: absolute; top: 20px; left: 10px; min-width: 15px; text-aligh: right; }
+  position: absolute; top: 20px; right: 38px; min-width: 5px; }
 .sw { font-size: 10px; line-height: 10px; text-shadow: 1px 1px 0 #FFF; 
-  position: absolute; bottom: 20px; left: 10px; min-width: 15px; text-aligh: right; }
+  position: absolute; bottom: 20px; right: 38px; min-width: 5px; }
 </style>
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
