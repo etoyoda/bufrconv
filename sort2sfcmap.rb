@@ -91,7 +91,11 @@ function init() {
       var nbn = 'nnil.png';
       if (obs.N !== null) {
         var n = Math.floor((obs.N + 6) / 12.5);
-	nbn = 'n' + n + '.png';
+	if (n > 9) {
+	  nbn = 'nauto.png';
+	} else {
+	  nbn = 'n' + n + '.png';
+	}
       }
       var surl = '#{windbase}' + nbn;
       var ts = (typeof obs.T === 'number') ? Math.round(obs.T - 273.15) : '';

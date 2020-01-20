@@ -1327,6 +1327,9 @@ class BufrSort
     return unless r['Lo']
     r['V'] = shdb['020001']
     r['N'] = shdb['020010']
+    if shdb['002001'] == 0 then
+      r['N'] = 188 unless r['N']
+    end
     r['d'] = shdb['011001']
     r['f'] = shdb['011002']
     r['T'] = shdb['012101']
