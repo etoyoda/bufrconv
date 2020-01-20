@@ -67,7 +67,7 @@ function init() {
   };
   var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
     maximumFractionDigits: 1 });
-  var overlays = L.layerGroup([]);
+  var overlays = L.layerGroup([], {attribution: '<a href="https://github.com/OGCMetOceanDWG/WorldWeatherSymbols/">OGC</a>'});
   for (i in data) {
     obs = data[i]
     if (obs.La && obs.Lo) { 
