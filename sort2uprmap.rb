@@ -84,11 +84,16 @@ function init() {
       }
       var bn = 'd' + dd + 'f' + ff + '.png';
       var url = '#{windbase}' + bn;
-      var ts = (typeof obs.T === 'number') ? decimal1.format(obs.T - 273.15) : '';
-      var ds = (typeof obs.Td === 'number') ? decimal1.format(obs.Td - 273.15) : '';
+      var ts = '';
+      var ds = '';
+      if (typeof obs.T === 'number') {
+        ts = '<div class="ne">' + decimal1.format(obs.T - 273.15) + '</div>';
+	if (typeof obs.Td == 'number') {
+          ds = '<div class="se">' + decimal1.format(obs.T - obs.Td) + '</div>';
+	}
+      }
       var ht = '<div class="stn"><img class="wb" src="' + url +
-        '" /><div class="ne">' + ts + '</div><div class="se">' +
-	ds + '</div></div>';
+        '" />' + ts + ds + '</div>';
       var ic = L.divIcon({html: ht, className: 'stn', iconSize: [64, 64], iconAnchor: [32, 32]});
       var opt = {icon: ic, title: obs['@']};
       var pop = JSON.stringify(obs);
