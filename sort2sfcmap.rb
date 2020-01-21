@@ -47,9 +47,9 @@ class App
 .nw { font-size: 10px; line-height: 10px; text-shadow: 1px 1px 0 #FFF; 
   position: absolute; top: 20px; right: 38px; min-width: 5px; }
 .ww { width: 20; height: 20; position: absolute; bottom: 11px; right: 32px; }
-.cl { font-size: 10px; line-height: 10px; position: absolute; top: 38px; left: 32px; }
-.cm { font-size: 10px; line-height: 10px; position: absolute; bottom: 36px; left: 28px; }
-.ch { font-size: 10px; line-height: 10px; position: absolute; bottom: 48px; left: 28px; }
+.cl { width: 14; height: 14; position: absolute; top: 38px;    left: 30px; }
+.cm { width: 14; height: 14; position: absolute; bottom: 36px; left: 30px; }
+.ch { width: 14; height: 14; position: absolute; bottom: 48px; left: 30px; }
 </style>
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
@@ -71,6 +71,7 @@ function init() {
   var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
     maximumFractionDigits: 1 });
   var overlays = L.layerGroup([], {attribution: '<a href="https://github.com/OGCMetOceanDWG/WorldWeatherSymbols/">OGC</a>'});
+  const wxbase = '#{wxbase}';
   for (i in data) {
     obs = data[i]
     if (obs.La && obs.Lo) { 
@@ -112,15 +113,15 @@ function init() {
         case 100: case 101: case 102: case 103: case 508: case 509: case 510:
           break;
         default:
-          wx = ('<img class="ww" src="#{wxbase}w' + obs.w + '.svg" alt="w' + obs.w + '" />');
+          wx = ('<img class="ww" src="' + wxbase + 'w' + obs.w + '.svg" alt="w' + obs.w + '" />');
         }
       }
       var cl = '';
-      if (obs.CL) { cl = '<div class="cl">L' + obs.CL + '</div>'; }
+      if (obs.CL) { cl = '<img class="cl" src="' + wxbase + 'cl' + obs.CL + '.svg" />'; }
       var cm = '';
-      if (obs.CM) { cm = '<div class="cm">M' + obs.CM + '</div>'; }
+      if (obs.CM) { cm = '<img class="cm" src="' + wxbase + 'cm' + obs.CM + '.svg" />'; }
       var ch = '';
-      if (obs.CH) { ch = '<div class="ch">H' + obs.CH + '</div>'; }
+      if (obs.CH) { ch = '<img class="ch" src="' + wxbase + 'ch' + obs.CH + '.svg" />'; }
       var ht = '<div class="stn"><img class="wb" src="' + url +
         '" /><img class="cd" src="' + surl +
         '" />' + ts + wx + cl + cm + ch + '</div>';
