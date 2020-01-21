@@ -55,25 +55,8 @@ class App
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
    crossorigin=""></script>
 <script id="jsmain" type="text/javascript">
-function init() {
-  var tile1 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
-    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>(淡色)',
-    maxZoom: 14
-  });
-  var tile2 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/english/{z}/{x}/{y}.png', {
-    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>(標高)',
-    maxZoom: 14
-  });
-  var basemaps = {
-    "淡色地図": tile1,
-    "標高": tile2
-  };
-  var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
-    maximumFractionDigits: 1 });
-  var overlays = L.layerGroup([], {attribution: '<a href="https://github.com/OGCMetOceanDWG/WorldWeatherSymbols/">OGC</a>'});
+function plot(overlays, obs) {
   const wxbase = '#{wxbase}';
-  for (i in data) {
-    obs = data[i]
     if (obs.La && obs.Lo) { 
       var dd = 'nil';
       var ff = 'nil';
@@ -130,13 +113,32 @@ function init() {
       var pop = JSON.stringify(obs);
       L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(overlays);
     }
-  }
+}
+function init() {
+  var tile1 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', {
+    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>(淡色)',
+    maxZoom: 14
+  });
+  var tile2 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/english/{z}/{x}/{y}.png', {
+    attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>(標高)',
+    maxZoom: 14
+  });
+  var basemaps = {
+    "淡色地図": tile1,
+    "標高": tile2
+  };
+  var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
+    maximumFractionDigits: 1 });
+  var overlays = L.layerGroup([], {attribution: '<a href="https://github.com/OGCMetOceanDWG/WorldWeatherSymbols/">OGC</a>'});
   var mymap = L.map('mapid', {
     center: [35.0, 135.0],
     zoom: 5,
     layers: [tile1, overlays]
   });
   L.control.layers(basemaps, {"plot": overlays}).addTo(mymap);
+  for (i in data) {
+    plot(overlays, data[i]);
+  }
 }
 </script>
 <script id="jsdata" type="text/javascript">
