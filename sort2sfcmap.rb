@@ -43,10 +43,13 @@ class App
 <style type="text/css">
 .stn { width: 64px; height: 64px; }
 .wb { width: 64px; height: 64px; position: absolute; top: 0; left: 0; }
-.cl { width: 16px; height: 16px; position: absolute; top: 24px; left: 24px; }
+.cd { width: 16px; height: 16px; position: absolute; top: 24px; left: 24px; }
 .nw { font-size: 10px; line-height: 10px; text-shadow: 1px 1px 0 #FFF; 
   position: absolute; top: 20px; right: 38px; min-width: 5px; }
 .ww { width: 20; height: 20; position: absolute; bottom: 11px; right: 32px; }
+.cl { font-size: 10px; line-height: 10px; position: absolute; top: 38px; left: 32px; }
+.cm { font-size: 10px; line-height: 10px; position: absolute; bottom: 36px; left: 28px; }
+.ch { font-size: 10px; line-height: 10px; position: absolute; bottom: 48px; left: 28px; }
 </style>
 <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
@@ -91,14 +94,17 @@ function init() {
       var nbn = 'nnil.png';
       if (obs.N !== null) {
         var n = Math.floor((obs.N + 6) / 12.5);
-	if (n > 9) {
+	if (obs.ix == 0) {
 	  nbn = 'nauto.png';
 	} else {
 	  nbn = 'n' + n + '.png';
 	}
       }
       var surl = '#{windbase}' + nbn;
-      var ts = (typeof obs.T === 'number') ? Math.round(obs.T - 273.15) : '';
+      var ts = '';
+      if (typeof obs.T === 'number') {
+        ts = '<div class="nw">' + Math.round(obs.T - 273.15) + '</div>';
+      }
       var wx = '';
       if (typeof obs.w === 'number') {
         switch (obs.w) {
@@ -109,9 +115,15 @@ function init() {
           wx = ('<img class="ww" src="#{wxbase}w' + obs.w + '.svg" alt="w' + obs.w + '" />');
         }
       }
+      var cl = '';
+      if (obs.CL) { cl = '<div class="cl">L' + obs.CL + '</div>'; }
+      var cm = '';
+      if (obs.CM) { cm = '<div class="cm">M' + obs.CM + '</div>'; }
+      var ch = '';
+      if (obs.CH) { ch = '<div class="ch">H' + obs.CH + '</div>'; }
       var ht = '<div class="stn"><img class="wb" src="' + url +
-        '" /><img class="cl" src="' + surl +
-        '" /><div class="nw">' + ts + '</div>' + wx + '</div>';
+        '" /><img class="cd" src="' + surl +
+        '" />' + ts + wx + cl + cm + ch + '</div>';
       var ic = L.divIcon({html: ht, className: 'stn', iconSize: [64, 64], iconAnchor: [32, 32]});
       var opt = {icon: ic, title: obs['@']};
       var pop = JSON.stringify(obs);

@@ -50,10 +50,21 @@ class BufrSort
       when String
         k, v = elem
         v = v.to_f if Rational === v
-        shdb[k] = v if v
+	shdb[k] = v if v
       end
     end
     shdb
+  end
+
+  def scan tree, key
+    a = []
+    for elem in tree
+      case elem.first
+      when key
+        a.push elem[1]
+      end
+    end
+    a
   end
 
   def idstring shdb
@@ -109,9 +120,14 @@ class BufrSort
     return unless r['Lo']
     r['V'] = shdb['020001']
     r['N'] = shdb['020010']
-    if shdb['002001'] == 0 then
-      r['N'] = 188 unless r['N']
+    for code in shdb['020012']
+      case code
+      when 10..19 then r['CH'] = code - 10
+      when 20..29 then r['CM'] = code - 20
+      when 30..39 then r['CL'] = code - 30
+      end
     end
+    r['ix'] = shdb['002001']
     r['d'] = shdb['011001']
     r['f'] = shdb['011002']
     r['T'] = shdb['012101']
@@ -279,6 +295,7 @@ class BufrSort
     idx = idstring(shdb)
     case @hdr[:cat]
     when 0, 1 then
+      shdb['020012'] = scan(tree, '020012')
       surface(shdb, idx)
     when 2 then
       upper(tree, idx, shdb)
