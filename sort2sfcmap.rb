@@ -79,27 +79,27 @@ function init() {
       var ff = 'nil';
       if (obs.d !== null) {
         dd = Math.floor((obs.d + 5) / 10);
-	if (dd == 0) { dd = 36; }
+        if (dd == 0) { dd = 36; }
       }
       if (obs.f !== null) {
-	ff = Math.floor((obs.f + 1.25) / 2.5) * 5;
-	if (ff > 100) {
-	  ff = Math.floor((obs.f + 2.5) / 5) * 10;
-	  if (ff > 150) { ff = 200; }
-	}
-	if ((ff == 0) && (obs.f > 0)) { ff = 5; }
-	if (ff == 0) { dd = 0; }
+        ff = Math.floor((obs.f + 1.25) / 2.5) * 5;
+        if (ff > 100) {
+          ff = Math.floor((obs.f + 2.5) / 5) * 10;
+          if (ff > 150) { ff = 200; }
+        }
+        if ((ff == 0) && (obs.f > 0)) { ff = 5; }
+        if (ff == 0) { dd = 0; }
       }
       var bn = 'd' + dd + 'f' + ff + '.png';
       var url = '#{windbase}' + bn;
       var nbn = 'nnil.png';
       if (obs.N !== null) {
         var n = Math.floor((obs.N + 6) / 12.5);
-	if (obs.ix == 0) {
-	  nbn = 'nauto.png';
-	} else {
-	  nbn = 'n' + n + '.png';
-	}
+        if (obs.ix == 0) {
+          nbn = 'nauto.png';
+        } else {
+          nbn = 'n' + n + '.png';
+        }
       }
       var surl = '#{windbase}' + nbn;
       var ts = '';
@@ -170,7 +170,7 @@ HTML
       yield $stdin
     else
       @files.each{|fnam|
-	File.open(fnam, 'r:UTF-8') {|fp| yield fp }
+        File.open(fnam, 'r:UTF-8') {|fp| yield fp }
       }
     end
   end
@@ -191,9 +191,9 @@ HTML
     iopen() {|fp|
       fp.each_line{|line|
         next unless pattern === line
-	n += 1
+        n += 1
         k, v = line.chomp.split(/ /, 2)
-	@merge[k] = v
+        @merge[k] = v
       }
     }
     $stderr.puts "#{n} lines" if $VERBOSE
