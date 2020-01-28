@@ -31,7 +31,7 @@ case $hh in
 00|12)
   ahl='^I(SM|SI|SN|SS|UP|UJ|US|UK)'
 ;;
-06|09|18)
+*)
   ahl='^I(SM|SI|SN|SS|UP|UJ|UK)'
 ;;
 esac
@@ -46,7 +46,7 @@ case $hh in
       p${pres}plot${bt}.html zsort.txt
   done
 ;;
-06|09|18)
+*)
   for pres in 925 850
   do
     ruby $nwp/bin/sort2uprmap.rb -WD:$wdbase $basetime p${pres} \
@@ -61,13 +61,12 @@ cd $base
 test ! -d ${bt}-plot || rm -rf ${bt}-plot
 mv $jobwk ${bt}-plot
 test -d $base/curr || mkdir $base/curr
-ln -Tf ${base}/${bt}-plot/sfcplot${bt}.html ${base}/curr/sfcplot${hh}.html
-for pres in 925 850 700 500 300 200 100 50
+for plane in sfc p925 p850 p700 p500 p300 p200 p100 p50
 do
-  if test -f ${base}/${bt}-plot/p${pres}plot${bt}.html
+  if test -f ${base}/${bt}-plot/${plane}plot${bt}.html
   then
-    ln -Tf ${base}/${bt}-plot/p${pres}plot${bt}.html \
-      ${base}/curr/p${pres}plot${hh}.html
+    ln -Tf ${base}/${bt}-plot/${plane}plot${bt}.html \
+      ${base}/curr/${plane}plot${hh}.html
   fi
 done
 exit 0
