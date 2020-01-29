@@ -76,13 +76,13 @@ function plot(overlays, obs) {
       var bn = 'd' + dd + 'f' + ff + '.png';
       var url = '#{windbase}' + bn;
       var nbn = 'nnil.png';
-      if (obs.N !== null) {
-        var n = Math.floor((obs.N + 6) / 12.5);
+      if (obs.N === null) {
         if (obs.ix == 0) {
           nbn = 'nauto.png';
-        } else {
-          nbn = 'n' + n + '.png';
         }
+      } else {
+        var n = Math.floor((obs.N + 6) / 12.5);
+	nbn = 'n' + n + '.png';
       }
       var surl = '#{windbase}' + nbn;
       var ts = '';
