@@ -55,7 +55,7 @@ class App
    integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
    crossorigin=""></script>
 <script id="jsmain" type="text/javascript">
-function plot(overlays, obs) {
+function plot(lgplot, obs) {
   const wxbase = '#{wxbase}';
     if (obs.La && obs.Lo) { 
       var dd = 'nil';
@@ -111,7 +111,7 @@ function plot(overlays, obs) {
       var ic = L.divIcon({html: ht, className: 'stn', iconSize: [64, 64], iconAnchor: [32, 32]});
       var opt = {icon: ic, title: obs['@']};
       var pop = JSON.stringify(obs);
-      L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(overlays);
+      L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(lgplot);
     }
 }
 function init() {
@@ -129,15 +129,15 @@ function init() {
   };
   var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
     maximumFractionDigits: 1 });
-  var overlays = L.layerGroup([], {attribution: '<a href="https://github.com/OGCMetOceanDWG/WorldWeatherSymbols/">OGC</a>'});
+  var lgplot = L.layerGroup([], {attribution: '<a href="https://github.com/OGCMetOceanDWG/WorldWeatherSymbols/">OGC</a>'});
   var mymap = L.map('mapid', {
     center: [35.0, 135.0],
     zoom: 5,
-    layers: [tile1, overlays]
+    layers: [tile1, lgplot]
   });
-  L.control.layers(basemaps, {"plot": overlays}).addTo(mymap);
+  L.control.layers(basemaps, {"plot": lgplot}).addTo(mymap);
   for (i in data) {
-    plot(overlays, data[i]);
+    plot(lgplot, data[i]);
   }
 }
 </script>
