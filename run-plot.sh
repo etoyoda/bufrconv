@@ -21,6 +21,7 @@ cd $jobwk
 
 : 10800 == 3600 x 3
 basetime=$(ruby -rtime -e 'puts(Time.at(((Time.parse(ARGV.first.sub(/Z/,":00:00Z")).to_i - 3600) / 10800) * 10800).utc.strftime("%Y-%m-%dT%H:%M:%SZ"))' $refhour)
+export basetime
 bt=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y-%m-%dT%HZ"))' $basetime)
 hh=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%H"))' $basetime)
 
@@ -36,8 +37,17 @@ case $hh in
 ;;
 esac
 
+imgopt=
+if test -f $nwp/bin/run-dst.sh
+then
+  if bash $nwp/bin/run-dst.sh
+  then
+    imgopt=-HIMDST:$(echo himdst*.png)
+  fi
+fi
+
 ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl"
-ruby $nwp/bin/sort2sfcmap.rb -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
+ruby $nwp/bin/sort2sfcmap.rb $imgopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
 case $hh in
 00|12)
   for pres in 925 850 700 500 300 200 100 50
