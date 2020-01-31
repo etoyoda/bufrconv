@@ -135,7 +135,13 @@ function init() {
     zoom: 5,
     layers: [tile1, lgplot]
   });
-  L.control.layers(basemaps, {"plot": lgplot}).addTo(mymap);
+  var cl = {"plot": lgplot};
+  var uHimdst = '#{@flags['HIMDST']}';
+  if (uHimdst) {
+    var himdst = L.imageOverlay(uHimdst, [[20,110],[50,150]], {attribution: 'Himawari'});
+    cl[uHimdst] = himdst;
+  }
+  L.control.layers(basemaps, cl).addTo(mymap);
   for (i in data) {
     plot(lgplot, data[i]);
   }
