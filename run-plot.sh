@@ -29,7 +29,7 @@ ln -Tfs $nwp/p0/incomplete/obsbf-2*.tar z.curr.tar
 
 ahl='^I(SM|SI|SN|SS)'
 case $hh in
-00|12)
+00|06|12|18)
   ahl='^I(SM|SI|SN|SS|UP|UJ|US|UK)'
 ;;
 *)
@@ -48,22 +48,23 @@ fi
 
 ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl"
 ruby $nwp/bin/sort2sfcmap.rb $imgopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
+levels=''
 case $hh in
 00|12)
-  for pres in 925 850 700 500 300 200 100 50
-  do
-    ruby $nwp/bin/sort2uprmap.rb -WD:$wdbase $basetime p${pres} \
-      p${pres}plot${bt}.html zsort.txt
-  done
-;;
+  levels='925 850 700 500 300 200 100 50'
+  ;;
+06|18)
+  levels='925 850 700 500 300'
+  ;;
 *)
-  for pres in 925 850
-  do
-    ruby $nwp/bin/sort2uprmap.rb -WD:$wdbase $basetime p${pres} \
-      p${pres}plot${bt}.html zsort.txt
-  done
+  levels='925 850'
 ;;
 esac
+for pres in $levels
+do
+  ruby $nwp/bin/sort2uprmap.rb -WD:$wdbase $basetime p${pres} \
+    p${pres}plot${bt}.html zsort.txt
+done
 
 
 rm -rf z*
