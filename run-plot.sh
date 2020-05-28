@@ -62,7 +62,7 @@ case $hh in
 esac
 for pres in $levels
 do
-  ruby $nwp/bin/sort2uprmap.rb -WD:$wdbase $basetime p${pres} \
+  ruby $nwp/bin/sort2uprmap.rb $imgopt -WD:$wdbase $basetime p${pres} \
     p${pres}plot${bt}.html zsort.txt
 done
 

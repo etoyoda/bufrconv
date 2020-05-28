@@ -105,7 +105,13 @@ function init() {
     zoom: 5,
     layers: [tile1, overlays]
   });
-  L.control.layers(basemaps, {"plot": overlays}).addTo(mymap);
+  var cl = {"plot": overlays};
+  var uHimdst = '#{@flags['HIMDST']}';
+  if (uHimdst) {
+    var himdst = L.imageOverlay(uHimdst, [[20,110],[50,150]], {attribution: 'Himawari'});
+    cl[uHimdst] = himdst;
+  }
+  L.control.layers(basemaps, cl).addTo(mymap);
 }
 </script>
 <script id="jsdata" type="text/javascript">
