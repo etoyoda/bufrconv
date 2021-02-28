@@ -46,7 +46,8 @@ then
   fi
 fi
 
-ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl"
+ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
+ln zsort.txt sfc${bt}.txt
 ruby $nwp/bin/sort2sfcmap.rb $imgopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
 levels=''
 case $hh in
