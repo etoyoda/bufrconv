@@ -28,6 +28,7 @@ class App
   end
 
   def htmlhead
+    bt = @maptime.strftime('%Y%m%d%H%M%S')
     windbase = (@flags['WD'] ||
       'https://raw.githubusercontent.com/etoyoda/wxsymbols/master/img/')
     <<HTML
@@ -59,9 +60,21 @@ function init() {
     attribution: '<a href="https://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a>(標高)',
     maxZoom: 14
   });
+  var tile3 = L.tileLayer('https://www.jma.go.jp/bosai/himawari/data/satimg/#{bt}/fd/#{bt}/B08/TBB/{z}/{x}/{y}.jpg', {
+    attribution: '<a href="https://www.data.jma.go.jp/sat_info/himawari/satobs.html">気象庁</a>',
+  });
+  var tile4 = L.tileLayer('https://www.jma.go.jp/bosai/himawari/data/satimg/#{bt}/fd/#{bt}/B13/TBB/{z}/{x}/{y}.jpg', {
+    attribution: '<a href="https://www.data.jma.go.jp/sat_info/himawari/satobs.html">気象庁</a>',
+  });
+  var tile5 = L.tileLayer('https://www.jma.go.jp/bosai/himawari/data/satimg/#{bt}/fd/#{bt}/SND/ETC/{z}/{x}/{y}.jpg', {
+    attribution: '<a href="https://www.data.jma.go.jp/sat_info/himawari/satobs.html">気象庁</a>',
+  });
   var basemaps = {
     "淡色地図": tile1,
-    "標高": tile2
+    "標高": tile2,
+    "ひまわり水蒸気": tile3,
+    "ひまわり赤外": tile4,
+    "ひまわり雲頂": tile5
   };
   var decimal1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1,
     maximumFractionDigits: 1 });
