@@ -45,6 +45,12 @@ then
     imgopt=-HIMDST:$(echo himdst*.png)
   fi
 fi
+ymdhns=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%d%H%M%S"))' $basetime)
+if test -d $nwp/nowc/$ymdhns
+then
+  ln -f $nwp/nowc/$ymdhns/surf_hrpns_$ymdhns.png surf_hrpns_${ymdhns}.png
+  imgopt="${imgopt} -HRPNS:surf_hrpns_${ymdhns}.png"
+fi
 
 ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
 ln zsort.txt sfc${bt}.txt
