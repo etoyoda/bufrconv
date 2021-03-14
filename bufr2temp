@@ -760,7 +760,7 @@ class BufrDecode
     # replication counter: nesting implemented using stack push/pop
     @cstack = []
     # operators
-    @addwidth = @addscale = @addfield = nil
+    @addwidth = @addscale = @addfield = @tmprefv = nil
     @ymdhack = ymdhack_ini
   end
 
@@ -953,6 +953,13 @@ BUFRの反復はネストできなければいけないので（用例がある�
         else
           @addscale = desc[:yyy] - 128
         end
+      when :op03
+        if desc[:yyy] == 255 then
+          @tmprefv = nil
+        else
+          @tmprefv = @bufrmsg.readnum({:width=>desc[:yyy], :scale=>0, :refv=>0})
+        end
+        $stderr.puts "hack03: #{@bufrmsg.ahl} tmprefv=#{@tmprefv.inspect} yyy=#{desc[:yyy]})"
       when :op04
         if desc[:yyy].zero? then
           @addfield = nil
@@ -1119,6 +1126,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         result.push({ :type => :op01, :fxy => fxy, :yyy => $1.to_i })
       when /^202(\d\d\d)/ then
         result.push({ :type => :op02, :fxy => fxy, :yyy => $1.to_i })
+      when /^203(\d\d\d)/ then
+        result.push({ :type => :op03, :fxy => fxy, :yyy => $1.to_i })
       when /^204(\d\d\d)/ then
         result.push({ :type => :op04, :fxy => fxy, :yyy => $1.to_i })
       when /^205(\d\d\d)/ then
