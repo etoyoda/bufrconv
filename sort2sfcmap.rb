@@ -150,9 +150,14 @@ function init() {
   });
   var cl = {"plot": lgplot};
   var uHimdst = '#{@flags['HIMDST']}';
+  var uHrpns = '#{@flags['HRPNS']}';
   if (uHimdst) {
     var himdst = L.imageOverlay(uHimdst, [[20,110],[50,150]], {attribution: 'Himawari'});
     cl[uHimdst] = himdst;
+  }
+  if (uHrpns) {
+    var himdst = L.imageOverlay(uHrpns, [[21.942986,118.124957],[48.922485,151.874957]], {attribution: 'JMA HRPNS'});
+    cl[uHrpns] = hrpns;
   }
   L.control.layers(basemaps, cl).addTo(mymap);
   for (i in data) {

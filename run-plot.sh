@@ -46,10 +46,12 @@ then
   fi
 fi
 ymdhns=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%d%H%M%S"))' $basetime)
-if test -d $nwp/nowc/$ymdhns
+if test -d $nwp/p1/nowc/$ymdhns
 then
-  ln -f $nwp/nowc/$ymdhns/surf_hrpns_$ymdhns.png surf_hrpns_${ymdhns}.png
+  ln -f $nwp/p1/nowc/$ymdhns/surf_hrpns_$ymdhns.png surf_hrpns_${ymdhns}.png
   imgopt="${imgopt} -HRPNS:surf_hrpns_${ymdhns}.png"
+else
+  logger --tag plot --id=$$ -p news.err -- "nowc $nwp/p1/nowc/$ymdhns missing"
 fi
 
 ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
