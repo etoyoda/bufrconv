@@ -156,7 +156,7 @@ function init() {
     cl[uHimdst] = himdst;
   }
   if (uHrpns) {
-    var himdst = L.imageOverlay(uHrpns, [[21.942986,118.124957],[48.922485,151.874957]], {attribution: 'JMA HRPNS'});
+    var hrpns = L.imageOverlay(uHrpns, [[21.942986,118.124957],[48.922485,151.874957]], {attribution: 'JMA HRPNS'});
     cl[uHrpns] = hrpns;
   }
   L.control.layers(basemaps, cl).addTo(mymap);
