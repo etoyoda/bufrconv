@@ -57,7 +57,7 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}
 then
-  for ve in msl_Pmsl p300_Z p500_Z p500_T p500_rVOR p850_Z p850_papT p925_Z p925_papT sfc_RAIN
+  for ve in msl_Pmsl p300_Z p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p925_Z p925_papT sfc_RAIN
   do
     if test -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png ; then
       ln -f    $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
@@ -95,6 +95,17 @@ do
     if test -f v${gpvbase}_f006_p${pres}_papT.png ; then
       upropt=-GPV1:v${gpvbase}_f006_p${pres}_papT.png
     fi
+    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
+    fi
+    ;;
+  700)
+    if test -f v${gpvbase}_f006_p${pres}_RH.png ; then
+      upropt=-GPV1:v${gpvbase}_f006_p${pres}_RH.png
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_VVPa.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_VVPa.png"
+    fi
     ;;
   300|500)
     if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
@@ -102,6 +113,9 @@ do
     fi
     if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_T.png ; then
+      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_T.png"
     fi
     ;;
   esac
@@ -114,13 +128,7 @@ rm -rf z*
 cd $base
 test ! -d ${bt}-plot || rm -rf ${bt}-plot
 mv $jobwk ${bt}-plot
-test -d $base/curr || mkdir $base/curr
-for plane in sfc p925 p850 p700 p500 p300 p200 p100 p50
-do
-  if test -f ${base}/${bt}-plot/${plane}plot${bt}.html
-  then
-    ln -Tf ${base}/${bt}-plot/${plane}plot${bt}.html \
-      ${base}/curr/${plane}plot${hh}.html
-  fi
-done
+rm -f curr
+ln -s ${bt}-plot curr
+
 exit 0
