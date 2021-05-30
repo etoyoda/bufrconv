@@ -57,7 +57,7 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}
 then
-  for ve in msl_Pmsl p300_Z p500_Z p850_papT p925_papT
+  for ve in msl_Pmsl p300_Z p500_Z p850_papT p925_papT sfc_RAIN
   do
     ln -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
   done
@@ -68,6 +68,9 @@ ln zsort.txt sfc${bt}.txt
 sfcopt=''
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
   sfcopt=-GPV1:v${gpvbase}_f006_msl_Pmsl.png
+fi
+if test -f v${gpvbase}_f006_sfc_RAIN.png ; then
+  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_sfc_RAIN.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
 levels=''

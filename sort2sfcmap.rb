@@ -159,6 +159,16 @@ function init() {
     var hrpns = L.imageOverlay(uHrpns, [[21.942986,118.124957],[48.922485,151.874957]], {attribution: 'JMA HRPNS'});
     cl[uHrpns] = hrpns;
   }
+  var uGpv1 = '#{@flags['GPV1']}';
+  if (uGpv1) {
+    var gpv1 = L.imageOverlay(uGpv1, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'Himawari', opacity:0.8});
+    cl[uGpv1] = gpv1;
+  }
+  var uGpv2 = '#{@flags['GPV2']}';
+  if (uGpv2) {
+    var gpv2 = L.imageOverlay(uGpv2, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'Himawari', opacity:0.8});
+    cl[uGpv2] = gpv2;
+  }
   L.control.layers(basemaps, cl).addTo(mymap);
   for (i in data) {
     plot(lgplot, data[i]);
