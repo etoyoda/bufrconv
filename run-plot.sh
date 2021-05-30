@@ -98,6 +98,9 @@ do
     if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
       upropt=-GPV1:v${gpvbase}_f006_p${pres}_Z.png
     fi
+    if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
+    fi
     ;;
   esac
   ruby $nwp/bin/sort2uprmap.rb $imgopt $upropt -WD:$wdbase $basetime \
