@@ -53,10 +53,22 @@ then
 else
   logger --tag plot --id=$$ -p news.err -- "nowc $nwp/p1/nowc/$ymdhns missing"
 fi
+gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
+if test -d $nwp/p1/jmagrib/$gpvtime
+then
+  for ve in msl_Pmsl p300_Z p500_Z p850_papT p925_papT
+  do
+    ln -f $nwp/p1/jmagrib/$gpvtime/v${gpvtime}_f006_${ve}.png .
+  done
+fi
 
 ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
 ln zsort.txt sfc${bt}.txt
-ruby $nwp/bin/sort2sfcmap.rb $imgopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
+sfcopt=''
+if test -f v${gpvtime}_f006_msl_Pmsl.png ; then
+  sfcopt=-GPV1:v${gpvtime}_f006_msl_Pmsl.png
+fi
+ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
 levels=''
 case $hh in
 00|12)
@@ -71,8 +83,21 @@ case $hh in
 esac
 for pres in $levels
 do
-  ruby $nwp/bin/sort2uprmap.rb $imgopt -WD:$wdbase $basetime p${pres} \
-    p${pres}plot${bt}.html zsort.txt
+  upropt=''
+  case $pres in
+  925|850)
+    if test -f v${gpvtime}_f006_p${pres}_papT.png ; then
+      upropt=-GPV1:v${gpvtime}_f006_p${pres}_papT.png
+    fi
+    ;;
+  300|500)
+    if test -f v${gpvtime}_f006_p${pres}_Z.png ; then
+      upropt=-GPV1:v${gpvtime}_f006_p${pres}_Z.png
+    fi
+    ;;
+  esac
+  ruby $nwp/bin/sort2uprmap.rb $imgopt $upropt -WD:$wdbase $basetime \
+    p${pres} p${pres}plot${bt}.html zsort.txt
 done
 
 
