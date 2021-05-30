@@ -59,7 +59,9 @@ if test -d $nwp/p1/jmagrib/${gpvtime}
 then
   for ve in msl_Pmsl p300_Z p500_Z p500_T p500_rVOR p850_Z p850_papT p925_Z p925_papT sfc_RAIN
   do
-    ln -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
+    if test -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png ; then
+      ln -f    $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
+    fi
   done
 fi
 
