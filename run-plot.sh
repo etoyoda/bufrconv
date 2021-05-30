@@ -67,10 +67,10 @@ ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>
 ln zsort.txt sfc${bt}.txt
 sfcopt=''
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
-  sfcopt=-GPV1:v${gpvbase}_f006_msl_Pmsl.png
+  sfcopt=-GPV2:v${gpvbase}_f006_msl_Pmsl.png
 fi
 if test -f v${gpvbase}_f006_sfc_RAIN.png ; then
-  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_sfc_RAIN.png"
+  sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_sfc_RAIN.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
 levels=''
