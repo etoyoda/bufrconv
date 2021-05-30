@@ -57,7 +57,7 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}
 then
-  for ve in msl_Pmsl p300_Z p500_Z p850_papT p925_papT sfc_RAIN
+  for ve in msl_Pmsl p300_Z p500_Z p500_T p500_rVOR p850_Z p850_papT p925_Z p925_papT sfc_RAIN
   do
     ln -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
   done

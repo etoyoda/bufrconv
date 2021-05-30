@@ -157,12 +157,12 @@ function init() {
   }
   var uGpv1 = '#{@flags['GPV1']}';
   if (uGpv1) {
-    var gpv1 = L.imageOverlay(uGpv1, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'Himawari', opacity:0.8});
+    var gpv1 = L.imageOverlay(uGpv1, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
     cl[uGpv1] = gpv1;
   }
   var uGpv2 = '#{@flags['GPV2']}';
   if (uGpv2) {
-    var gpv2 = L.imageOverlay(uGpv2, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'Himawari', opacity:0.8});
+    var gpv2 = L.imageOverlay(uGpv2, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
     cl[uGpv2] = gpv2;
   }
   if (uHrpns) {
