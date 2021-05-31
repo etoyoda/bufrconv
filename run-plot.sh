@@ -96,7 +96,7 @@ do
       upropt=-GPV1:v${gpvbase}_f006_p${pres}_papT.png
     fi
     if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_Z.png"
     fi
     ;;
   700)
