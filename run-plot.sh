@@ -57,7 +57,7 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}
 then
-  for ve in msl_Pmsl p300_Z p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p925_Z p925_papT sfc_RAIN
+  for ve in msl_Pmsl p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT sfc_RAIN z10_WINDS
   do
     if test -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png ; then
       ln -f    $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
@@ -73,6 +73,9 @@ if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
 fi
 if test -f v${gpvbase}_f006_sfc_RAIN.png ; then
   sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_sfc_RAIN.png"
+fi
+if test -f v${gpvbase}_f006_z10_WINDS.png ; then
+  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_WINDS.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
 levels=''
@@ -97,6 +100,8 @@ do
     fi
     if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_Z.png"
+    elif test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_WINDS.png"
     fi
     ;;
   700)
@@ -113,6 +118,8 @@ do
     fi
     if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
+    elif test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_WINDS.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_T.png ; then
       upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_T.png"

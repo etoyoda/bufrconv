@@ -134,6 +134,11 @@ function init() {
     var gpv2 = L.imageOverlay(uGpv2, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
     cl[uGpv2] = gpv2;
   }
+  var uGpv3 = '#{@flags['GPV3']}';
+  if (uGpv3) {
+    var gpv3 = L.imageOverlay(uGpv3, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv3] = gpv3;
+  }
   L.control.layers(basemaps, cl).addTo(mymap);
 }
 </script>
