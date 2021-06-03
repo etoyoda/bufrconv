@@ -68,12 +68,13 @@ then
   fi
 fi
 
-ruby $nwp/bin/bufrsort LM:6,FN:zsort2.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
+ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
 if test -f gsm${gpvtime}.txt ; then
-  bash -c "cat gsm${gpvtime}.txt >> zsort2.txt"
+  ruby $nwp/bin/distillobs.rb zsort.txt gsm${gpvtime}.txt >| zmerge.txt
+else
+  ruby $nwp/bin/distillobs.rb zsort.txt >| zmerge.txt
 fi
-bash -c "ruby $nwp/bin/distillobs.rb zsort2.txt > zsort.txt"
-ln zsort.txt sfc${bt}.txt
+ln zmerge.txt sfc${bt}.txt
 sfcopt=''
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
   sfcopt=-GPV2:v${gpvbase}_f006_msl_Pmsl.png
@@ -84,7 +85,7 @@ fi
 if test -f v${gpvbase}_f006_z10_WINDS.png ; then
   sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_WINDS.png"
 fi
-ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zsort.txt
+ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zmerge.txt
 levels=''
 case $hh in
 00|12)
@@ -135,7 +136,7 @@ do
     ;;
   esac
   ruby $nwp/bin/sort2uprmap.rb $imgopt $upropt -WD:$wdbase $basetime \
-    p${pres} p${pres}plot${bt}.html zsort.txt
+    p${pres} p${pres}plot${bt}.html zmerge.txt
 done
 
 
