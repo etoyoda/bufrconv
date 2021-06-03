@@ -72,7 +72,7 @@ ruby $nwp/bin/bufrsort LM:6,FN:zsort2.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2
 if test -f gsm${gpvtime}.txt ; then
   bash -c "cat gsm${gpvtime}.txt >> zsort2.txt"
 fi
-ruby $nwp/bin/distillobs.rb zsort2.txt > zsort.txt
+bash -c "ruby $nwp/bin/distillobs.rb zsort2.txt > zsort.txt"
 ln zsort.txt sfc${bt}.txt
 sfcopt=''
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
