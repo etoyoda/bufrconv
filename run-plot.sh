@@ -53,19 +53,26 @@ then
 else
   logger --tag plot --id=$$ -p news.err -- "nowc $nwp/p1/nowc/$ymdhns missing"
 fi
-gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%m%dT%HZ"))' $basetime)
+gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%m%dT%H"))' $basetime)
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
-if test -d $nwp/p1/jmagrib/${gpvtime}
+if test -d $nwp/p1/jmagrib/${gpvtime}Z
 then
   for ve in msl_Pmsl p100_WINDS p200_Z p200_WINDS p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT sfc_RAIN z10_WINDS
   do
-    if test -f $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png ; then
-      ln -f    $nwp/p1/jmagrib/${gpvtime}/v${gpvbase}_f006_${ve}.png .
+    if test -f $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png ; then
+      ln -f    $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png .
     fi
   done
+  if test -f $nwp/p1/jmagrib/${gpvtime}Z/gsm${gpvtime}.txt ; then
+    ln    -f $nwp/p1/jmagrib/${gpvtime}Z/gsm${gpvtime}.txt .
+  fi
 fi
 
-ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
+ruby $nwp/bin/bufrsort LM:6,FN:zsort2.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
+if test -f gsm${gpvtime}.txt ; then
+  cat gsm${gpvtime}.txt >> zsort2.txt
+fi
+ruby $nwp/bin/distillobs.rb zsort2.txt > zsort.txt
 ln zsort.txt sfc${bt}.txt
 sfcopt=''
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
