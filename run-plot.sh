@@ -57,7 +57,7 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}Z
 then
-  for ve in msl_Pmsl p100_WINDS p200_Z p200_WINDS p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT sfc_RAIN z10_WINDS
+  for ve in msl_Pmsl p100_WINDS p200_Z p200_WINDS p250_rDIV p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT sfc_RAIN z10_WINDS
   do
     if test -f $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png ; then
       ln -f    $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png .
@@ -132,6 +132,8 @@ do
     fi
     if test -f v${gpvbase}_f006_p${pres}_T.png ; then
       upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_T.png"
+    elif test -f v${gpvbase}_f006_p250_rDIV.png ; then
+      upropt="${upropt} -GPV3:v${gpvbase}_f006_p250_rDIV.png"
     fi
     ;;
   esac
