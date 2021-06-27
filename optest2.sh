@@ -54,7 +54,9 @@ else
   tail -40 synoperr.txt
   false
 fi
-grep ' - ' synoperr.txt >&2 || :
+#QUICK AND DIRTY MASK OF UNSUPPORTED FEATURES
+sed -ne '/ 003002/d; / 203014/d; / - /p' synoperr.txt >&2 || :
+#WAS: grep ' - ' synoperr.txt >&2 || :
 
 if ruby ${bc}/bufr2temp.rb obsbf-${yy}-${mm}-${dd}.tar > /dev/null 2> temperr.txt
 then
