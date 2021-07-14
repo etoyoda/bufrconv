@@ -65,7 +65,9 @@ else
   tail -40 temperr.txt
   false
 fi
-grep ' - ' temperr.txt >&2 || :
+#QUICK AND DIRTY MASK OF UNSUPPORTED FEATURES
+sed -ne '/ 207001/d; / - /p' temperr.txt >&2 || :
+#WAS: grep ' - ' synoperr.txt >&2 || :
 
 rm -f obsbf-${yy}-${mm}-${dd}.tar
 
