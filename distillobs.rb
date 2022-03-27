@@ -3,6 +3,7 @@ require 'json'
 db = Hash.new
 for line in ARGF
   shdr, sbody = line.split(/ /, 2)
+  next unless sbody
   body = JSON.parse(sbody)
   hdr = shdr.split(/\//, 3)
   id = [hdr[0], hdr[1], body['La'].to_i, body['Lo'].to_i].join('/')
@@ -21,6 +22,6 @@ for line in ARGF
     db[id] = [hdr[2], line]
   end
 end
-db.each_value {|line|
+db.each_value {|stnid, line|
   puts line
 }
