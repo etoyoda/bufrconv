@@ -68,12 +68,20 @@ then
   fi
 fi
 
-ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
-if test -f gsm${gpvtime}.txt ; then
-  ruby $nwp/bin/distillobs.rb zsort.txt gsm${gpvtime}.txt >| zmerge.txt
-else
-  ruby $nwp/bin/distillobs.rb zsort.txt >| zmerge.txt
+if test -f $nwp/bin/run-detac.sh
+then
+  bash $nwp/bin/run-detac.sh || :
 fi
+
+ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
+obsfiles=zsort.txt
+if test -f gsm${gpvtime}.txt ; then
+  obsfiles="$obsfiles gsm${gpvtime}.txt"
+fi
+if test -f zloctac.txt ; then
+  obsfiles="$obsfiles zloctac.txt"
+fi
+ruby $nwp/bin/distillobs.rb $obsfiles >| zmerge.txt
 ln zmerge.txt sfc${bt}.txt
 sfcopt=''
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
