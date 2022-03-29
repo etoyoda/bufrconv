@@ -178,6 +178,13 @@ function init() {
   for (i in data) {
     plot(lgplot, data[i]);
   }
+  mymap.on('keydown', function(ev){
+    if (ev.originalEvent.code == 'KeyU') {
+      mymap.panTo([50, 30]);
+    } else if (ev.originalEvent.code == 'KeyJ') {
+      mymap.panTo([35, 135]);
+    }
+  });
 }
 </script>
 <script id="jsdata" type="text/javascript">
