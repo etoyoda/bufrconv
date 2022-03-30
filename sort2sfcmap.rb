@@ -78,7 +78,9 @@ function plot(lgplot, obs) {
       var url = '#{windbase}' + bn;
       var nbn = 'nnil.png';
       if (obs.N === null) {
-        if (obs.ix == 0) {
+        if (!('ix' in obs)) {
+          nbn = 'n9.png';
+        } else if (obs.ix == 0) {
           nbn = 'nauto.png';
         }
       } else {
