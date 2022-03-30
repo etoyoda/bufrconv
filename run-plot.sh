@@ -75,11 +75,11 @@ fi
 
 ruby $nwp/bin/bufrsort LM:6,FN:zsort.txt z.curr.tar:AHL="$ahl" > bufrsort.log 2>&1
 obsfiles=zsort.txt
-if test -f gsm${gpvtime}.txt ; then
-  obsfiles="$obsfiles gsm${gpvtime}.txt"
-fi
 if test -f zloctac.txt ; then
   obsfiles="$obsfiles zloctac.txt"
+fi
+if test -f gsm${gpvtime}.txt ; then
+  obsfiles="$obsfiles gsm${gpvtime}.txt"
 fi
 ruby $nwp/bin/distillobs.rb $obsfiles >| zmerge.txt
 ln zmerge.txt sfc${bt}.txt
