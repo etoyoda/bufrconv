@@ -113,7 +113,11 @@ function plot(lgplot, obs) {
         '" />' + ts + wx + cl + cm + ch + '</div>';
       var ic = L.divIcon({html: ht, className: 'stn', iconSize: [64, 64], iconAnchor: [32, 32]});
       var opt = {icon: ic, title: obs['@']};
-      var pop = JSON.stringify(obs);
+      var pop = '<table border=1>';
+      for (const field in obs) {
+        pop += '<tr><th>' + field + '</th><td>' + obs[field] + '</td></tr>';
+      }
+      pop += '</table>';
       L.marker([obs.La, obs.Lo], opt).bindPopup(pop).addTo(lgplot);
     }
 }
