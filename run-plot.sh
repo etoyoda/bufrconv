@@ -90,9 +90,12 @@ fi
 if test -f v${gpvbase}_f006_sfc_RAIN.png ; then
   sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_sfc_RAIN.png"
 fi
-if test -f v${gpvbase}_f006_z10_WINDS.png ; then
-  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_WINDS.png"
+if test -f v${gpvbase}_f006_p700_RH.png ; then
+  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_p700_RH.png"
 fi
+#if test -f v${gpvbase}_f006_z10_WINDS.png ; then
+#  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_WINDS.png"
+#fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zmerge.txt
 levels=''
 case $hh in
