@@ -139,6 +139,21 @@ function init() {
     var gpv3 = L.imageOverlay(uGpv3, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
     cl[uGpv3] = gpv3;
   }
+  var uGpv4 = '#{@flags['GPV4']}';
+  if (uGpv4) {
+    var gpv4 = L.imageOverlay(uGpv4, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv4] = gpv4;
+  }
+  var uGpv5 = '#{@flags['GPV5']}';
+  if (uGpv5) {
+    var gpv5 = L.imageOverlay(uGpv5, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv5] = gpv5;
+  }
+  var uGpv6 = '#{@flags['GPV6']}';
+  if (uGpv6) {
+    var gpv6 = L.imageOverlay(uGpv6, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv6] = gpv6;
+  }
   L.control.layers(basemaps, cl).addTo(mymap);
   mymap.on('keydown', function(ev){
     if (ev.originalEvent.code == 'KeyU') {

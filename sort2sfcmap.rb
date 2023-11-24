@@ -176,6 +176,21 @@ function init() {
     var gpv3 = L.imageOverlay(uGpv3, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
     cl[uGpv3] = gpv3;
   }
+  var uGpv4 = '#{@flags['GPV4']}';
+  if (uGpv4) {
+    var gpv4 = L.imageOverlay(uGpv4, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv3] = gpv4;
+  }
+  var uGpv5 = '#{@flags['GPV5']}';
+  if (uGpv5) {
+    var gpv5 = L.imageOverlay(uGpv5, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv5] = gpv5;
+  }
+  var uGpv6 = '#{@flags['GPV6']}';
+  if (uGpv6) {
+    var gpv6 = L.imageOverlay(uGpv6, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv6] = gpv6;
+  }
   if (uHrpns) {
     var hrpns = L.imageOverlay(uHrpns, [[21.942986,118.124957],[48.922485,151.874957]], {attribution: 'JMA HRPNS'});
     cl[uHrpns] = hrpns;
