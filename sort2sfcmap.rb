@@ -179,7 +179,7 @@ function init() {
   var uGpv4 = '#{@flags['GPV4']}';
   if (uGpv4) {
     var gpv4 = L.imageOverlay(uGpv4, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
-    cl[uGpv3] = gpv4;
+    cl[uGpv4] = gpv4;
   }
   var uGpv5 = '#{@flags['GPV5']}';
   if (uGpv5) {
