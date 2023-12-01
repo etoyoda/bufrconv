@@ -57,7 +57,7 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}Z
 then
-  for ve in msl_Pmsl p100_WINDS p200_Z p200_WINDS p250_rDIV p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT p925_WD sfc_RAIN z10_WD z2_T
+  for ve in msl_Pmsl p100_WINDS p200_Z p200_WINDS p250_rDIV p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT p925_WD sfc_RAIN z10_WD z2_T p925_WINDS z10_WINDS p500_WINDS
   do
     if test -f $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png ; then
       ln -f    $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png .
@@ -84,20 +84,23 @@ fi
 ruby $nwp/bin/distillobs.rb $obsfiles >| zmerge.txt
 ln zmerge.txt sfc${bt}.txt
 sfcopt=''
-if test -f v${gpvbase}_f006_z10_WD.png ; then
-  sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_z10_WD.png"
+if test -f v${gpvbase}_f006_z2_T.png ; then
+  sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_z2_T.png"
 fi
-if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
-  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_msl_Pmsl.png"
+if test -f v${gpvbase}_f006_z10_WD.png ; then
+  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_z10_WD.png"
+fi
+if test -f v${gpvbase}_f006_z10_WINDS.png ; then
+  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_WINDS.png"
 fi
 if test -f v${gpvbase}_f006_p700_RH.png ; then
-  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_p700_RH.png"
+  sfcopt="${sfcopt} -GPV4:v${gpvbase}_f006_p700_RH.png"
+fi
+if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
+  sfcopt="${sfcopt} -GPV5:v${gpvbase}_f006_msl_Pmsl.png"
 fi
 if test -f v${gpvbase}_f006_sfc_RAIN.png ; then
-  sfcopt="${sfcopt} -GPV4:v${gpvbase}_f006_sfc_RAIN.png"
-fi
-if test -f v${gpvbase}_f006_z2_T.png ; then
-  sfcopt="${sfcopt} -GPV5:v${gpvbase}_f006_z2_T.png"
+  sfcopt="${sfcopt} -GPV6:v${gpvbase}_f006_sfc_RAIN.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zmerge.txt
 levels=''
@@ -147,13 +150,15 @@ do
     fi
     if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
-    elif test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_WINDS.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
+      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_WINDS.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_T.png ; then
-      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_T.png"
-    elif test -f v${gpvbase}_f006_p250_rDIV.png ; then
-      upropt="${upropt} -GPV3:v${gpvbase}_f006_p250_rDIV.png"
+      upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_T.png"
+    fi
+    if test -f v${gpvbase}_f006_p250_rDIV.png ; then
+      upropt="${upropt} -GPV5:v${gpvbase}_f006_p250_rDIV.png"
     fi
     ;;
   esac
