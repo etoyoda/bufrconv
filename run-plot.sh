@@ -84,23 +84,23 @@ fi
 ruby $nwp/bin/distillobs.rb $obsfiles >| zmerge.txt
 ln zmerge.txt sfc${bt}.txt
 sfcopt=''
-if test -f v${gpvbase}_f006_z2_T.png ; then
-  sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_z2_T.png"
-fi
-if test -f v${gpvbase}_f006_z10_WD.png ; then
-  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_z10_WD.png"
-fi
 if test -f v${gpvbase}_f006_z10_WINDS.png ; then
-  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_WINDS.png"
+  sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_z10_WINDS.png"
 fi
 if test -f v${gpvbase}_f006_p700_RH.png ; then
-  sfcopt="${sfcopt} -GPV4:v${gpvbase}_f006_p700_RH.png"
+  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_p700_RH.png"
 fi
 if test -f v${gpvbase}_f006_msl_Pmsl.png ; then
-  sfcopt="${sfcopt} -GPV5:v${gpvbase}_f006_msl_Pmsl.png"
+  sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_msl_Pmsl.png"
 fi
 if test -f v${gpvbase}_f006_sfc_RAIN.png ; then
-  sfcopt="${sfcopt} -GPV6:v${gpvbase}_f006_sfc_RAIN.png"
+  sfcopt="${sfcopt} -GPV4:v${gpvbase}_f006_sfc_RAIN.png"
+fi
+if test -f v${gpvbase}_f006_z10_WD.png ; then
+  sfcopt="${sfcopt} -GPV5:v${gpvbase}_f006_z10_WD.png"
+fi
+if test -f v${gpvbase}_f006_z2_T.png ; then
+  sfcopt="${sfcopt} -GPV6:v${gpvbase}_f006_z2_T.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zmerge.txt
 levels=''
@@ -123,11 +123,11 @@ do
     if test -f v${gpvbase}_f006_p${pres}_papT.png ; then
       upropt=-GPV1:v${gpvbase}_f006_p${pres}_papT.png
     fi
-    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_Z.png"
-    fi
     if test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
-      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_WINDS.png"
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_WINDS.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
+      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_Z.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_WD.png ; then
       upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_WD.png"
@@ -145,20 +145,23 @@ do
     fi
     ;;
   100|200|300|500)
-    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
-      upropt=-GPV1:v${gpvbase}_f006_p${pres}_Z.png
-    fi
-    if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_rVOR.png"
-    fi
     if test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
-      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_WINDS.png"
+      upropt="-GPV1:v${gpvbase}_f006_p${pres}_WINDS.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_T.png ; then
-      upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_T.png"
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_T.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
+      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_Z.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
+      upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_rVOR.png"
     fi
     if test -f v${gpvbase}_f006_p250_rDIV.png ; then
       upropt="${upropt} -GPV5:v${gpvbase}_f006_p250_rDIV.png"
+    fi
+    if test -f v${gpvbase}_f006_p700_RH.png ; then
+      upropt="${upropt} -GPV6:v${gpvbase}_f006_p700_RH.png"
     fi
     ;;
   esac
