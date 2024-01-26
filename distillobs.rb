@@ -9,6 +9,7 @@ for line in ARGF
   id = [hdr[0], hdr[1], body['La'].to_i, body['Lo'].to_i].join('/')
   body['La'] = (body['La'] * 100).floor * 0.01
   body['Lo'] = (body['Lo'] * 100).floor * 0.01
+  next if /^32165$/ === hdr[2]
   for var in body.keys - ['N', 'd', 'f']
     next unless body.include?(var)
     body.delete(var) if body[var].nil?
