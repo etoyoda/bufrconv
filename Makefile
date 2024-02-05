@@ -27,5 +27,8 @@ bufr2pilot: amalgamate.rb bufr2pilot.rb bufrscan.rb bufrdump.rb output.rb
 bufrsort: amalgamate.rb bufrsort.rb bufrscan.rb bufrdump.rb
 	ruby amalgamate.rb bufrsort.rb bufrscan.rb bufrdump.rb > bufrsort
 
+bufr2pick: amalgamate.rb bufr2pick.rb bufrscan.rb bufrdump.rb
+	ruby amalgamate.rb bufr2pick.rb bufrscan.rb bufrdump.rb > bufr2pick
+
 bufrconv.zip: $(FILES)
 	zip bufrconv.zip $(FILES)
