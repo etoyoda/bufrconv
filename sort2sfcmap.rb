@@ -194,6 +194,11 @@ function init() {
     var gpv6 = L.imageOverlay(uGpv6, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
     cl[uGpv6] = gpv6;
   }
+  var uGpv7 = '#{@flags['GPV6']}';
+  if (uGpv7) {
+    var gpv7 = L.imageOverlay(uGpv7, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    cl[uGpv7] = gpv7;
+  }
   if (uHrpns) {
     var hrpns = L.imageOverlay(uHrpns, [[21.942986,118.124957],[48.922485,151.874957]], {attribution: 'JMA HRPNS'});
     cl[uHrpns] = hrpns;
