@@ -102,8 +102,8 @@ fi
 if test -f v${gpvbase}_f006_z10_WD.png ; then
   sfcopt="${sfcopt} -GPV6:v${gpvbase}_f006_z10_WD.png"
 fi
-if test -f v${gpvbase}_f006_z2_T.png ; then
-  sfcopt="${sfcopt} -GPV7:v${gpvbase}_f006_z2_T.png"
+if test -f v${gpvbase}_f006_p925_papT.png ; then
+  sfcopt="${sfcopt} -GPV7:v${gpvbase}_f006_p925_papT.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zmerge.txt
 levels=''
