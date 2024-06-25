@@ -127,7 +127,7 @@ class BUFRMsg
     n = getnum(@ptr, 6)
     @ptr += 6
     if ival & imask == imask and do_missing then
-      raise "difference #{n} bits cannot follow missing value R0" if n != 0
+      raise ENOSYS,"difference #{n} bits cannot follow missing value R0" if n != 0
       return [nil] * nsubset
     end
     r0 = ((imask & ival) >> ishift) + refv
