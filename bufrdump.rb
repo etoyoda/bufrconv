@@ -225,7 +225,7 @@ class BufrDecode
   end
 
   def rewind_tape
-    @addwidth = @addscale = @addfield = nil
+    @addwidth = @addscale = @adjscale = @addfield = nil
     @pos = -1
   end
 
@@ -294,6 +294,12 @@ BUFRの反復はネストできなければいけないので（用例がある�
     if @addscale and :num === ent[:type] then
       ent = ent.dup
       ent[:scale] += @addscale
+    end
+    if @adjscale and :num === ent[:type] then
+      ent = ent.dup
+      ent[:scale] += @adjscale
+      ent[:refv] *= 10.0 ** @adjscale
+      ent[:width] += (10 * @adjscale + 2) / 3
     end
     ent
   end
@@ -395,6 +401,12 @@ BUFRの反復はネストできなければいけないので（用例がある�
             :units => 'CODE TABLE', :desc => 'ASSOCIATED FIELD',
             :pos => -1, :fxy => desc[:fxy]
           }
+        end
+      when :op07
+        if desc[:yyy].zero? then
+          @adjscale = nil
+        else
+          @adjscale = desc[:yyy]
         end
       end
     end
@@ -560,6 +572,8 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         y = $1.to_i
         desc = { :type => :op06, :fxy => fxy, :set_width => y }
         result.push desc
+      when /^207(\d\d\d)/ then
+        result.push({ :type => :op07, :fxy => fxy, :yyy => $1.to_i })
       when /^2/ then
         raise ENOSYS, "unsupported operator #{fxy}"
       when /^3/ then
