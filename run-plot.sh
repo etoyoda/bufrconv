@@ -87,8 +87,8 @@ sfcopt=''
 if test -f v${gpvbase}_f006_z10_WINDS.png ; then
   sfcopt="${sfcopt} -GPV1:v${gpvbase}_f006_z10_WINDS.png"
 fi
-if test -f v${gpvbase}_f006_p700_RH.png ; then
-  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_p700_RH.png"
+if test -f v${gpvbase}_f006_p925_papT.png ; then
+  sfcopt="${sfcopt} -GPV2:v${gpvbase}_f006_p925_papT.png"
 fi
 if test -f v${gpvbase}_f006_z10_Pres.png ; then
   sfcopt="${sfcopt} -GPV3:v${gpvbase}_f006_z10_Pres.png"
@@ -102,8 +102,8 @@ fi
 if test -f v${gpvbase}_f006_z10_WD.png ; then
   sfcopt="${sfcopt} -GPV6:v${gpvbase}_f006_z10_WD.png"
 fi
-if test -f v${gpvbase}_f006_p925_papT.png ; then
-  sfcopt="${sfcopt} -GPV7:v${gpvbase}_f006_p925_papT.png"
+if test -f v${gpvbase}_f006_p700_RH.png ; then
+  sfcopt="${sfcopt} -GPV7:v${gpvbase}_f006_p700_RH.png"
 fi
 ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.html zmerge.txt
 levels=''
@@ -148,8 +148,8 @@ do
     fi
     ;;
   100|200|300|500)
-    if test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
-      upropt="-GPV1:v${gpvbase}_f006_p${pres}_WINDS.png"
+    if test -f v${gpvbase}_f006_p700_RH.png ; then
+      upropt="-GPV1:v${gpvbase}_f006_p700_RH.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_T.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_T.png"
@@ -165,8 +165,8 @@ do
     if test -f v${gpvbase}_f006_p250_rDIV.png ; then
       upropt="${upropt} -GPV5:v${gpvbase}_f006_p250_rDIV.png"
     fi
-    if test -f v${gpvbase}_f006_p700_RH.png ; then
-      upropt="${upropt} -GPV6:v${gpvbase}_f006_p700_RH.png"
+    if test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
+      upropt="${upropt} -GPV6:v${gpvbase}_f006_p${pres}_WINDS.png"
     fi
     ;;
   esac
