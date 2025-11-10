@@ -74,7 +74,9 @@ class BUFRMsg
     raise EBADF, "DS #{@dsofs} beyond msg end #{esofs}" if @dsofs >= esofs
     @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
     esofs2 = @dsofs + @dslen
-    raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}" if esofs2 != esofs
+    if esofs2 > esofs or esofs2 < (esofs-5) then
+      raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}"
+    end
     @ptr = (@dsofs + 4) * 8
     @ptrmax = @ptr + (@dslen - 4) * 8
   end
@@ -527,6 +529,7 @@ class BUFRScan
 	  @ahl = nil
         end
       end
+      STDERR.puts "BUFR pos=#{@pos} idx=#{idx}" if $DEBUG
       # check BUFR ... 7777 structure
       if @buf.bytesize - idx < 8 then
         buf2 = @io.read(1024)
@@ -535,6 +538,7 @@ class BUFRScan
         @buf += buf2
       end
       msglen = BUFRMsg::unpack3(@buf[idx+4,3])
+      STDERR.puts "msglen=#{msglen}" if $DEBUG
       if @buf.bytesize - idx < msglen then
         buf2 = @io.read(msglen - @buf.bytesize + idx)
         return nil if buf2.nil?
@@ -542,6 +546,7 @@ class BUFRScan
         @buf += buf2
       end
       endmark = @buf[idx + msglen - 4, 4]
+      STDERR.puts "endmark=#{endmark.inspect} at #{idx+msglen-4}" if $DEBUG
       if endmark == '7777' then
         msg = BUFRMsg.new(@buf, idx, msglen, @pos, @fnam, @ahl)
         @ofs = idx + msglen
