@@ -1516,6 +1516,7 @@ class BufrSort
       r[:ahl] = @hdr.ahl
       lev = format('p%u', stdp / 100)
       k = [t.strftime('%Y-%m-%dT%H:00Z'), lev, idx].join('/') 
+      k.encode!('UTF-8') if k.encoding == Encoding::ISO_8859_1
       @nstore += 1
       @ofp.puts [k, JSON.generate(r)].join(' ')
     }
