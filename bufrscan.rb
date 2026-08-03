@@ -150,14 +150,20 @@ class BUFRMsg
     return rval
   end
 
+  MAGIC = 24
+
   def readnum desc
     return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
-    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
-    if @ptr + width > @ptrmax
+    do_missing = !(/^(031000|031001|031031|204)/ === desc[:fxy])
+    if @ptr + width <= @ptrmax
+      iwidth, ishift, imask, ival = getbits(@ptr, width)
+    elsif @ptr + width > @ptrmax + MAGIC
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
+    else
+      # positions beyond the end of message treated as missing or zero
+      return do_missing ? nil : 0
     end
-    iwidth, ishift, imask, ival = getbits(@ptr, width)
     @ptr += width
     if ival & imask == imask and do_missing then
       return nil
