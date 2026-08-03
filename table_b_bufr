@@ -1122,6 +1122,8 @@
 004075  SHORT TIME PERIOD OR DISPLACEMENT           MINUTES      0       -128     8
 004080  AVERAGING PERIOD FOR FOLLOWING VALUE        CODE TABLE   0          0     4
 004086  LONG TIME PERIOD OR DISPLACEMENT            S            0      -8192    15
+004214  ACTUAL HOUR OF OBSERVATION                  HOUR         0          0     5
+004215  ACTUAL MINUTE OF OBNSERVATION               MINUTES      0          0     6
 005001  LATITUDE(HIGH ACCURACY)                     DEGREE       5   -9000000    25
 005002  LATITUDE(COARSE ACCURACY)                   DEGREE       2      -9000    15
 005011  LATITUDE INCREMENT(HIGH ACCURACY)           DEGREE       5   -9000000    25
@@ -3167,3 +3169,5 @@
 033203  HARDWARE QUALITY TABLE                      FLAG TABLE   0          0    31
 033204  SURFACE POLLUTANTS QUALITY                  CODE TABLE   0          0     5
 033205  CORRELATION COEFFICIENT                     NUMERIC      2       -100     8
+052210  REFERENCE NO AND DD OF THE HILL - TAB 32    CODE TABLE   0          0     4
+013237  SNOW COVER                                  CODE TABLE   0          0     3
