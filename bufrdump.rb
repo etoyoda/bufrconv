@@ -653,6 +653,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       nsubset = bufrmsg[:nsubset]
       nsubset.times{|isubset|
         begin
+          puts "isubset #{isubset} ptrcheck #{bufrmsg.ptrcheck}" if $DEBUG
           tb.newsubset isubset, bufrmsg.ptrcheck
           BufrDecode.new(tape, bufrmsg).run(tb)
         rescue Errno::EDOM => e

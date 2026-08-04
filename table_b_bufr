@@ -3121,9 +3121,14 @@
 020234  THIN ICE COVER  SSMI (G0)                   %            0          0     7
 020235  FIRST YEAR ICE COVER  SSMI (G1)             %            0          0     7
 020236  MULTI-YEAR ICE COVER SSMI (G2)              %            0          0     7
-020237  TOTAL ICE COVER (CT)                        %            0          0     7
-020238  FIRST CLASS PARTIAL ICE COVER (CA)          CODE TABLE   0          0     7
-020239  SECOND CLALL PARTIAL ICE COVER (CB)         CODE TABLE   0          0     7
+** CANADIAN
+* 020237  TOTAL ICE COVER (CT)                        %            0          0     7
+* 020238  FIRST CLASS PARTIAL ICE COVER (CA)          CODE TABLE   0          0     7
+* 020239  SECOND CLALL PARTIAL ICE COVER (CB)         CODE TABLE   0          0     7
+** GERMAN
+020237  METEOROLOGICAL OPTICAL RANGE                M            0          0    18
+020238  MIN. METEOROLOGICAL OPTICAL RANGE           M            0          0    18
+020239  MAX. METEOROLOGICAL OPTICAL RANGE           M            0          0    18
 020240  THIRD CLASS PARTIAL ICE COVER (CC)          CODE TABLE   0          0     7
 020241  FIRST CLASS DEVELOPMENT STAGE (SA)          CODE TABLE   0          0     7
 020242  SECOND CLASS DEVELOPMENT STAGE (SB)         CODE TABLE   0          0     7
