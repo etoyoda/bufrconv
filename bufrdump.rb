@@ -336,9 +336,9 @@ BUFRの反復はネストできなければいけないので（用例がある�
 要素記述子を読むたびに、BUFR報 bufrmsg から実データを読み出す。
 =end
 
-  def run tb
+  def run tb, isubset=-1
     rewind_tape
-    @bufrmsg.ymdhack(@ymdhack) if @ymdhack
+    @bufrmsg.ymdhack(@ymdhack, isubset) if @ymdhack
     while desc = read_tape(tb)
       case desc[:type]
       when :str
@@ -655,7 +655,7 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
         begin
           puts "isubset #{isubset} ptrcheck #{bufrmsg.ptrcheck}" if $DEBUG
           tb.newsubset isubset, bufrmsg.ptrcheck
-          BufrDecode.new(tape, bufrmsg).run(tb)
+          BufrDecode.new(tape, bufrmsg).run(tb, isubset)
         rescue Errno::EDOM => e
           $stderr.puts e.message + bufrmsg[:meta].inspect
         ensure

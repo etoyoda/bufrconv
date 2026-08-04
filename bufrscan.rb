@@ -359,7 +359,7 @@ class BUFRMsg
 
   # 各サブセットをデコードする前にデータ内容の日付を検査し、
   # 要すればいくらかビットをずらしてでも適正値が読める位置に移動する
-  def ymdhack opts
+  def ymdhack opts, isubset=-1
     decode_primary
     # 日付記述子 004001/004002/004003 の位置が通知されなければ検査不能
     return unless opts[:ymd]
@@ -404,9 +404,9 @@ class BUFRMsg
     #
     # --- 日付検査失敗。ビットずれリカバリーモードに入る ---
     #
-    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u\n",
+    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u subset %u\n",
       brtx >> 10, 0b1111 & (brtx >> 6), 0b111111 & brtx,
-      rt1.strftime('%Y-%m-%d'), @ptr)
+      rt1.strftime('%Y-%m-%d'), @ptr, isubset)
     (-80 .. 10).each{|ofs|
       next if ofs.zero?
       xptr = @ptr + ofs
