@@ -554,7 +554,8 @@ class BUFRScan
       endmark = @buf[idx + msglen - 4, 4]
       STDERR.puts "endmark=#{endmark.inspect} at #{idx+msglen-4}" if $DEBUG
       if endmark == '7777' then
-        msg = BUFRMsg.new(@buf, idx, msglen, @pos, @fnam, @ahl)
+        msgpos = @pos - @buf.bytesize + idx
+        msg = BUFRMsg.new(@buf, idx, msglen, msgpos, @fnam, @ahl)
         @ofs = idx + msglen
         return msg
       end
