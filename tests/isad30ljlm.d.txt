@@ -1,4 +1,4 @@
-{"msglen":23171,"ed":4,"meta":{"ahl":"ISAD30 LJLM 022340","fnam":"A_ISAD30LJLM022340_C_RJTD_20260802235035_1.bufr","pos":23192},"mastab":0,"ctr":219,"subctr":0,"upd":0,"cat":0,"subcat":7,"masver":33,"locver":0,"cflag":false,"nsubset":94,"obsp":true,"compress":false,"descs":"307092","reftime":"2026-08-02 23:40:00 UTC"}
+{"msglen":23171,"ed":4,"meta":{"ahl":"ISAD30 LJLM 022340","fnam":"A_ISAD30LJLM022340_C_RJTD_20260802235035_1.bufr","pos":21},"mastab":0,"ctr":219,"subctr":0,"upd":0,"cat":0,"subcat":7,"masver":33,"locver":0,"cflag":false,"nsubset":94,"obsp":true,"compress":false,"descs":"307092","reftime":"2026-08-02 23:40:00 UTC"}
 === subset 0 [512, 185504] ===
 001125               0 #000 WIGOS IDENTIFIER SERIES
 001126             705 #001 WIGOS ISSUER OF IDENTIFIER

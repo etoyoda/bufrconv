@@ -76,8 +76,10 @@ class BUFRMsg
     raise EBADF, "DS #{@dsofs} beyond msg end #{esofs}" if @dsofs >= esofs
     @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
     esofs2 = @dsofs + @dslen
-    if esofs2 > esofs or esofs2 < (esofs-5) then
-      raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}"
+	if esofs2 > esofs then
+      raise EBADF, "End of DS beyond msg end #{esofs2-esofs}"
+	elsif esofs2 < (esofs-5) then
+      raise EBADF, "Gap after end of DS #{esofs-esofs2}"
     end
     @ptr = (@dsofs + 4) * 8
     @ptrmax = @ptr + (@dslen - 4) * 8
@@ -152,14 +154,20 @@ class BUFRMsg
     return rval
   end
 
+  MAGIC = 24
+
   def readnum desc
     return readnum2(desc) if compressed?
     width, scale, refv = desc[:width], desc[:scale], desc[:refv]
-    do_missing = !(/^(031000|031031|204)/ === desc[:fxy])
-    if @ptr + width > @ptrmax
+    do_missing = !(/^(031000|031001|031031|204)/ === desc[:fxy])
+    if @ptr + width <= @ptrmax
+      iwidth, ishift, imask, ival = getbits(@ptr, width)
+    elsif @ptr + width > @ptrmax + MAGIC
       raise ENOSPC, "end of msg reached #{@ptrmax} < #{@ptr} + #{width}"
+    else
+      # positions beyond the end of message treated as missing or zero
+      return do_missing ? nil : 0
     end
-    iwidth, ishift, imask, ival = getbits(@ptr, width)
     @ptr += width
     if ival & imask == imask and do_missing then
       return nil
@@ -355,7 +363,7 @@ class BUFRMsg
 
   # 各サブセットをデコードする前にデータ内容の日付を検査し、
   # 要すればいくらかビットをずらしてでも適正値が読める位置に移動する
-  def ymdhack opts
+  def ymdhack opts, isubset=-1
     decode_primary
     # 日付記述子 004001/004002/004003 の位置が通知されなければ検査不能
     return unless opts[:ymd]
@@ -400,9 +408,9 @@ class BUFRMsg
     #
     # --- 日付検査失敗。ビットずれリカバリーモードに入る ---
     #
-    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u\n",
+    $stderr.printf("ymdhack: mismatch %04u-%02u-%02u ids.rtime %s pos %u subset %u\n",
       brtx >> 10, 0b1111 & (brtx >> 6), 0b111111 & brtx,
-      rt1.strftime('%Y-%m-%d'), @ptr)
+      rt1.strftime('%Y-%m-%d'), @ptr, isubset)
     (-80 .. 10).each{|ofs|
       next if ofs.zero?
       xptr = @ptr + ofs
@@ -550,7 +558,8 @@ class BUFRScan
       endmark = @buf[idx + msglen - 4, 4]
       STDERR.puts "endmark=#{endmark.inspect} at #{idx+msglen-4}" if $DEBUG
       if endmark == '7777' then
-        msg = BUFRMsg.new(@buf, idx, msglen, @pos, @fnam, @ahl)
+        msgpos = @pos - @buf.bytesize + idx
+        msg = BUFRMsg.new(@buf, idx, msglen, msgpos, @fnam, @ahl)
         @ofs = idx + msglen
         return msg
       end
@@ -909,9 +918,9 @@ BUFRの反復はネストできなければいけないので（用例がある�
 要素記述子を読むたびに、BUFR報 bufrmsg から実データを読み出す。
 =end
 
-  def run tb
+  def run tb, isubset=-1
     rewind_tape
-    @bufrmsg.ymdhack(@ymdhack) if @ymdhack
+    @bufrmsg.ymdhack(@ymdhack, isubset) if @ymdhack
     while desc = read_tape(tb)
       case desc[:type]
       when :str
@@ -927,7 +936,6 @@ BUFRの反復はネストできなければいけないので（用例がある�
           psdesc={:width=>@chgrefv, :refv=>0, :scale=>0}
           newrefv=@bufrmsg.readnum(psdesc)
           newrefv=-(newrefv ^ (2**(@chgrefv-1))) if newrefv & (2**(@chgrefv-1))
-          STDERR.puts "newrefv #{newrefv} #@chgrefv #{desc.inspect}"
           @super_refv[desc[:fxy]] = newrefv
         else
           if @addfield and not /^031021/ === desc[:fxy] then
@@ -1227,8 +1235,9 @@ BUFR表BおよびDを読み込む。さしあたり、カナダ気象局の libE
       nsubset = bufrmsg[:nsubset]
       nsubset.times{|isubset|
         begin
+          puts "isubset #{isubset} ptrcheck #{bufrmsg.ptrcheck}" if $DEBUG
           tb.newsubset isubset, bufrmsg.ptrcheck
-          BufrDecode.new(tape, bufrmsg).run(tb)
+          BufrDecode.new(tape, bufrmsg).run(tb, isubset)
         rescue Errno::EDOM => e
           $stderr.puts e.message + bufrmsg[:meta].inspect
         ensure

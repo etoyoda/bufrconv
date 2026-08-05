@@ -2973,9 +2973,9 @@
 012200  TEMP. OF BAROMETER-ATTACHED THERMOM. (SA)   K            1          0    12
 012201  MAXIMUM TEMPERATURE AT 2M, PAST 6 HRS       K            1          0    12
 ** CANADIAN
-012202  MINIMUM TEMPERATURE AT 2M, PAST 6 HRS       K            1          0    12
+* 012202  MINIMUM TEMPERATURE AT 2M, PAST 6 HRS       K            1          0    12
 ** GERMAN
-* 012202  MEAN TEMPERATURE AT 2M                      K            2          0    16
+012202  MEAN TEMPERATURE AT 2M                      K            2          0    16
 012203  DEW POINT DEPRESSION (2M)                   K            1          0     9
 012204  TEMPERATURE CORRECTION                      K            2          0    16
 012230  OBSERV. R.M.S. ERROR, T-TD (HUMISAT)        K            1          0     8
@@ -3110,12 +3110,13 @@
 020200  HEIGHT OF LOW LEVEL CLOUDS (SYNOP)          M           -1        -40    11
 020201  TYPE OF MID LEVEL CLOUDS (SA|SYNOP|METAR)   CODE TABLE   0          0     6
 020202  TYPE OF HIGH LEVEL CLOUDS (SA|SYNOP|METAR)  CODE TABLE   0          0     6
-020203  BASE LAYER (TURB., ICG, CLDS, WX) PIR|MET   M            0          0    15 M
 ** CANADIAN
+* 020203  BASE LAYER (TURB., ICG, CLDS, WX) PIR|MET   M            0          0    15 M
 * 020204  TOP LAYER (TURB., ICG, CLDS, WX) PIR|METAR  M            0          0    15 M
 * 020205  AIRCRAFT POSN W/R TO CLOUDS (PIREP)         CODE TABLE   0          0     5
 * 020206  SKY CONDITION, PIREP|SA|METAR               CODE TABLE   0          0     5
 ** GERMAN
+020203  FORM OF PRECIPITATION                       CODE TABLE   0          0     4
 020204  FALLEN PRECIPITATION (DAY BEFORE)           CODE TABLE   0          0     6
 020205  DEW, RIME ETC.(DAY BEFORE)                  CODE TABLE   0          0     7
 020206  OTHER WEATHER (DAY BEFORE)                  CODE TABLE   0          0     4
