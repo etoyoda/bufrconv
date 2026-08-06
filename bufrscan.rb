@@ -74,8 +74,10 @@ class BUFRMsg
     raise EBADF, "DS #{@dsofs} beyond msg end #{esofs}" if @dsofs >= esofs
     @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
     esofs2 = @dsofs + @dslen
-    if esofs2 > esofs or esofs2 < (esofs-5) then
-      raise EBADF, "ES #{esofs2} mismatch msg end #{esofs}"
+	if esofs2 > esofs then
+      raise EBADF, "End of DS beyond msg end #{esofs2-esofs}"
+	elsif esofs2 < (esofs-5) then
+      raise EBADF, "Gap after end of DS #{esofs-esofs2}"
     end
     @ptr = (@dsofs + 4) * 8
     @ptrmax = @ptr + (@dslen - 4) * 8
