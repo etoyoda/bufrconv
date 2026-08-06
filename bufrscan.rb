@@ -74,13 +74,27 @@ class BUFRMsg
     raise EBADF, "DS #{@dsofs} beyond msg end #{esofs}" if @dsofs >= esofs
     @dslen = BUFRMsg::unpack3(@buf[@dsofs,3])
     esofs2 = @dsofs + @dslen
-	if esofs2 > esofs then
+    @msglen_fix = nil
+    if esofs2 > esofs then
       raise EBADF, "End of DS beyond msg end #{esofs2-esofs}"
-	elsif esofs2 < (esofs-5) then
-      raise EBADF, "Gap after end of DS #{esofs-esofs2}"
+    elsif esofs2 < (esofs-10) then
+      ofs7=@buf.index('7777',esofs2-16)
+      ofsb=@buf.index('BUFR',@ofs+8)
+      if ofs7 and ofs7 == esofs2 and ofs7 < esofs then
+        @msglen_fix = ofs7+4-@ofs
+        STDERR.puts "msglen repaired #@msglen to #@msglen_fix"
+      else
+        raise EBADF, "Gap after end of DS #{esofs-esofs2}:" \
+          " ofs=#@ofs msglen=#@msglen idslen=#@idslen opslen=#@opslen" \
+          " ddslen=#@ddslen dslen=#@dslen dsofs=#@dsofs ofs7=#{ofs7} ofsb=#{ofsb}"
+      end
     end
     @ptr = (@dsofs + 4) * 8
     @ptrmax = @ptr + (@dslen - 4) * 8
+  end
+
+  def msglen
+    @msglen_fix || @msglen
   end
 
   def dump ofs = nil
@@ -558,7 +572,7 @@ class BUFRScan
       if endmark == '7777' then
         msgpos = @pos - @buf.bytesize + idx
         msg = BUFRMsg.new(@buf, idx, msglen, msgpos, @fnam, @ahl)
-        @ofs = idx + msglen
+        @ofs = idx + msg.msglen
         return msg
       end
       @ofs += 4
