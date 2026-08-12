@@ -2435,6 +2435,11 @@
 042008  NONLINEAR INVERSE SPECTRAL WIDTH            M            2          0    16
 042009  BIN PARTITION REFERENCE                     NUMERIC      0          0     8
 042010  PARTITION NUMBER                            NUMERIC      0          1     4
+042011  A1 COEF. OF THE DIRECTIONAL FOURIER SERIES  NUMERIC      4     -20000    15
+042012  B1 COEF. OF THE DIRECTIONAL FOURIER SERIES  NUMERIC      4     -20000    15
+042013  A2 COEF. OF THE DIRECTIONAL FOURIER SERIES  NUMERIC      4     -20000    15
+042014  B2 COEF. OF THE DIRECTIONAL FOURIER SERIES  NUMERIC      4     -20000    15
+042015  CHECK FACTOR K                              NUMERIC      2          0    12
 049001  RECORD ID                                   NUMERIC      0          0    10
 049002  SEQUENCE NR                                 NUMERIC      0          0     8
 049003  SUBSAT. LAT.                                DEGREES      2      -9000    15
