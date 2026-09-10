@@ -18,7 +18,7 @@ def check_store hash, key, val
 end
 
 unless File.exist?('vola_legacy_report.txt')
-  cmd = "wget https://oscar.wmo.int/oscar/vola/vola_legacy_report.txt"
+  cmd = "wget https://toyoda-eizi.net/2019/bufrconv/srctable/vola_legacy_report.txt"
   system(cmd)
 end
 
