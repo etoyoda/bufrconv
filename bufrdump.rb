@@ -452,8 +452,20 @@ class BufrDB
   class ENOSYS < BUFRMsg::ENOSYS
   end
 
+  def self.find_table_dir
+    r = [
+      ENV['BUFRDUMPDIR'],
+      File.join(File.dirname(__FILE__), "share"),
+      '/nwp/share/bufrconv'
+    ].find{|d|
+      d && File.exist?(File.join(d, 'table_b_bufr'))
+    }
+    raise "table_b_bufr not found - use $BUFRDUMPDIR" unless r
+    r
+  end
+
   def self.setup
-    BufrDB.new(ENV['BUFRDUMPDIR'] || File.dirname($0))
+    BufrDB.new(find_table_dir)
   end
 
 =begin
