@@ -354,6 +354,7 @@ class BUFRMsg
   end
 
   def compressed?
+    return @props[:compress] if @props[:mastab]
     decode_primary
     @props[:compress]
   end
