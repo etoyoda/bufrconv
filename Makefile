@@ -1,10 +1,10 @@
 test: all
 	cd tests; $(MAKE) test
 
-all: zip table_b_bufr.v13
+all: zip share/table_b_bufr.v13
 
-table_b_bufr.v13: table_b_bufr srctable/table_b_bufr-13 srctable/b-diff.rb
-	ruby srctable/b-diff.rb srctable/table_b_bufr-13 table_b_bufr > table_b_bufr.v13
+share/table_b_bufr.v13: share/table_b_bufr srctable/table_b_bufr-13 srctable/b-diff.rb
+	ruby srctable/b-diff.rb srctable/table_b_bufr-13 share/table_b_bufr > share/table_b_bufr.v13
 
 overwrite:
 	cd tests && $(MAKE) overwrite
@@ -12,7 +12,7 @@ overwrite:
 zip: bufrconv.zip
 
 FILES= LICENSE bufr2synop bufr2temp bufrscan.rb bufrdump.rb \
- table_b_bufr table_b_bufr.v13 table_d_bufr table_c11 table_station \
+ share/table_b_bufr share/table_b_bufr.v13 share/table_d_bufr share/table_c11 share/table_station \
  bufr2pilot bufrsort bufr2pick
 
 bufr2synop: amalgamate.rb bufr2synop.rb bufrscan.rb bufrdump.rb output.rb
