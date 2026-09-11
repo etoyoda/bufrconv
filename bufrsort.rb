@@ -2,9 +2,8 @@
 
 require 'json'
 
-$LOAD_PATH.push File.dirname($0)  ##del
-require 'bufrdump'  ##del
-require 'output'  ##del
+require_relative 'bufrdump'  ##del
+require_relative 'output'  ##del
 
 class BufrSort
 

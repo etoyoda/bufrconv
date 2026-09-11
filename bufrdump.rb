@@ -1,8 +1,7 @@
 #!/usr/bin/ruby
 
 require 'json'
-$LOAD_PATH.push File.dirname($0)  ##del
-require 'bufrscan'  ##del
+require_relative 'bufrscan'  ##del
 
 class TreeBuilder
 

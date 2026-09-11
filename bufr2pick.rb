@@ -1,7 +1,6 @@
 #!/usr/bin/ruby
 
-$LOAD_PATH.push File.dirname($0) ##del
-require 'bufrdump' ##del
+require_relative 'bufrdump' ##del
 
 class Bufr2pick
 
