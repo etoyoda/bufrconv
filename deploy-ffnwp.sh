@@ -1,6 +1,25 @@
 #!/bin/bash
 set -xEeuo pipefail
 
+check_generated() {
+  local src=$1
+  local bin=$2
+  test -f "$bin" || {
+    echo "ERROR: missing file $bin" >&2
+    echo "Run 'make' first." >&2
+    exit 1
+  }
+  if [ "$src" -nt "$bin" ]; then
+    echo "ERROR: $bin is older than $src" >&2
+    echo "Run 'make' first." >&2
+    exit 1
+  fi
+}
+for prog in bufr2pick bufr2synop bufr2temp bufr2pilot
+do
+  check_generated ${prog}.rb ${prog}
+done
+
 if getent passwd nwp >/dev/null; then
   INSTALL_USER=nwp
   CRON=true
