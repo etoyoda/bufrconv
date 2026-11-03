@@ -57,7 +57,15 @@ gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}Z
 then
-  for ve in msl_Pmsl z10_Pres p100_WINDS p200_Z p200_WINDS p250_rDIV p300_Z p300_WINDS p500_Z p500_T p500_rVOR p700_RH p700_VVPa p850_Z p850_papT p850_WINDS p925_Z p925_papT p925_WD sfc_RAIN z10_WD z2_T p925_WINDS z10_WINDS p500_WINDS p100_WD p200_WD p300_WD p500_WD
+  for ve in \
+  msl_Pmsl z10_Pres z10_WD z10_WINDS z2_T sfc_RAIN \
+  p50_Z p50_WINDS \
+  p100_Z p100_WD p100_WINDS \
+  p250_Z p250_T p250_WD p250_WINDS p250_rDIV \
+  p500_Z p500_T p500_WD p500_WINDS p500_rVOR \
+  p700_Z p700_RH p700_VVPa \
+  p850_Z p850_T p850_papT p850_WINDS \
+  p925_Z p925_papT p925_WD p925_WINDS
   do
     if test -f $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png ; then
       ln -f    $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_f006_${ve}.png .
@@ -109,13 +117,13 @@ ruby $nwp/bin/sort2sfcmap.rb $imgopt $sfcopt -WD:$wdbase $basetime sfcplot${bt}.
 levels=''
 case $hh in
 00|12)
-  levels='925 850 700 500 300 200 100 50'
+  levels='925 850 700 500 250 100 50'
   ;;
 06|18)
-  levels='925 850 700 500 300'
+  levels='925 850 700 500 250'
   ;;
 *)
-  levels='925 850'
+  levels='925 850 500'
 ;;
 esac
 for pres in $levels
@@ -143,30 +151,42 @@ do
     if test -f v${gpvbase}_f006_p${pres}_RH.png ; then
       upropt=-GPV1:v${gpvbase}_f006_p${pres}_RH.png
     fi
+    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_Z.png"
+    fi
     if test -f v${gpvbase}_f006_p${pres}_VVPa.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_VVPa.png"
+      upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_VVPa.png"
     fi
     ;;
-  100|200|300|500)
-    if test -f v${gpvbase}_f006_p700_RH.png ; then
-      upropt="-GPV1:v${gpvbase}_f006_p700_RH.png"
-    fi
+  500)
     if test -f v${gpvbase}_f006_p${pres}_T.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_T.png"
-    elif test -f v${gpvbase}_f006_p${pres}_WD.png ; then
-      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_WD.png"
+      upropt="${upropt} -GPV1:v${gpvbase}_f006_p${pres}_T.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
-      upropt="${upropt} -GPV3:v${gpvbase}_f006_p${pres}_Z.png"
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_Z.png"
     fi
     if test -f v${gpvbase}_f006_p${pres}_rVOR.png ; then
       upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_rVOR.png"
     fi
-    if test -f v${gpvbase}_f006_p250_rDIV.png ; then
-      upropt="${upropt} -GPV5:v${gpvbase}_f006_p250_rDIV.png"
+    if test -f v${gpvbase}_f006_p700_RH.png ; then
+      upropt="${upropt} -GPV5:v${gpvbase}_f006_p700_RH.png"
     fi
+    ;;
+  50|100|250)
     if test -f v${gpvbase}_f006_p${pres}_WINDS.png ; then
-      upropt="${upropt} -GPV6:v${gpvbase}_f006_p${pres}_WINDS.png"
+      upropt="${upropt} -GPV1:v${gpvbase}_f006_p${pres}_WINDS.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_Z.png ; then
+      upropt="${upropt} -GPV2:v${gpvbase}_f006_p${pres}_Z.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_rDIV.png ; then
+      upropt="${upropt} -GPV4:v${gpvbase}_f006_p${pres}_rDIV.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_T.png ; then
+      upropt="${upropt} -GPV5:v${gpvbase}_f006_p${pres}_T.png"
+    fi
+    if test -f v${gpvbase}_f006_p${pres}_WD.png ; then
+      upropt="${upropt} -GPV6:v${gpvbase}_f006_p${pres}_WD.png"
     fi
     ;;
   esac
