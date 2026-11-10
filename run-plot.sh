@@ -37,6 +37,7 @@ case $hh in
 ;;
 esac
 
+: --- prepare Himawari Dust Imagery ---
 imgopt=
 if test -f $nwp/bin/run-dst.sh
 then
@@ -45,6 +46,8 @@ then
     imgopt=-HIMDST:$(echo himdst*.png)
   fi
 fi
+
+: --- prepare Precip Nowcast ---
 ymdhns=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%d%H%M%S"))' $basetime)
 if test -d $nwp/p1/nowc/$ymdhns
 then
@@ -53,6 +56,7 @@ then
 else
   logger --tag plot --id=$$ -p news.err -- "nowc $nwp/p1/nowc/$ymdhns missing"
 fi
+
 gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV.first)-3600*6).utc.strftime("%Y%m%dT%H"))' $basetime)
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 if test -d $nwp/p1/jmagrib/${gpvtime}Z
@@ -76,6 +80,7 @@ then
   fi
 fi
 
+: --- prepare TAC decode ---
 if test -f $nwp/bin/run-detac.sh
 then
   bash $nwp/bin/run-detac.sh || :
