@@ -31,6 +31,7 @@ class App
     bt = @maptime.strftime('%Y%m%d%H%M%S')
     windbase = (@flags['WD'] ||
       'https://raw.githubusercontent.com/etoyoda/wxsymbols/master/img/')
+    gpvattr=(@flags['GPVATTR'] || 'JMA')
     <<HTML
 <html>
 <head>
@@ -126,35 +127,35 @@ function init() {
   }
   var uGpv1 = '#{@flags['GPV1']}';
   if (uGpv1) {
-    var gpv1 = L.imageOverlay(uGpv1, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    var gpv1 = L.imageOverlay(uGpv1, [[-85.043,-179.3],[85.043,179.3]], {attribution: '#{gpvattr}', opacity:0.8});
     mymap.addLayer(gpv1);
     cl[uGpv1] = gpv1;
   }
   var uGpv2 = '#{@flags['GPV2']}';
   if (uGpv2) {
-    var gpv2 = L.imageOverlay(uGpv2, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    var gpv2 = L.imageOverlay(uGpv2, [[-85.043,-179.3],[85.043,179.3]], {attribution: '#{gpvattr}', opacity:0.8});
     mymap.addLayer(gpv2);
     cl[uGpv2] = gpv2;
   }
   var uGpv3 = '#{@flags['GPV3']}';
   if (uGpv3) {
-    var gpv3 = L.imageOverlay(uGpv3, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    var gpv3 = L.imageOverlay(uGpv3, [[-85.043,-179.3],[85.043,179.3]], {attribution: '#{gpvattr}', opacity:0.8});
     mymap.addLayer(gpv3);
     cl[uGpv3] = gpv3;
   }
   var uGpv4 = '#{@flags['GPV4']}';
   if (uGpv4) {
-    var gpv4 = L.imageOverlay(uGpv4, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    var gpv4 = L.imageOverlay(uGpv4, [[-85.043,-179.3],[85.043,179.3]], {attribution: '#{gpvattr}', opacity:0.8});
     cl[uGpv4] = gpv4;
   }
   var uGpv5 = '#{@flags['GPV5']}';
   if (uGpv5) {
-    var gpv5 = L.imageOverlay(uGpv5, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    var gpv5 = L.imageOverlay(uGpv5, [[-85.043,-179.3],[85.043,179.3]], {attribution: '#{gpvattr}', opacity:0.8});
     cl[uGpv5] = gpv5;
   }
   var uGpv6 = '#{@flags['GPV6']}';
   if (uGpv6) {
-    var gpv6 = L.imageOverlay(uGpv6, [[-85.043,-179.3],[85.043,179.3]], {attribution: 'JMA', opacity:0.8});
+    var gpv6 = L.imageOverlay(uGpv6, [[-85.043,-179.3],[85.043,179.3]], {attribution: '#{gpvattr}', opacity:0.8});
     cl[uGpv6] = gpv6;
   }
   L.control.layers(basemaps, cl).addTo(mymap);

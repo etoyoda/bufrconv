@@ -62,6 +62,7 @@ gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ
 # GPV 探索 - 予報時間が短いもの優先、そのなかでjma があれば優先
 gpvdir=''
 ft=''
+gpvattr=''
 for ft in 6 9 12 15
 do
   # こちらが gpv の basetime
@@ -69,9 +70,11 @@ do
   fft=$(printf 'f%03u' $ft)
   if test -f $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_${fft}_msl_Pmsl.png ; then
     gpvdir=$nwp/p1/jmagrib/${gpvtime}Z
+    gpvattr='-GPVATTR=JMAGSM'
     break
   elif test -f $nwp/p1/ukwmc/${gpvtime}Z/v${gpvbase}_${fft}_msl_Pmsl.png ; then
     gpvdir=$nwp/p1/ukwmc/${gpvtime}Z
+    gpvattr='-GPVATTR=UKMO'
     break
   fi
 done
@@ -116,7 +119,7 @@ if test -f gsm${gpvtime}.txt ; then
 fi
 ruby $nwp/bin/distillobs.rb $obsfiles >| zmerge.txt
 ln zmerge.txt sfc${bt}.txt
-sfcopt=''
+sfcopt="$gpvattr"
 if test -f v${gpvbase}_${fft}_z10_WINDS.png ; then
   sfcopt="${sfcopt} -GPV1:v${gpvbase}_${fft}_z10_WINDS.png"
 fi
@@ -153,11 +156,11 @@ case $hh in
 esac
 for pres in $levels
 do
-  upropt=''
+  upropt="$gpvattr"
   case $pres in
   925|850)
     if test -f v${gpvbase}_${fft}_p${pres}_papT.png ; then
-      upropt=-GPV1:v${gpvbase}_${fft}_p${pres}_papT.png
+      upropt="${upropt} -GPV1:v${gpvbase}_${fft}_p${pres}_papT.png"
     fi
     if test -f v${gpvbase}_${fft}_p${pres}_WINDS.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_${fft}_p${pres}_WINDS.png"
@@ -174,7 +177,7 @@ do
     ;;
   700)
     if test -f v${gpvbase}_${fft}_p${pres}_RH.png ; then
-      upropt=-GPV1:v${gpvbase}_${fft}_p${pres}_RH.png
+      upropt="${upropt} -GPV1:v${gpvbase}_${fft}_p${pres}_RH.png"
     fi
     if test -f v${gpvbase}_${fft}_p${pres}_Z.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_${fft}_p${pres}_Z.png"
