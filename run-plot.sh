@@ -125,6 +125,8 @@ if test -f v${gpvbase}_${fft}_z10_WINDS.png ; then
 fi
 if test -f v${gpvbase}_${fft}_p925_papT.png ; then
   sfcopt="${sfcopt} -GPV2:v${gpvbase}_${fft}_p925_papT.png"
+elif test -f v${gpvbase}_${fft}_p850_papT.png ; then
+  sfcopt="${sfcopt} -GPV2:v${gpvbase}_${fft}_p850_papT.png"
 fi
 if test -f v${gpvbase}_${fft}_z10_Pres.png ; then
   sfcopt="${sfcopt} -GPV3:v${gpvbase}_${fft}_z10_Pres.png"
@@ -151,7 +153,7 @@ case $hh in
   levels='925 850 700 500 250'
   ;;
 *)
-  levels='925 850 500'
+  levels='925 850 700 500'
 ;;
 esac
 for pres in $levels
@@ -161,12 +163,16 @@ do
   925|850)
     if test -f v${gpvbase}_${fft}_p${pres}_papT.png ; then
       upropt="${upropt} -GPV1:v${gpvbase}_${fft}_p${pres}_papT.png"
+    elif test -f v${gpvbase}_${fft}_p700_RH.png ; then
+      upropt="${upropt} -GPV1:v${gpvbase}_${fft}_p700_RH.png"
     fi
     if test -f v${gpvbase}_${fft}_p${pres}_WINDS.png ; then
       upropt="${upropt} -GPV2:v${gpvbase}_${fft}_p${pres}_WINDS.png"
     fi
     if test -f v${gpvbase}_${fft}_p${pres}_Z.png ; then
       upropt="${upropt} -GPV3:v${gpvbase}_${fft}_p${pres}_Z.png"
+    elif test -f v${gpvbase}_${fft}_msl_Pmsl.png ; then
+      upropt="${upropt} -GPV3:v${gpvbase}_${fft}_msl_Pmsl.png"
     fi
     if test -f v${gpvbase}_${fft}_p${pres}_WD.png ; then
       upropt="${upropt} -GPV4:v${gpvbase}_${fft}_p${pres}_WD.png"
