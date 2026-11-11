@@ -78,6 +78,7 @@ done
 # 上記探索で GPV がみつかっていれば
 if test -d $gpvdir
 then
+  logger --tag plot --id=$$ -p news.info -- "using ${gpvdir}"
   for ve in \
   msl_Pmsl z10_Pres z10_WD z10_WINDS z2_T sfc_RAIN \
   p50_Z p50_WINDS \
@@ -95,6 +96,8 @@ then
   if test -f ${gpvdir}/gsm${gpvtime}.txt ; then
     ln    -f ${gpvdir}/gsm${gpvtime}.txt .
   fi
+else
+  logger --tag plot --id=$$ -p news.info -- "no gpv for ${gpvbase}"
 fi
 
 : --- prepare TAC decode ---
