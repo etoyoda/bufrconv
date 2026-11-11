@@ -66,13 +66,12 @@ for ft in 6 9 12 15
 do
   # こちらが gpv の basetime
   gpvtime=$(ruby -rtime -e 'puts((Time.parse(ARGV[0])-3600*ARGV[1].to_i).utc.strftime("%Y%m%dT%H"))' $basetime $ft)
-  if test -d $nwp/p1/jmagrib/${gpvtime}Z ; then
+  fft=$(printf 'f%03u' $ft)
+  if test -f $nwp/p1/jmagrib/${gpvtime}Z/v${gpvbase}_${fft}_msl_Pmsl.png ; then
     gpvdir=$nwp/p1/jmagrib/${gpvtime}Z
-    fft=$(printf 'f%03u' $ft)
     break
-  elif test -d $nwp/p1/ukwmc/${gpvtime}Z ; then
+  elif test -f $nwp/p1/ukwmc/${gpvtime}Z/v${gpvbase}_${fft}_msl_Pmsl.png ; then
     gpvdir=$nwp/p1/ukwmc/${gpvtime}Z
-    fft=$(printf 'f%03u' $ft)
     break
   fi
 done
