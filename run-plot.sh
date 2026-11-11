@@ -60,8 +60,8 @@ fi
 # base というのは誤りで gpv の valid time
 gpvbase=$(ruby -rtime -e 'puts(Time.parse(ARGV.first).utc.strftime("%Y%m%dT%H%MZ"))' $basetime)
 # GPV 探索 - 予報時間が短いもの優先、そのなかでjma があれば優先
-gpvdir='absent'
-ft='f999'
+gpvdir=''
+ft=''
 for ft in 6 9 12 15
 do
   # こちらが gpv の basetime
