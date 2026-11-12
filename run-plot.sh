@@ -127,6 +127,8 @@ if test -f v${gpvbase}_${fft}_p925_papT.png ; then
   sfcopt="${sfcopt} -GPV2:v${gpvbase}_${fft}_p925_papT.png"
 elif test -f v${gpvbase}_${fft}_p850_papT.png ; then
   sfcopt="${sfcopt} -GPV2:v${gpvbase}_${fft}_p850_papT.png"
+elif test -f v${gpvbase}_${fft}_p700_RH.png ; then
+  sfcopt="${sfcopt} -GPV2:v${gpvbase}_${fft}_p700_RH.png"
 fi
 if test -f v${gpvbase}_${fft}_z10_Pres.png ; then
   sfcopt="${sfcopt} -GPV3:v${gpvbase}_${fft}_z10_Pres.png"
