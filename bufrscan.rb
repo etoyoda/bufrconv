@@ -119,12 +119,12 @@ class BUFRMsg
 
   def getbits ptr, width
     ifirst = ptr / 8
-    raise ENOSPC, "getbits #{ifirst} out of msg size #{@buf.bytesize}" if ifirst > @buf.bytesize
+    raise ENOSPC, "getbits ifirst=#{ifirst} width=#{width} ptr=#{ptr} msgsize=#{@buf.bytesize}" if ifirst > @buf.bytesize
     ilast = (ptr + width) / 8
     iwidth = ilast - ifirst + 1
     ishift = 8 - ((ptr + width) % 8)
     imask = ((1 << width) - 1) << ishift
-    ival = @buf[ifirst,iwidth].unpack('C*').inject{|r,i|(r<<8)|i}
+    ival = @buf[ifirst,iwidth].unpack('C*').inject(0){|r,i|(r<<8)|i}
     [iwidth, ishift, imask, ival]
   end
 
