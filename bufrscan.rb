@@ -76,7 +76,9 @@ class BUFRMsg
     esofs2 = @dsofs + @dslen
     @msglen_fix = nil
     if esofs2 > esofs then
-      raise EBADF, "End of DS beyond msg end #{esofs2-esofs}"
+      raise EBADF, "End of DS beyond msg end #{esofs2-esofs}:" \
+      " ofs=#@ofs msglen=#@msglen ed=#@ed idslen=#@idslen opslen=#@opslen" \
+      " ddslen=#@ddslen dslen=#@dslen"
     elsif esofs2 < (esofs-10) then
       ofs7=@buf.index('7777',esofs2-16)
       ofsb=@buf.index('BUFR',@ofs+8)
